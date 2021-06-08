@@ -1,9 +1,20 @@
 # main.py
 
-from test_class import STest
+from dash_app import app
+import dash_callbacks  # do not delete
+from session import Session
 
+session = Session()
 
-# Press the green button in the gutter to run the script.
+'''
+    The Code Reloading feature is provided by Flask & Werkzeug via
+    the use_reloader keyword. A caveat of Code Reloading is that
+    your app code is run twice when starting: once to start the parent
+    process and another time to run the child process that gets reloaded.
+'''
+
 if __name__ == '__main__':
-    s = STest()
-    s.test_me()
+    # dev_tools_hot_release=False to avoid going twice in this file
+    app.run_server(dev_tools_ui=True, dev_tools_hot_reload=False)
+    session.stop()
+
