@@ -8,7 +8,7 @@ from random import choice
 import threading
 
 # TODO: uncomment it
-from account_balance import AssetBalance, AccountBalance
+from sc_account_balance import AssetBalance, AccountBalance
 
 log = logging.getLogger('log')
 K_INITIAL_EUR = 3_000.0  # 12_000.0
