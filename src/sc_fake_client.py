@@ -38,7 +38,7 @@ class ThreadCmpGenerator:
         # generate a new cmp every _interval seconds and send it to update_cmp
         print('thread started')
         while self._running:
-            print(f'cmp thread running: {self._running}')
+            # print(f'cmp thread running: {self._running}')
             time.sleep(self._interval)
             new_cmp = choice([-20, -10, -5, 0, 5, 10, 20])
             self.f_callback(new_cmp)
@@ -92,7 +92,7 @@ class FakeClient:
     def update_cmp(self, step: float):
         # when in MANUAL mode the cmp is update from command line interface
         self._cmp += step
-        print(f'new cmp: ', self._cmp)
+        # print(f'new cmp: ', self._cmp)
         self._process_cmp_change()
 
     def create_order(self, **kwargs) -> dict:

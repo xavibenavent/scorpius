@@ -11,7 +11,6 @@ from binance import enums as k_binance
 from sc_market import Market, ClientMode
 from sc_order import Order, OrderStatus
 from sc_account_balance import AccountBalance
-# from sc_pt_calculator import get_pt_values
 from sc_pending_orders_book import PendingOrdersBook
 from sc_traded_orders_book import TradedOrdersBook
 from sc_strategy_manager import StrategyManager
@@ -36,9 +35,9 @@ K_DISTANCE_FIRST_COMPENSATION = 150  # 200.0
 K_GAP_FIRST_COMPENSATION = 35  # 50.0
 
 # K_SPAN_FOR_CONCENTRATION = 500
-K_DISTANCE_FOR_CONCENTRATION = 150
-K_GAP_CONCENTRATION = 200
-K_INTERDISTANCE_AFTER_CONCENTRATION = 50.0
+# K_DISTANCE_FOR_CONCENTRATION = 150
+# K_GAP_CONCENTRATION = 200
+# K_INTERDISTANCE_AFTER_CONCENTRATION = 50.0
 
 # one placement per cycle control flag
 K_ONE_PLACE_PER_CYCLE_MODE = True
@@ -49,7 +48,7 @@ K_INITIAL_PT_TO_CREATE = 1
 PT_CREATED_COUNT_MAX = 100  # max number of pt created per session
 PT_CMP_CYCLE_COUNT = 30  # approximately secs (cmp update elapsed time)
 
-COMPENSATION_GAP = 500.0  # applied gap for compensated orders
+# COMPENSATION_GAP = 500.0  # applied gap for compensated orders
 
 
 class QuitMode(Enum):
@@ -59,7 +58,7 @@ class QuitMode(Enum):
 
 class Session:
     def __init__(self, client_mode: ClientMode):
-
+        print('session')
         self.market = Market(
             symbol_ticker_callback=self.symbol_ticker_callback,
             order_traded_callback=self.order_traded_callback,
@@ -74,9 +73,7 @@ class Session:
         self.bm = BalanceManager(market=self.market)
         self.pob = PendingOrdersBook(orders=[])
         self.tob = TradedOrdersBook()
-
         self.cm = ConcentratorManager(pob=self.pob, tob=self.tob)
-
         self.sm = StrategyManager(pob=self.pob, cm=self.cm, bm=self.bm)
 
         self.session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
@@ -112,6 +109,11 @@ class Session:
         self.partial_traded_orders_count = 0
 
     # ********** dashboard callback functions **********
+    def get_last_cmp(self):
+        if len(self.cmps) > 0:
+            return self.cmps[-1]
+        else:
+            return 0
 
     def get_all_orders_dataframe(self) -> pd.DataFrame:
         # get list with all orders: pending (monitor + placed) & traded (completed + pending_pt_id)
