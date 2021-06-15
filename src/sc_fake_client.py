@@ -21,7 +21,7 @@ K_BNBEUR = 350.0
 
 K_INITIAL_CMP = 45_000.0
 
-K_UPDATE_RATE = 1.0  # secs
+K_UPDATE_RATE = 0.1  # secs
 
 
 class ThreadCmpGenerator:

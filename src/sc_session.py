@@ -106,7 +106,7 @@ class Session:
 
         self.ticker_count = 0
 
-        self.partial_traded_orders_count = 0
+        # self.partial_traded_orders_count = 0
 
     # ********** dashboard callback functions **********
     def get_last_cmp(self):
@@ -136,7 +136,8 @@ class Session:
     def symbol_ticker_callback(self, cmp: float) -> None:
         # 0.1: create first pt
         if self.ticker_count == 0 and cmp > 20000.0:
-            self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=cmp)
+            # self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=cmp)
+            self.ptm.create_new_pt(cmp=cmp)
 
         # 0.2: update cmp count to control timely pt creation
         self.cmp_count += 1
@@ -153,7 +154,8 @@ class Session:
         self.check_placed_list_for_move_back(cmp=cmp)
 
         # strategy manager and update of trades needed for new pt
-        self.partial_traded_orders_count += self.sm.assess_strategy_actions(cmp=cmp)
+        # self.partial_traded_orders_count += self.sm.assess_strategy_actions(cmp=cmp)
+        self.sm.assess_strategy_actions(cmp=cmp)
 
         # 4. loop through monitoring orders and place to Binance when appropriate
         self.check_monitor_list_for_placing(cmp=cmp)
@@ -163,15 +165,18 @@ class Session:
 
     def check_inactivity(self, cmp):
         if self.cycles_from_last_trade > 125:  # TODO: magic number (5')
-            if self.bm.is_s1_below_buffer():
-                # force BUY
-                self.sm.force_buy(cmp=cmp)
-            elif self.bm.is_s2_below_buffer():
-                # force SELL
-                self.sm.force_sell(cmp=cmp)
-            else:
-                # create new pt
-                self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=cmp)
+            # if self.bm.is_s1_below_buffer():
+            #     # force BUY
+            #     # self.sm.force_buy(cmp=cmp)
+            #     pass
+            # elif self.bm.is_s2_below_buffer():
+            #     # force SELL
+            #     # self.sm.force_sell(cmp=cmp)
+            #     pass
+            # else:
+            #     # create new pt
+            #     # self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=cmp)
+            self.ptm.create_new_pt(cmp=cmp)
 
             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
@@ -241,10 +246,12 @@ class Session:
                     self.tob.add_pending(order=order)
 
                 # update counter for next pt
-                self.partial_traded_orders_count += 1
+                # self.partial_traded_orders_count += 1
                 # check whether a new pt is allowed or not
-                if self.pt_created_count < PT_CREATED_COUNT_MAX and self.partial_traded_orders_count >= 0:
-                    self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=self.last_cmp)
+                # if self.pt_created_count < PT_CREATED_COUNT_MAX and self.partial_traded_orders_count >= 0:
+                #     self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=self.last_cmp)
+                if self.pt_created_count < PT_CREATED_COUNT_MAX and len(self.pob.get_pending_orders()) == 0:
+                    self.ptm.create_new_pt(cmp=self.last_cmp)
                 else:
                     log.info('no new pt created after the last traded order')
                 # since the traded orders has been identified, do not check more orders

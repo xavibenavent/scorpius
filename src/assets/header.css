@@ -1,0 +1,29 @@
+.app-overall {
+    background-color: #111111;
+    opacity: 0.8;
+}
+
+.app-header {
+    height: 60px;
+    line-height: 60px;
+    border-bottom: thin lightgrey solid;
+}
+
+.app-header .app-header--title {
+    font-size: 50px;
+    padding-left: 5px;
+}
+
+.sc-col {
+    background: blue;
+}
+
+.sc-button {
+    margin: 5px;
+}
+
+#pending-table {
+    background-color: green;
+    background: yellow;
+}
+

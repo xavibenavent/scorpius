@@ -76,6 +76,14 @@ class Order:
         # log.info(f'** ORDER DESTROYED {self}')
         pass
 
+    def to_dict_for_df(self):
+        d = self.__dict__
+        d['amount'] = self.get_signed_amount()
+        d['total'] = self.get_signed_total()
+        d['status_name'] = self.status.name.lower()
+        print(f'd: {d}')
+        return d
+
     @staticmethod
     def get_new_uid() -> str:
         return secrets.token_hex(8)
