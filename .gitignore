@@ -1,4 +1,6 @@
 /.venv/
 /old/
 *.pyc
+.idea/
+tests/
 
