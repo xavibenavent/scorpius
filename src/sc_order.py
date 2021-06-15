@@ -48,8 +48,8 @@ class Order:
         self.btc_commission = 0.0
         self.binance_id = binance_id
 
-        self.signed_amount = self.get_signed_amount()
-        self.signed_total = self.get_signed_total()
+        # self.signed_amount = self.get_signed_amount()
+        # self.signed_total = self.get_signed_total()
 
         # session parameters
         self.activation_distance = K_ACTIVATION_DISTANCE
@@ -78,8 +78,8 @@ class Order:
 
     def to_dict_for_df(self):
         d = self.__dict__
-        d['amount'] = self.get_signed_amount()
-        d['total'] = self.get_signed_total()
+        # d['amount'] = self.get_signed_amount()
+        d['total'] = self.get_total()
         d['status_name'] = self.status.name.lower()
         print(f'd: {d}')
         return d

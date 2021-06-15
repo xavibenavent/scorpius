@@ -81,14 +81,14 @@ def get_pending_datatable(data: List[dict]):
                     'filter_query': '{k_side} = SELL && {status_name} = monitor',
                     'column_id': ['price', 'amount', 'total'],
                 },
-                'background': 'blue'
+                'color': 'Crimson'
             },
             {
                 'if': {
                     'filter_query': '{k_side} = BUY && {status_name} = monitor',
                     'column_id': ['price', 'amount', 'total'],
                 },
-                'color': 'grey'
+                'color': 'Aquamarine'
             },
             {
                 'if': {
