@@ -43,13 +43,10 @@ class Order:
         self.price = price
         self.amount = amount
         self.status = status
-        self.status_name = status.name.lower()
+        # self.status_name = status.name.lower()
         self.bnb_commission = bnb_commission
         self.btc_commission = 0.0
         self.binance_id = binance_id
-
-        # self.signed_amount = self.get_signed_amount()
-        # self.signed_total = self.get_signed_total()
 
         # session parameters
         self.activation_distance = K_ACTIVATION_DISTANCE
@@ -70,19 +67,12 @@ class Order:
         else:
             self.uid = uid
 
-        # log.info(f'** ORDER CREATED ++ {self}')
-
-    def __del__(self):
-        # log.info(f'** ORDER DESTROYED {self}')
-        pass
-
     def to_dict_for_df(self):
-        d = self.__dict__
-        # d['amount'] = self.get_signed_amount()
-        d['total'] = self.get_total()
-        d['status_name'] = self.status.name.lower()
-        print()
-        print(f'd: {d}')
+        # get a dictionary form the object able to use in dash (through a df)
+        d = {}
+        for k, v in self.__dict__.items():
+            d[k] = v
+        d['status'] = self.status.name.lower()
         return d
 
     @staticmethod
@@ -96,7 +86,6 @@ class Order:
         return self.get_distance(cmp=cmp) > max_dist
 
     def get_distance(self, cmp: float) -> float:
-        # return abs(cmp - self.price)
         if self.k_side == k_binance.SIDE_BUY:
             return cmp - self.price
         else:
@@ -106,9 +95,7 @@ class Order:
         return abs(self.get_distance(cmp))
 
     def get_price_str(self, precision: int = 2) -> str:
-        # price = '{:0.0{}f}'.format(self.price, precision)  # 2 for EUR
         return f'{self.price:0.0{precision}f}'
-        # return price
 
     def get_amount(self, precision: int = 6) -> float:
         return round(self.amount, precision)  # 6 for BTC
@@ -145,11 +132,12 @@ class Order:
         return self.status.name
 
     def __repr__(self):
-        return (f'split count: {self.split_count} '
+        return (
                 f'{self.k_side:4} - {self.session_id} - {self.pt_id:11} - '
                 f'{self.name:10} - {self.order_id:12} - {self.price:10,.2f} '
                 f'- {self.amount:12,.6f} - {self.bnb_commission:12,.6f} - {self.status.name:10}'
-                f'- {self.binance_id} - {self.uid} - {self.creation}')
+                f'- {self.binance_id} - {self.uid}'
+        )
 
     @staticmethod
     def is_filter_passed(filters: dict, qty: float, price: float) -> bool:

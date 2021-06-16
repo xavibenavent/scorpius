@@ -8,6 +8,8 @@ import dash
 import dash_bootstrap_components as dbc
 from dash_layout import DashLayout
 
+import logging
+
 print('dash_app.py')
 
 app = dash.Dash(__name__,
@@ -15,3 +17,9 @@ app = dash.Dash(__name__,
                 external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 app.layout = DashLayout().get_layout()
+
+# This is the default behavior of the logger that Flask uses
+# change this default behavior to only produce logs for errors:
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+

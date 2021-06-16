@@ -51,6 +51,6 @@ def update_table(timer):
     # sort by price
     df1 = df.sort_values(by=['price'], ascending=False)
     # filter by status for each table (monitor-placed & traded)
-    df_pending = df1[df1.status_name.isin(['monitor', 'placed', 'cmp'])]
+    df_pending = df1[df1.status.isin(['monitor', 'placed', 'cmp'])]
     return df_pending.to_dict('records')
 

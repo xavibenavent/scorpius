@@ -21,12 +21,12 @@ class DataframeManager:
         df = pd.DataFrame([order.to_dict_for_df() for order in all_orders])
         # delete status column because it returns a tuple and raises an error in the dash callback
         # there is the property status_name that substitutes status
-        df1 = df.drop(columns='status', axis=1)
-        return df1
+        # df1 = df.drop(columns='status', axis=1)
+        return df
 
     def get_all_orders_df_with_cmp(self) -> pd.DataFrame:
         df = self.get_all_orders_df()
         # create cmp order-like and add to dataframe
-        cmp_order = dict(pt_id='CMP', status_name='cmp', price=self.session.get_last_cmp())
+        cmp_order = dict(pt_id='CMP', status='cmp', price=self.session.get_last_cmp())
         df1 = df.append(other=cmp_order, ignore_index=True)
         return df1

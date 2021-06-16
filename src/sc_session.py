@@ -215,7 +215,7 @@ class Session:
         return new_placement_allowed
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
-        print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
+        # print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
         # get the order by uid
         for order in self.pob.placed:
             if order.uid == uid:

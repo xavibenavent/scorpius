@@ -64,35 +64,35 @@ def get_pending_datatable(data: List[dict]):
         style_data_conditional=[
             {
                 'if': {
-                    'filter_query': '{k_side} = SELL && {status_name} = placed',
+                    'filter_query': '{k_side} = SELL && {status} = placed',
                     'column_id': ['price', 'amount', 'total'],
                 },
                 'color': 'red'
             },
             {
                 'if': {
-                    'filter_query': '{k_side} = BUY && {status_name} = placed',
+                    'filter_query': '{k_side} = BUY && {status} = placed',
                     'column_id': ['price', 'amount', 'total'],
                 },
                 'color': 'green'
             },
             {
                 'if': {
-                    'filter_query': '{k_side} = SELL && {status_name} = monitor',
+                    'filter_query': '{k_side} = SELL && {status} = monitor',
                     'column_id': ['price', 'amount', 'total'],
                 },
                 'color': 'Crimson'
             },
             {
                 'if': {
-                    'filter_query': '{k_side} = BUY && {status_name} = monitor',
+                    'filter_query': '{k_side} = BUY && {status} = monitor',
                     'column_id': ['price', 'amount', 'total'],
                 },
                 'color': 'Aquamarine'
             },
             {
                 'if': {
-                    'filter_query': '{status_name} = cmp',
+                    'filter_query': '{status} = cmp',
                     'column_id': ['price', 'name', 'pt_id', 'total'],
                 },
                 'color': 'orange'
