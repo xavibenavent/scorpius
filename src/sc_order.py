@@ -81,6 +81,7 @@ class Order:
         # d['amount'] = self.get_signed_amount()
         d['total'] = self.get_total()
         d['status_name'] = self.status.name.lower()
+        print()
         print(f'd: {d}')
         return d
 
