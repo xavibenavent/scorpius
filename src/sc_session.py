@@ -221,9 +221,16 @@ class Session:
         new_placement_allowed = True
         self.pob.place_order(order=order)
         is_order_placed, new_status = self._place_order(order=order)
+        # new_status can be FILLED, if the order was traded right after being placed
         if is_order_placed:
             # 2. placed: (s: PLACED, t: pending_orders, l: placed)
-            order.set_status(status=OrderStatus.PLACED)
+            if new_status == 'NEW':
+                order.set_status(status=OrderStatus.PLACED)
+            elif new_status == 'FILLED':
+                order.set_status(status=OrderStatus.TRADED)
+                if order in self.pob.placed:
+                    log.critical('order removed from placed')
+                    self.pob.placed.remove(order)
             # to control one new placement per cycle mode
             if K_ONE_PLACE_PER_CYCLE_MODE:
                 new_placement_allowed = False

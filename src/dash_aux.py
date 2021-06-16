@@ -27,10 +27,11 @@ def get_pending_datatable(data: List[dict]):
                  scheme=Scheme.fixed,
                  group=True
              )},
-            {'id': 'compensation_count', 'name': 'compensation', 'type': 'numeric',
-             'format': Format(
-                 precision=0,
-             )},
+            {'id': 'status', 'name': 'status', 'type': 'text',
+             # 'format': Format(
+             #     precision=0,
+             # )
+             },
             {'id': 'split_count', 'name': 'split', 'type': 'numeric',
              'format': Format(
                  precision=0,
@@ -65,35 +66,35 @@ def get_pending_datatable(data: List[dict]):
             {
                 'if': {
                     'filter_query': '{k_side} = SELL && {status} = placed',
-                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total', 'status'],
                 },
                 'color': 'red'
             },
             {
                 'if': {
                     'filter_query': '{k_side} = BUY && {status} = placed',
-                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total', 'status'],
                 },
                 'color': 'green'
             },
             {
                 'if': {
                     'filter_query': '{k_side} = SELL && {status} = monitor',
-                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total', 'status'],
                 },
                 'color': 'pink'
             },
             {
                 'if': {
                     'filter_query': '{k_side} = BUY && {status} = monitor',
-                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total', 'status'],
                 },
                 'color': 'Aquamarine'
             },
             {
                 'if': {
                     'filter_query': '{status} = cmp',
-                    'column_id': ['pt_id', 'name', 'price', 'name', 'pt_id', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'name', 'pt_id', 'total', 'status'],
                 },
                 'color': 'orange'
             }

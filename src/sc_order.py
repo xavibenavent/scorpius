@@ -72,6 +72,7 @@ class Order:
         for k, v in self.__dict__.items():
             d[k] = v
         d['status'] = self.status.name.lower()
+        d['total'] = self.get_total()
         return d
 
     @staticmethod
