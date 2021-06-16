@@ -196,8 +196,26 @@ class Session:
                     cmp=cmp,
                     min_dist=K_MINIMUM_DISTANCE_FOR_PLACEMENT):
                 # check balance
-                if self.bm.is_balance_enough(order=order):
+                balance_enough, eur_liquidity, btc_liquidity = self.bm.is_balance_enough(order=order)
+                # if self.bm.is_balance_enough(order=order):
+                if balance_enough:
                     new_placement_allowed = self._process_place_order(order=order)
+                else:
+                    if eur_liquidity >= 500:
+                        # split order
+                        print(f'split for eur with eur liquidity: {eur_liquidity:,.2f}')
+                        split_orders = self.cm.split_for_partial_placement(order=order)
+                        for split_order in split_orders:
+                            print(split_order)
+                        pass
+                    elif btc_liquidity > 0.01:
+                        # split order
+                        print(f'split for btc with btc liquidity: {btc_liquidity:,.6f}')
+                        split_orders = self.cm.split_for_partial_placement(order=order)
+                        for split_order in split_orders:
+                            print(split_order)
+                        pass
+                    break
 
     def _process_place_order(self, order: Order) -> bool:
         new_placement_allowed = True

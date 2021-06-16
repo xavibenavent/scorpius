@@ -177,7 +177,7 @@ class ConcentratorManager:
 
     def split_for_partial_placement(self, order: Order) -> List[Order]:
         # split into 2 orders with amount proportional to ratio
-        new_orders = self.split_n_order(order=order, inter_distance=0.0, child_count=2)
+        new_orders = self.split_n_order(order=order, inter_distance=10.0, child_count=2)
         return new_orders
 
     def concentrate_for_liquidity(self, order: Order, ref_mp: float, ref_gap: float) -> bool:

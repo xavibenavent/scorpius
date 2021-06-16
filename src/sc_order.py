@@ -43,7 +43,6 @@ class Order:
         self.price = price
         self.amount = amount
         self.status = status
-        # self.status_name = status.name.lower()
         self.bnb_commission = bnb_commission
         self.btc_commission = 0.0
         self.binance_id = binance_id
@@ -68,7 +67,7 @@ class Order:
             self.uid = uid
 
     def to_dict_for_df(self):
-        # get a dictionary form the object able to use in dash (through a df)
+        # get a dictionary from the object able to use in dash (through a df)
         d = {}
         for k, v in self.__dict__.items():
             d[k] = v

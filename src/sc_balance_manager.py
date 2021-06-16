@@ -43,21 +43,28 @@ class BalanceManager:
         d = dict(s1=btc_bal, s2=eur_bal, bnb=bnb_bal)
         return AccountBalance(d)
 
-    def is_balance_enough(self, order: Order) -> (bool, float):
-        # if not enough balance, it returns False and the balance needed
-        is_balance_enough = False
+    def is_balance_enough(self, order: Order) -> (bool, float, float):
+        # if enough balance, it returns True, 0, 0
+        # if False, it returns False, eur_liquidity, btc_liquidity
+        # is_balance_enough = False
         if order.k_side == k_binance.SIDE_BUY:
             balance_allowance = self.current_ab.get_free_price_s2()
-            available_liquidity = balance_allowance - EUR_MIN_BALANCE  # [EUR]
-            if (available_liquidity - order.get_total()) > 0:
-                is_balance_enough = True
+            eur_liquidity = balance_allowance - EUR_MIN_BALANCE  # [EUR]
+            if (eur_liquidity - order.get_total()) > 0:
+                # is_balance_enough = True
+                return True, 0, 0
+            else:
+                return False, eur_liquidity, 0
         else:  # SIDE_SELL
             balance_allowance = self.current_ab.get_free_amount_s1()
-            available_liquidity = balance_allowance - BTC_MIN_BALANCE  # [BTC]
-            if (available_liquidity - order.amount) > 0:
-                is_balance_enough = True
+            btc_liquidity = balance_allowance - BTC_MIN_BALANCE  # [BTC]
+            if (btc_liquidity - order.amount) > 0:
+                # is_balance_enough = True
+                return True, 0, 0
+            else:
+                return False, 0, btc_liquidity
 
-        return is_balance_enough
+        # return is_balance_enough
 
     @staticmethod
     def get_balance_for_list(orders: List[Order]) -> (float, float, float, float):

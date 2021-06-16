@@ -65,35 +65,35 @@ def get_pending_datatable(data: List[dict]):
             {
                 'if': {
                     'filter_query': '{k_side} = SELL && {status} = placed',
-                    'column_id': ['price', 'amount', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total'],
                 },
                 'color': 'red'
             },
             {
                 'if': {
                     'filter_query': '{k_side} = BUY && {status} = placed',
-                    'column_id': ['price', 'amount', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total'],
                 },
                 'color': 'green'
             },
             {
                 'if': {
                     'filter_query': '{k_side} = SELL && {status} = monitor',
-                    'column_id': ['price', 'amount', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total'],
                 },
-                'color': 'Crimson'
+                'color': 'pink'
             },
             {
                 'if': {
                     'filter_query': '{k_side} = BUY && {status} = monitor',
-                    'column_id': ['price', 'amount', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total'],
                 },
                 'color': 'Aquamarine'
             },
             {
                 'if': {
                     'filter_query': '{status} = cmp',
-                    'column_id': ['price', 'name', 'pt_id', 'total'],
+                    'column_id': ['pt_id', 'name', 'price', 'name', 'pt_id', 'total'],
                 },
                 'color': 'orange'
             }
