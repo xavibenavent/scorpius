@@ -54,6 +54,7 @@ class Market:
         # create client depending on client_mode parameter
         self.client: Union[Client, FakeClient]
         # self.client, self.simulator_mode = self.set_client(client_mode)
+        self.fake_client: Optional[FakeClient] = None
         self.client = self.set_client(client_mode)
 
         # self.start_sockets()
@@ -212,11 +213,16 @@ class Market:
             except (BinanceAPIException, BinanceRequestException) as e:
                 log.critical(e)
 
+    def update_fake_client_cmp(self, step: float):
+        if self.fake_client:
+            self.fake_client.update_cmp_from_dashboard(step=step)
+        else:
+            log.critical('xxxxxxxxxxx trying to update cmp in non fake client mode xxxxxxxxxx')
+
     # ********** binance configuration methods **********
 
     def set_client(self, client_mode) -> (Union[Client, FakeClient], bool):
         client: Union[Client, FakeClient]
-        # is_simulator_mode = False
 
         if client_mode == ClientMode.CLIENT_MODE_BINANCE:  # 'binance':
             api_keys = {
@@ -229,13 +235,12 @@ class Market:
             client = FakeClient(
                 user_socket_callback=self.binance_user_socket_callback,
                 symbol_ticker_callback=self.binance_symbol_ticker_callback,
-                mode=FakeCmpMode.MODE_GENERATOR
             )
-            # is_simulator_mode = True
+            self.fake_client = client
         else:
             log.critical(f'client_mode {client_mode} not accepted')
             sys.exit()
-        return client  # , is_simulator_mode
+        return client
 
     def _start_sockets(self):
         # init socket manager

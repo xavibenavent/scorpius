@@ -45,7 +45,7 @@ class ThreadCmpGenerator:
 
 
 class FakeCmpMode(Enum):
-    MODE_MANUAL = 0  # in this mode two buttons (+, -) control the market place
+    MODE_MANUAL = 0  # in this mode two buttons (+, -) control the market price
     MODE_GENERATOR = 1  # every K_UPDATE_RATE seconds generates a new cmp
 
 
@@ -61,7 +61,9 @@ class FakeOrder:
 
 
 class FakeClient:
-    def __init__(self, user_socket_callback, symbol_ticker_callback, cmp=K_INITIAL_CMP, mode=FakeCmpMode.MODE_MANUAL):
+    def __init__(self, user_socket_callback,
+                 symbol_ticker_callback,
+                 cmp=K_INITIAL_CMP):
         self._user_socket_callback = user_socket_callback
         self._symbol_ticker_callback = symbol_ticker_callback
         self._placed_orders: List[FakeOrder] = []
@@ -70,7 +72,9 @@ class FakeClient:
         self._cmp: float = cmp
         self._cmp_sequence: List[float] = [cmp]
 
-        self._mode: FakeCmpMode = mode  # set when creating FakeClient in line 208 of Market
+        # FAKE CMP MODE SETTING
+        self._fake_cmp_mode = FakeCmpMode.MODE_MANUAL
+        # self._fake_cmp_mode = FakeCmpMode.MODE_GENERATOR
 
         self._account_balance = AccountBalance(
             d=dict(
@@ -79,21 +83,30 @@ class FakeClient:
                 bnb=AssetBalance(name='bnb', free=K_INITIAL_BNB, locked=0.0)
             ))
 
-        self.tcg = ThreadCmpGenerator(interval=K_UPDATE_RATE, f_callback=self.update_cmp)
+        self.tcg = ThreadCmpGenerator(interval=K_UPDATE_RATE, f_callback=self._update_cmp)
 
     def start_cmp_generator(self):
-        if self._mode == FakeCmpMode.MODE_GENERATOR:
+        if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
             x = threading.Thread(target=self.tcg.run)
             x.start()
 
     def stop_cmp_generator(self):
-        self.tcg.terminate()
+        if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
+            self.tcg.terminate()
 
-    def update_cmp(self, step: float):
-        # when in MANUAL mode the cmp is update from command line interface
+    def update_cmp_from_dashboard(self, step: float):
+        if self._fake_cmp_mode == FakeCmpMode.MODE_MANUAL:
+            self._update_cmp(step=step)
+        else:
+            log.warning('trying to manually update cmp in GENERATOR MODE')
+
+    def _update_cmp(self, step: float):
+        # when in MANUAL mode the cmp is update from the dashboard
         self._cmp += step
-        # print(f'new cmp: ', self._cmp)
         self._process_cmp_change()
+
+    def get_mode(self) -> FakeCmpMode:
+        return self._fake_cmp_mode
 
     def create_order(self, **kwargs) -> dict:
         order = FakeOrder(

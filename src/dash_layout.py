@@ -28,6 +28,8 @@ class DashLayout:
                     dbc.Col([
                         dbc.Button('New PT', id='button-new-pt', color='secondary', block=True, className='sc-button'),
                         dbc.Button("Stop Session", id='button-stop', color="primary", block=True, className='sc-button'),
+                        dbc.Button('+ 10.0 €', id='increase-cmp', color='warning', block=True, className='sc-button'),
+                        dbc.Button('- 10.0 €', id='decrease-cmp', color='warning', block=True, className='sc-button'),
                     ], width=2),
                     dbc.Col([
                         self.get_card()
@@ -50,7 +52,9 @@ class DashLayout:
                     [
                         html.H6(id='cmp', children="Learn Dash with Charming Data", className="card-title"),
                         html.H6(id='msg', children=''),
-                        html.H6(id='msg-2', children='')
+                        html.H6(id='msg-2', children=''),
+                        html.H6(id='msg-increase-cmp', children=''),
+                        html.H6(id='msg-decrease-cmp', children='')
                     ]
                 ),
             ],

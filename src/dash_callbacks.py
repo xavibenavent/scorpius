@@ -33,7 +33,7 @@ def on_button_click(n):
 
 @app.callback(
     Output('msg-2', 'children'),
-    Input('button-new-pt', 'n_clicks')
+    Input('button-new-pt', 'n_clicks'),
 )
 def on_button_click(n):
     if n is None:
@@ -41,6 +41,31 @@ def on_button_click(n):
     else:
         dfm.session.ptm.create_new_pt(dfm.session.get_last_cmp())
         return 'new pt created'
+
+
+@app.callback(
+    Output('msg-increase-cmp', 'children'),
+    Input('increase-cmp', 'n_clicks')
+)
+def on_button_click(n):
+    if n is None:
+        return ''
+    else:
+        dfm.session.market.update_fake_client_cmp(step=10.0)
+        return '+ 10.0€'
+
+
+@app.callback(
+    Output('msg-decrease-cmp', 'children'),
+    Input('decrease-cmp', 'n_clicks'),
+)
+def on_button_click(n):
+    if n is None:
+        return ''
+    else:
+        dfm.session.market.update_fake_client_cmp(step=-10.0)
+        return '- 10.0€'
+
 
 @app.callback(
     Output('pending-table', 'data'),
