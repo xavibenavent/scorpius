@@ -4,6 +4,36 @@ from typing import List
 import dash_table
 from dash_table.Format import Format, Scheme
 
+import pandas as pd
+import plotly.express as px
+from plotly.graph_objects import Figure, Indicator
+
+
+def get_balance_bar_chart(df: pd.DataFrame, asset: str, y_max: float) -> Figure:
+    fig = px.bar(
+        df,
+        x='asset',
+        y='amount',
+        text='amount',
+        color='type',
+        barmode='stack',
+        range_y=[0, y_max],
+        width=220,
+        height=400,
+        color_discrete_sequence=['green', 'red']
+    )
+    fig.update_layout(showlegend=False)  # , transition_duration=300)
+    # fig.update_xaxes(visible=False)
+    fig.update_yaxes(visible=False)
+    fig.update_traces(marker_line_color='rgb(8,48,107)',
+                      marker_line_width=1.5, opacity=0.6, textfont_size=16)
+    if asset == 'eur':
+        fig.update_traces(texttemplate='%{y:,.2f}')
+    else:
+        fig.update_traces(texttemplate='%{y:,.6f}')
+    fig.update_layout(plot_bgcolor='#fff', margin_l=0)
+    return fig
+
 
 def get_pending_datatable(data: List[dict]):
     datatable = dash_table.DataTable(
@@ -32,19 +62,19 @@ def get_pending_datatable(data: List[dict]):
              #     precision=0,
              # )
              },
-            {'id': 'split_count', 'name': 'split', 'type': 'numeric',
-             'format': Format(
-                 precision=0,
-             )},
-            {'id': 'concentration_count', 'name': 'concentration', 'type': 'numeric',
-             'format': Format(
-                 precision=0,
-             )}
+            # {'id': 'split_count', 'name': 'split', 'type': 'numeric',
+            #  'format': Format(
+            #      precision=0,
+            #  )},
+            # {'id': 'concentration_count', 'name': 'concentration', 'type': 'numeric',
+            #  'format': Format(
+            #      precision=0,
+            #  )}
         ],
         data=data,
         page_action='none',  # disable pagination (default is after 250 rows)
         style_table={'height': '800px', 'overflowY': 'auto'},  # , 'backgroundColor': K_BACKGROUND_COLOR},
-        style_cell={'fontSize': 16, 'font-family': 'Arial', 'background': 'black'},
+        style_cell={'fontSize': 16, 'font-family': 'Arial',},  # 'background': 'black'},
         # set table height and vertical scroll
         style_data={
             'width': '90px',

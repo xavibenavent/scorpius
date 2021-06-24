@@ -16,12 +16,6 @@ K_UPDATE_INTERVAL = 1000  # milisecs
 class DashLayout:
     def get_layout(self) -> html.Div:
         layout = html.Div(className='app-overall', children=[
-            html.Div(
-                className="app-header",
-                children=[
-                    html.Div('Plotly Dash', className="app-header--title")
-                ]
-            ),
             html.Div(children=[
                 html.H1(id='title', children='Scorpius Session V1.0'),
                 dbc.Row([
@@ -30,14 +24,28 @@ class DashLayout:
                         dbc.Button("Stop Session", id='button-stop', color="primary", block=True, className='sc-button'),
                         dbc.Button('+ 10.0 €', id='increase-cmp', color='warning', block=True, className='sc-button'),
                         dbc.Button('- 10.0 €', id='decrease-cmp', color='warning', block=True, className='sc-button'),
-                    ], width=2),
+                    ], width=1),
                     dbc.Col([
                         self.get_card()
                     ], width=2),
+                    # ********** balance bar charts **********
+                    dbc.Col(
+                        dcc.Graph(id='btc-balance-chart'),
+                        width={'size': 1, 'offset': 0},
+                    ),
+                    dbc.Col(
+                        dcc.Graph(id='eur-balance-chart'),
+                        width={'size': 1, 'offset': 0}
+                    ),
+                    dbc.Col(
+                        dcc.Graph(id='bnb-balance-chart'),
+                        width={'size': 1, 'offset': 0}
+                    ),
+
                     # ********** pending orders table **********
                     dbc.Col([
                         daux.get_pending_datatable(data=[{}])
-                    ], width=6, className='sc-col'),
+                    ], width=4, className='sc-col'),
                 ]),
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)
             ],)
@@ -50,16 +58,17 @@ class DashLayout:
                 dbc.CardImg(src="assets/bitcoin.png", top=True, bottom=False),
                 dbc.CardBody(
                     [
-                        html.H6(id='cmp', children="Learn Dash with Charming Data", className="card-title"),
+                        html.H6(id='symbol', children='BTCEUR', className='symbol'),
+                        html.H6(id='cmp', children='', className="card-title"),
                         html.H6(id='msg', children=''),
                         html.H6(id='msg-2', children=''),
                         html.H6(id='msg-increase-cmp', children=''),
                         html.H6(id='msg-decrease-cmp', children='')
-                    ]
+                    ], style={'text-align': 'center'}
                 ),
             ],
-            color="dark",  # https://bootswatch.com/default/ for more card colors
-            inverse=True,  # change color of text (black or white)
+            # color="dark",  # https://bootswatch.com/default/ for more card colors
+            # inverse=True,  # change color of text (black or white)
             outline=False,  # True = remove the block colors from the background and header
         )
 
