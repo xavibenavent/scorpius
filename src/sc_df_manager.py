@@ -11,6 +11,7 @@ class DataframeManager:
     def __init__(self):
         # self.session = Session(client_mode=ClientMode.CLIENT_MODE_SIMULATOR)
         self.session = Session(client_mode=ClientMode.CLIENT_MODE_BINANCE)
+        print('Session init')
 
     def get_all_orders_df(self) -> pd.DataFrame:
         # get list with all orders: pending (monitor + placed) & traded (completed + pending_pt_id)

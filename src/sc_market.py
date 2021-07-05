@@ -1,5 +1,7 @@
 # pp_market.py
 
+import time
+import asyncio
 import sys
 import logging
 from typing import Callable, Union, Any, Optional, List
@@ -94,6 +96,7 @@ class Market:
         # called from Binance API each time an order is traded and
         # each time the account balance changes
         event_type: str = msg['e']
+        print(event_type)
         if event_type == 'executionReport':
             if (msg['x'] == 'TRADE') and (msg["X"] == 'FILLED'):
                 # order traded
@@ -131,7 +134,6 @@ class Market:
             self.account_balance_callback(account_balance)
 
     def binance_symbol_ticker_callback(self, msg: Any) -> None:
-        print(msg)
         # called from Binance API each time the cmp is updated
         if msg['e'] == 'error':
             log.critical(f'symbol ticker socket error: {msg["m"]}')
@@ -267,5 +269,5 @@ class Market:
         )
 
         # start sockets
-        /# ._bsm.start()
-        self._bsm.join()
+        # self._bsm.start()
+        # self._bsm.join()

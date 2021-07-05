@@ -72,9 +72,11 @@ def update_figure(timer):
         dict(asset='bnb', amount=ab.bnb.locked, type='locked'),
     ])
 
-    fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.2)
-    fig_eur = get_balance_bar_chart(df=df_eur, asset='eur', y_max=10000)
-    fig_bnb = get_balance_bar_chart(df=df_bnb, asset='bnb', y_max=55)
+    print(df_bnb)
+
+    fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.6)
+    fig_eur = get_balance_bar_chart(df=df_eur, asset='eur', y_max=20000)
+    fig_bnb = get_balance_bar_chart(df=df_bnb, asset='bnb', y_max=40)
     return fig_btc, fig_eur, fig_bnb
 
 

@@ -41,6 +41,7 @@ class BalanceManager:
         eur_bal = self.market.get_asset_balance(asset='EUR', tag=tag, p=2)
         bnb_bal = self.market.get_asset_balance(asset='BNB', tag=tag)
         d = dict(s1=btc_bal, s2=eur_bal, bnb=bnb_bal)
+        print(d)
         return AccountBalance(d)
 
     def is_balance_enough(self, order: Order) -> (bool, float, float):

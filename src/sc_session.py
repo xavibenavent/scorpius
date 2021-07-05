@@ -134,34 +134,38 @@ class Session:
     # ********** Binance socket callback functions **********
 
     def symbol_ticker_callback(self, cmp: float) -> None:
-        # 0.1: create first pt
-        if self.ticker_count == 0 and cmp > 20000.0:
-            # self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=cmp)
-            self.ptm.create_new_pt(cmp=cmp)
+        print(cmp)
+        try:
+            # 0.1: create first pt
+            if self.ticker_count == 0 and cmp > 20000.0:
+                # self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=cmp)
+                self.ptm.create_new_pt(cmp=cmp)
 
-        # 0.2: update cmp count to control timely pt creation
-        self.cmp_count += 1
-        self.ticker_count += 1
+            # 0.2: update cmp count to control timely pt creation
+            self.cmp_count += 1
+            self.ticker_count += 1
 
-        # these two lists will be used to plot
-        self.cmps.append(cmp)
-        self.cycles_serie.append(self.cmp_count)
+            # these two lists will be used to plot
+            self.cmps.append(cmp)
+            self.cycles_serie.append(self.cmp_count)
 
-        self.last_cmp = cmp
-        self.cycles_from_last_trade += 1
+            self.last_cmp = cmp
+            self.cycles_from_last_trade += 1
 
-        # 2. loop through placed orders and move to monitor list if isolated
-        self.check_placed_list_for_move_back(cmp=cmp)
+            # 2. loop through placed orders and move to monitor list if isolated
+            self.check_placed_list_for_move_back(cmp=cmp)
 
-        # strategy manager and update of trades needed for new pt
-        # self.partial_traded_orders_count += self.sm.assess_strategy_actions(cmp=cmp)
-        self.sm.assess_strategy_actions(cmp=cmp)
+            # strategy manager and update of trades needed for new pt
+            # self.partial_traded_orders_count += self.sm.assess_strategy_actions(cmp=cmp)
+            self.sm.assess_strategy_actions(cmp=cmp)
 
-        # 4. loop through monitoring orders and place to Binance when appropriate
-        self.check_monitor_list_for_placing(cmp=cmp)
+            # 4. loop through monitoring orders and place to Binance when appropriate
+            self.check_monitor_list_for_placing(cmp=cmp)
 
-        # 5. check inactivity & liquidity
-        self.check_inactivity(cmp=cmp)
+            # 5. check inactivity & liquidity
+            self.check_inactivity(cmp=cmp)
+        except AttributeError as e:
+            pass
 
     def check_inactivity(self, cmp):
         if self.cycles_from_last_trade > 125:  # TODO: magic number (5')
