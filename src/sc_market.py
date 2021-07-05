@@ -5,7 +5,8 @@ import logging
 from typing import Callable, Union, Any, Optional, List
 from twisted.internet import reactor
 from binance.client import Client
-from binance.websockets import BinanceSocketManager
+# from binance.websockets import BinanceSocketManager
+from binance import ThreadedWebsocketManager
 from binance import enums as k_binance
 # from binance import exceptions
 from enum import Enum
@@ -244,7 +245,8 @@ class Market:
 
     def _start_sockets(self):
         # init socket manager
-        self._bsm = BinanceSocketManager(client=self.client)
+        # self._bsm = BinanceSocketManager(client=self.client)
+        self._bsm = ThreadedWebsocketManager(api_key=self.client.api_key, api_secret=self.client.api_secret)
 
         # symbol ticker socket
         self._symbol_ticker_s = self._bsm.start_symbol_ticker_socket(
