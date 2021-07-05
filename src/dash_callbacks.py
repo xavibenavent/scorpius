@@ -72,6 +72,8 @@ def update_figure(timer):
         dict(asset='bnb', amount=ab.bnb.locked, type='locked'),
     ])
 
+    print(df_btc)
+    print(df_eur)
     print(df_bnb)
 
     fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.6)
