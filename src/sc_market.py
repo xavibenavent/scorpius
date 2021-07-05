@@ -29,6 +29,11 @@ from sc_fake_client import FakeClient, FakeCmpMode
 
 log = logging.getLogger('log')
 
+global_api_keys = {
+                "key": "JkbTNxP0s6x6ovKcHTWYzDzmzLuKLh6g9gjwHmvAdh8hpsOAbHzS9w9JuyYD9mPf",
+                "secret": "IWjjdrYPyaWK4yMyYPIRhdiS0I7SSyrhb7HIOj4vjDcaFMlbZ1ygR6I8TZMUQ3mW"
+            }
+
 
 class ClientMode(Enum):
     CLIENT_MODE_BINANCE = 1
@@ -246,7 +251,7 @@ class Market:
     def _start_sockets(self):
         # init socket manager
         # self._bsm = BinanceSocketManager(client=self.client)
-        self._bsm = ThreadedWebsocketManager(api_key=self.client.api_key, api_secret=self.client.api_secret)
+        self._bsm = ThreadedWebsocketManager(api_key=global_api_keys['key'], api_secret=global_api_keys['secret'])
 
         # symbol ticker socket
         self._symbol_ticker_s = self._bsm.start_symbol_ticker_socket(
