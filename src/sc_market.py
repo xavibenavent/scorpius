@@ -131,6 +131,7 @@ class Market:
             self.account_balance_callback(account_balance)
 
     def binance_symbol_ticker_callback(self, msg: Any) -> None:
+        print(msg)
         # called from Binance API each time the cmp is updated
         if msg['e'] == 'error':
             log.critical(f'symbol ticker socket error: {msg["m"]}')
@@ -253,6 +254,8 @@ class Market:
         # self._bsm = BinanceSocketManager(client=self.client)
         self._bsm = ThreadedWebsocketManager(api_key=global_api_keys['key'], api_secret=global_api_keys['secret'])
 
+        self._bsm.start()
+
         # symbol ticker socket
         self._symbol_ticker_s = self._bsm.start_symbol_ticker_socket(
             symbol=self.symbol,
@@ -264,4 +267,5 @@ class Market:
         )
 
         # start sockets
-        self._bsm.start()
+        /# ._bsm.start()
+        self._bsm.join()
