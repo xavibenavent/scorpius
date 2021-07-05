@@ -76,6 +76,9 @@ class FakeClient:
         self._fake_cmp_mode = FakeCmpMode.MODE_MANUAL
         # self._fake_cmp_mode = FakeCmpMode.MODE_GENERATOR
 
+        self.api_key = ''
+        self.api_secret = ''
+
         self._account_balance = AccountBalance(
             d=dict(
                 s1=AssetBalance(name='btc', free=K_INITIAL_BTC, locked=0.0),
