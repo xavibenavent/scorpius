@@ -10,7 +10,8 @@ import dash_aux as daux
 
 print('dash_layout.py')
 
-K_UPDATE_INTERVAL = 1000  # milisecs
+# with lower values the dashboard does not refresh itself correctly
+K_UPDATE_INTERVAL = 2000  # milisecs
 
 
 class DashLayout:

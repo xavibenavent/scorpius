@@ -3,7 +3,6 @@
 import logging
 from dash_app import app
 import dash_callbacks  # do not delete
-# from dash_callbacks import session
 from sc_session import Session, QuitMode
 from sc_market import ClientMode
 from sc_logger import XBLogger

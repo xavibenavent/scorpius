@@ -165,7 +165,7 @@ class Session:
             # 5. check inactivity & liquidity
             self.check_inactivity(cmp=cmp)
         except AttributeError as e:
-            pass
+            print(e)
 
     def check_inactivity(self, cmp):
         if self.cycles_from_last_trade > 125:  # TODO: magic number (5')
