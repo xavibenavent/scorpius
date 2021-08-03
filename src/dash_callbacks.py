@@ -57,7 +57,8 @@ def on_button_click(n):
     Input(component_id='update', component_property='n_intervals')
 )
 def update_figure(timer):
-    ab = dfm.session.bm.get_account_balance()
+    # ab = dfm.session.bm.get_account_balance()
+    ab = dfm.session.bm.current_ab
 
     df_btc = pd.DataFrame([
         dict(asset='btc', amount=ab.s1.free, type='free'),

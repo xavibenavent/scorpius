@@ -11,7 +11,7 @@ import dash_aux as daux
 print('dash_layout.py')
 
 # with lower values the dashboard does not refresh itself correctly
-K_UPDATE_INTERVAL = 2000  # milisecs
+K_UPDATE_INTERVAL = 1000  # milisecs
 
 
 class DashLayout:
@@ -47,6 +47,13 @@ class DashLayout:
                     dbc.Col([
                         daux.get_pending_datatable(data=[{}])
                     ], width=4, className='sc-col'),
+                    dbc.Col(
+                        dbc.Card(
+                            [
+                                dbc.CardBody([html.H6(id='pt_cpmpleted', children='0', className='pt-info')])
+                            ]
+                        ), width=1, className='sc-col'
+                    )
                 ]),
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)
             ],)
