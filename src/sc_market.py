@@ -245,11 +245,11 @@ class Market:
         self._bsm.start()
 
         # symbol ticker socket
-        self._bsm.start_symbol_ticker_socket(
+        self._symbol_ticker_s = self._bsm.start_symbol_ticker_socket(
             symbol=self.symbol,
             callback=self.binance_symbol_ticker_callback)
 
         # user socket
-        self._bsm.start_user_socket(
+        self._user_s = self._bsm.start_user_socket(
             callback=self.binance_user_socket_callback
         )
