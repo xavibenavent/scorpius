@@ -29,11 +29,6 @@ from sc_fake_client import FakeClient, FakeCmpMode
 
 log = logging.getLogger('log')
 
-# global_api_keys = {
-#                 "key": "JkbTNxP0s6x6ovKcHTWYzDzmzLuKLh6g9gjwHmvAdh8hpsOAbHzS9w9JuyYD9mPf",
-#                 "secret": "IWjjdrYPyaWK4yMyYPIRhdiS0I7SSyrhb7HIOj4vjDcaFMlbZ1ygR6I8TZMUQ3mW"
-#             }
-
 
 class ClientMode(Enum):
     CLIENT_MODE_BINANCE = 1
@@ -53,9 +48,6 @@ class Market:
         self.client_mode = client_mode
         # symbol must be passed as argument o get from configuration file
         self.symbol = 'BTCEUR'
-
-        # set control flags
-        self.is_symbol_ticker_on = False  # when off symbol ticker socket U/S
 
         # create client depending on client_mode parameter
         self.client: Union[Client, FakeClient]
