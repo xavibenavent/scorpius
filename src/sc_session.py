@@ -132,7 +132,8 @@ class Session:
             # 0.1: create first pt
             if self.ticker_count == 0 and cmp > 20000.0:
                 # self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=cmp)
-                self.ptm.create_new_pt(cmp=cmp)
+                # self.ptm.create_new_pt(cmp=cmp)
+                pass
 
             # 0.2: update cmp count to control timely pt creation
             self.cmp_count += 1

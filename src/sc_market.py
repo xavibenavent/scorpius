@@ -1,13 +1,12 @@
-# pp_market.py
+# sc_market.py
 
-import time
-import asyncio
+# import time
+# import asyncio
 import sys
 import logging
 from typing import Callable, Union, Any, Optional, List
 from twisted.internet import reactor
 from binance.client import Client
-# from binance.websockets import BinanceSocketManager
 from binance import ThreadedWebsocketManager
 from binance import enums as k_binance
 # from binance import exceptions
@@ -26,15 +25,14 @@ from requests.exceptions import ConnectionError, ReadTimeout
 
 from sc_order import Order
 from sc_account_balance import AccountBalance, AssetBalance
-# from src.pp_simulated_client import SimulatedClient
 from sc_fake_client import FakeClient, FakeCmpMode
 
 log = logging.getLogger('log')
 
-global_api_keys = {
-                "key": "JkbTNxP0s6x6ovKcHTWYzDzmzLuKLh6g9gjwHmvAdh8hpsOAbHzS9w9JuyYD9mPf",
-                "secret": "IWjjdrYPyaWK4yMyYPIRhdiS0I7SSyrhb7HIOj4vjDcaFMlbZ1ygR6I8TZMUQ3mW"
-            }
+# global_api_keys = {
+#                 "key": "JkbTNxP0s6x6ovKcHTWYzDzmzLuKLh6g9gjwHmvAdh8hpsOAbHzS9w9JuyYD9mPf",
+#                 "secret": "IWjjdrYPyaWK4yMyYPIRhdiS0I7SSyrhb7HIOj4vjDcaFMlbZ1ygR6I8TZMUQ3mW"
+#             }
 
 
 class ClientMode(Enum):
@@ -64,8 +62,6 @@ class Market:
         # self.client, self.simulator_mode = self.set_client(client_mode)
         self.fake_client: Optional[FakeClient] = None
         self.client = self.set_client(client_mode)
-
-        # self.start_sockets()
 
     def start_sockets(self):
         if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:  # not self.simulator_mode:
@@ -253,21 +249,15 @@ class Market:
 
     def _start_sockets(self):
         # init socket manager
-        # self._bsm = BinanceSocketManager(client=self.client)
-        self._bsm = ThreadedWebsocketManager(api_key=global_api_keys['key'], api_secret=global_api_keys['secret'])
-
+        self._bsm = ThreadedWebsocketManager(api_key=self.client.API_KEY, api_secret=self.client.API_SECRET)
         self._bsm.start()
 
         # symbol ticker socket
-        self._symbol_ticker_s = self._bsm.start_symbol_ticker_socket(
+        self._bsm.start_symbol_ticker_socket(
             symbol=self.symbol,
             callback=self.binance_symbol_ticker_callback)
 
         # user socket
-        self._user_s = self._bsm.start_user_socket(
+        self._bsm.start_user_socket(
             callback=self.binance_user_socket_callback
         )
-
-        # start sockets
-        # self._bsm.start()
-        # self._bsm.join()
