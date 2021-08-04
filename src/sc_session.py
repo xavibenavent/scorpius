@@ -34,11 +34,6 @@ K_DISTANCE_INTER_FIRST_CHILDREN = 25.0  # 50
 K_DISTANCE_FIRST_COMPENSATION = 150  # 200.0
 K_GAP_FIRST_COMPENSATION = 35  # 50.0
 
-# K_SPAN_FOR_CONCENTRATION = 500
-# K_DISTANCE_FOR_CONCENTRATION = 150
-# K_GAP_CONCENTRATION = 200
-# K_INTERDISTANCE_AFTER_CONCENTRATION = 50.0
-
 # one placement per cycle control flag
 K_ONE_PLACE_PER_CYCLE_MODE = True
 
@@ -47,8 +42,6 @@ K_INITIAL_PT_TO_CREATE = 1
 # pt creation
 PT_CREATED_COUNT_MAX = 100  # max number of pt created per session
 PT_CMP_CYCLE_COUNT = 30  # approximately secs (cmp update elapsed time)
-
-# COMPENSATION_GAP = 500.0  # applied gap for compensated orders
 
 
 class QuitMode(Enum):
@@ -169,19 +162,7 @@ class Session:
 
     def check_inactivity(self, cmp):
         if self.cycles_from_last_trade > 125:  # TODO: magic number (5')
-            # if self.bm.is_s1_below_buffer():
-            #     # force BUY
-            #     # self.sm.force_buy(cmp=cmp)
-            #     pass
-            # elif self.bm.is_s2_below_buffer():
-            #     # force SELL
-            #     # self.sm.force_sell(cmp=cmp)
-            #     pass
-            # else:
-            #     # create new pt
-            #     # self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=cmp)
             self.ptm.create_new_pt(cmp=cmp)
-
             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
     def check_placed_list_for_move_back(self, cmp: float):
