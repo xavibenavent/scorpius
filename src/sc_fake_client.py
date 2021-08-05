@@ -10,7 +10,9 @@ import threading
 # TODO: uncomment it
 from sc_account_balance import AssetBalance, AccountBalance
 
-from config import SIMULATOR_MODE
+# from config import SIMULATOR_MODE
+import configparser
+
 
 log = logging.getLogger('log')
 K_INITIAL_EUR = 3_000.0  # 12_000.0
@@ -75,7 +77,11 @@ class FakeClient:
         self._cmp_sequence: List[float] = [cmp]
 
         # FAKE CMP MODE SETTING
-        self._fake_cmp_mode = FakeCmpMode[SIMULATOR_MODE]
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        sm = config['FAKE_CMP_MODE']['simulator_mode']
+
+        self._fake_cmp_mode = FakeCmpMode[sm]
 
         self.api_key = ''
         self.api_secret = ''

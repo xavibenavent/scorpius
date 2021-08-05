@@ -28,7 +28,8 @@ from sc_account_balance import AccountBalance, AssetBalance
 from sc_fake_client import FakeClient
 
 # import app parameters
-from config import CLIENT_MODE, BINANCE_SYMBOL
+# from config import CLIENT_MODE, BINANCE_SYMBOL
+import configparser
 
 log = logging.getLogger('log')
 
@@ -48,11 +49,13 @@ class Market:
         self.order_traded_callback: Callable[[str, float, float], None] = order_traded_callback
         self.account_balance_callback: Callable[[AccountBalance], None] = account_balance_callback
 
-        # CLIENT_MODE set in config.py
-        self.client_mode = ClientMode[CLIENT_MODE]
+        config = configparser.ConfigParser()
+        config.read('config.ini')
 
-        # symbol must be passed as argument o get from configuration file
-        self.symbol = BINANCE_SYMBOL
+        cm = config['APP_MODE']['client_mode']
+        self.client_mode = ClientMode[cm]
+
+        self.symbol = config['BINANCE']['symbol']
 
         # create client depending on client_mode parameter
         self.client: Union[Client, FakeClient]
