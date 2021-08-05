@@ -48,11 +48,7 @@ class Market:
         self.symbol = config['BINANCE']['symbol']
 
         # create client depending on client_mode parameter
-        self.client: Union[Client, FakeClient]
-        self.client = self._set_client(client_mode=self.client_mode)
-
-        # fake_client is set in the set_client() method and only in case of SIMULATOR MODE
-        self.fake_client: Optional[FakeClient] = None
+        self.client: Union[Client, FakeClient] = self._set_client(client_mode=self.client_mode)
 
     def start_sockets(self):
         if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:  # not self.simulator_mode:
@@ -202,17 +198,15 @@ class Market:
         log.info('********** CANCELLING PLACED ORDER(S) **********')
         for order in orders:
             try:
-                # d = self.client.cancel_order(symbol='BTCEUR', origClientOrderId=order.uid)
                 self.client.cancel_order(symbol='BTCEUR', origClientOrderId=order.uid)
                 log.info(f'** ORDER CANCELLED IN BINANCE {order}')
             except (BinanceAPIException, BinanceRequestException) as e:
                 log.critical(e)
 
     def update_fake_client_cmp(self, step: float):
-        if self.fake_client:
-            self.fake_client.update_cmp_from_dashboard(step=step)
-        else:
-            log.critical('xxxxxxxxxxx trying to update cmp in non fake client mode xxxxxxxxxx')
+        # only in SIMULATOR mode
+        if self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
+            self.client.update_cmp_from_dashboard(step=step)
 
     # ********** binance configuration methods **********
 
@@ -231,7 +225,6 @@ class Market:
                 user_socket_callback=self.binance_user_socket_callback,
                 symbol_ticker_callback=self.binance_symbol_ticker_callback,
             )
-            self.fake_client = client
         else:
             log.critical(f'client_mode {client_mode} not accepted')
             sys.exit()
