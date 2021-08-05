@@ -1,7 +1,7 @@
 # config.py
 
 
-# ********* app client mode (ClientMode enum class defined in sc_market.py) ********
+# ********* App client mode ********
 CLIENT_MODE = 'CLIENT_MODE_BINANCE'
 # CLIENT_MODE = 'CLIENT_MODE_SIMULATOR'
 
@@ -13,3 +13,6 @@ SIMULATOR_MODE = 'MODE_MANUAL'
 
 # ******** Binance symbol ********
 BINANCE_SYMBOL = 'BTCEUR'
+
+
+# ******** Trading parameters ********

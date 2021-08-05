@@ -75,9 +75,7 @@ class FakeClient:
         self._cmp_sequence: List[float] = [cmp]
 
         # FAKE CMP MODE SETTING
-        self._fake_cmp_mode = SIMULATOR_MODE
-        # self._fake_cmp_mode = FakeCmpMode.MODE_MANUAL
-        # self._fake_cmp_mode = FakeCmpMode.MODE_GENERATOR
+        self._fake_cmp_mode = FakeCmpMode[SIMULATOR_MODE]
 
         self.api_key = ''
         self.api_secret = ''
