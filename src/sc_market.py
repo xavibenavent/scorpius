@@ -40,18 +40,19 @@ class Market:
         config = configparser.ConfigParser()
         config.read('config.ini')
 
+        # BINANCE or SIMULATOR
         cm = config['APP_MODE']['client_mode']
         self.client_mode = ClientMode[cm]
 
+        # Usually BTCEUR
         self.symbol = config['BINANCE']['symbol']
 
         # create client depending on client_mode parameter
         self.client: Union[Client, FakeClient]
-        self.client = self.set_client(client_mode=self.client_mode)
+        self.client = self._set_client(client_mode=self.client_mode)
 
         # fake_client is set in the set_client() method and only in case of SIMULATOR MODE
         self.fake_client: Optional[FakeClient] = None
-
 
     def start_sockets(self):
         if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:  # not self.simulator_mode:
@@ -73,7 +74,6 @@ class Market:
 
         elif self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
             self.client.stop_cmp_generator()
-
         # sys.exit()
 
     # ********** callback functions **********
@@ -216,7 +216,7 @@ class Market:
 
     # ********** binance configuration methods **********
 
-    def set_client(self, client_mode) -> (Union[Client, FakeClient], bool):
+    def _set_client(self, client_mode) -> (Union[Client, FakeClient], bool):
         client: Union[Client, FakeClient]
 
         if client_mode == ClientMode.CLIENT_MODE_BINANCE:  # 'binance':
