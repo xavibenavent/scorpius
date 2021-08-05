@@ -50,13 +50,12 @@ class QuitMode(Enum):
 
 
 class Session:
-    def __init__(self, client_mode: ClientMode):
+    def __init__(self):
         print('session')
         self.market = Market(
             symbol_ticker_callback=self.symbol_ticker_callback,
             order_traded_callback=self.order_traded_callback,
-            account_balance_callback=self.account_balance_callback,
-            client_mode=client_mode
+            account_balance_callback=self.account_balance_callback
         )
 
         # get filters that will be checked before placing an order

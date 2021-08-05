@@ -2,15 +2,14 @@
 
 import pandas as pd
 
-from sc_session import Session, ClientMode
+from sc_session import Session
 
 print('sc_df_manager.py')
 
 
 class DataframeManager:
     def __init__(self):
-        # self.session = Session(client_mode=ClientMode.CLIENT_MODE_SIMULATOR)
-        self.session = Session(client_mode=ClientMode.CLIENT_MODE_BINANCE)
+        self.session = Session()
         print('Session init')
 
     def get_all_orders_df(self) -> pd.DataFrame:

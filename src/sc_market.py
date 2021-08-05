@@ -28,7 +28,7 @@ from sc_account_balance import AccountBalance, AssetBalance
 from sc_fake_client import FakeClient
 
 # import app parameters
-from config import *
+from config import CLIENT_MODE, BINANCE_SYMBOL
 
 log = logging.getLogger('log')
 
@@ -42,8 +42,7 @@ class Market:
     def __init__(self,
                  symbol_ticker_callback: Callable[[float], None],
                  order_traded_callback: Callable[[str, float, float], None],
-                 account_balance_callback: Callable[[AccountBalance], None],
-                 client_mode: ClientMode):
+                 account_balance_callback: Callable[[AccountBalance], None]):
 
         self.symbol_ticker_callback: Callable[[float], None] = symbol_ticker_callback
         self.order_traded_callback: Callable[[str, float, float], None] = order_traded_callback
@@ -53,13 +52,13 @@ class Market:
         self.client_mode = ClientMode[CLIENT_MODE]
 
         # symbol must be passed as argument o get from configuration file
-        self.symbol = 'BTCEUR'
+        self.symbol = BINANCE_SYMBOL
 
         # create client depending on client_mode parameter
         self.client: Union[Client, FakeClient]
-        # self.client, self.simulator_mode = self.set_client(client_mode)
+        # fake_client is set in the set_client() method and only in case of SIMULATOR MODE
         self.fake_client: Optional[FakeClient] = None
-        self.client = self.set_client(client_mode)
+        self.client = self.set_client(client_mode=self.client_mode)
 
     def start_sockets(self):
         if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:  # not self.simulator_mode:
