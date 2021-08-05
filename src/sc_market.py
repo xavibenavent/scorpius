@@ -25,7 +25,10 @@ from requests.exceptions import ConnectionError, ReadTimeout
 
 from sc_order import Order
 from sc_account_balance import AccountBalance, AssetBalance
-from sc_fake_client import FakeClient, FakeCmpMode
+from sc_fake_client import FakeClient
+
+# import app parameters
+from config import *
 
 log = logging.getLogger('log')
 
@@ -45,7 +48,10 @@ class Market:
         self.symbol_ticker_callback: Callable[[float], None] = symbol_ticker_callback
         self.order_traded_callback: Callable[[str, float, float], None] = order_traded_callback
         self.account_balance_callback: Callable[[AccountBalance], None] = account_balance_callback
-        self.client_mode = client_mode
+
+        # CLIENT_MODE set in config.py
+        self.client_mode = ClientMode[CLIENT_MODE]
+
         # symbol must be passed as argument o get from configuration file
         self.symbol = 'BTCEUR'
 
