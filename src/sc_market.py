@@ -1,7 +1,5 @@
 # sc_market.py
 
-# import time
-# import asyncio
 import sys
 import logging
 from typing import Callable, Union, Any, Optional, List
@@ -9,17 +7,8 @@ from twisted.internet import reactor
 from binance.client import Client
 from binance import ThreadedWebsocketManager
 from binance import enums as k_binance
-# from binance import exceptions
 from enum import Enum
-
-from binance.exceptions import BinanceAPIException
-from binance.exceptions import BinanceRequestException
-from binance.exceptions import BinanceOrderException
-from binance.exceptions import BinanceOrderMinAmountException
-from binance.exceptions import BinanceOrderMinPriceException
-from binance.exceptions import BinanceOrderMinTotalException
-from binance.exceptions import BinanceOrderUnknownSymbolException
-from binance.exceptions import BinanceOrderInactiveSymbolException
+from binance.exceptions import *
 
 from requests.exceptions import ConnectionError, ReadTimeout
 
@@ -27,8 +16,6 @@ from sc_order import Order
 from sc_account_balance import AccountBalance, AssetBalance
 from sc_fake_client import FakeClient
 
-# import app parameters
-# from config import CLIENT_MODE, BINANCE_SYMBOL
 import configparser
 
 log = logging.getLogger('log')
@@ -49,6 +36,7 @@ class Market:
         self.order_traded_callback: Callable[[str, float, float], None] = order_traded_callback
         self.account_balance_callback: Callable[[AccountBalance], None] = account_balance_callback
 
+        # get app parameters from config.ini
         config = configparser.ConfigParser()
         config.read('config.ini')
 
@@ -59,9 +47,11 @@ class Market:
 
         # create client depending on client_mode parameter
         self.client: Union[Client, FakeClient]
+        self.client = self.set_client(client_mode=self.client_mode)
+
         # fake_client is set in the set_client() method and only in case of SIMULATOR MODE
         self.fake_client: Optional[FakeClient] = None
-        self.client = self.set_client(client_mode=self.client_mode)
+
 
     def start_sockets(self):
         if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:  # not self.simulator_mode:
@@ -252,6 +242,7 @@ class Market:
         self._bsm = ThreadedWebsocketManager(api_key=self.client.API_KEY, api_secret=self.client.API_SECRET)
         self._bsm.start()
 
+        # _symbol_ticker_s and _user_s strings will be used to stop the sockets
         # symbol ticker socket
         self._symbol_ticker_s = self._bsm.start_symbol_ticker_socket(
             symbol=self.symbol,
