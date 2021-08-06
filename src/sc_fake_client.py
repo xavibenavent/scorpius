@@ -1,4 +1,4 @@
-# pp_fake_client.py
+# sc_fake_client.py
 
 import logging
 import time
@@ -7,25 +7,12 @@ from enum import Enum
 from random import choice
 import threading
 
-# TODO: uncomment it
 from sc_account_balance import AssetBalance, AccountBalance
 
 # from config import SIMULATOR_MODE
 import configparser
 
-
 log = logging.getLogger('log')
-K_INITIAL_EUR = 3_000.0  # 12_000.0
-K_INITIAL_BTC = 0.1  # 0.3
-K_INITIAL_BNB = 50.0
-
-K_FEE = 0.0008
-K_BNBBTC = 0.25
-K_BNBEUR = 350.0
-
-K_INITIAL_CMP = 45_000.0
-
-K_UPDATE_RATE = 0.1  # secs
 
 
 class ThreadCmpGenerator:
@@ -66,15 +53,11 @@ class FakeOrder:
 
 class FakeClient:
     def __init__(self, user_socket_callback,
-                 symbol_ticker_callback,
-                 cmp=K_INITIAL_CMP):
+                 symbol_ticker_callback):
         self._user_socket_callback = user_socket_callback
         self._symbol_ticker_callback = symbol_ticker_callback
         self._placed_orders: List[FakeOrder] = []
         self._placed_orders_count = 0
-
-        self._cmp: float = cmp
-        self._cmp_sequence: List[float] = [cmp]
 
         # FAKE CMP MODE SETTING
         config = configparser.ConfigParser()
@@ -82,18 +65,31 @@ class FakeClient:
         sm = config['FAKE_CMP_MODE']['simulator_mode']
 
         self._fake_cmp_mode = FakeCmpMode[sm]
+        initial_btc = float(config['SIMULATOR']['initial_btc'])
+        initial_eur = float(config['SIMULATOR']['initial_eur'])
+        initial_bnb = float(config['SIMULATOR']['initial_bnb'])
+        update_rate = float(config['SIMULATOR']['update_rate'])
+
+        # initial cmp
+        self._cmp: float = float(config['SIMULATOR']['initial_cmp'])
+        # cmp historical list
+        self._cmp_sequence: List[float] = [self._cmp]
+
+        self._FEE = float(config['SIMULATOR']['fee'])
+        self._BNBBTC = float(config['SIMULATOR']['bnb_btc'])
+        self._BNBEUR = float(config['SIMULATOR']['bnb_eur'])
 
         self.api_key = ''
         self.api_secret = ''
 
         self._account_balance = AccountBalance(
             d=dict(
-                s1=AssetBalance(name='btc', free=K_INITIAL_BTC, locked=0.0),
-                s2=AssetBalance(name='eur', free=K_INITIAL_EUR, locked=0.0, precision=2),
-                bnb=AssetBalance(name='bnb', free=K_INITIAL_BNB, locked=0.0)
+                s1=AssetBalance(name='btc', free=initial_btc, locked=0.0),
+                s2=AssetBalance(name='eur', free=initial_eur, locked=0.0, precision=2),
+                bnb=AssetBalance(name='bnb', free=initial_bnb, locked=0.0)
             ))
 
-        self.tcg = ThreadCmpGenerator(interval=K_UPDATE_RATE, f_callback=self._update_cmp)
+        self.tcg = ThreadCmpGenerator(interval=update_rate, f_callback=self._update_cmp)
 
     def start_cmp_generator(self):
         if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
@@ -248,9 +244,9 @@ class FakeClient:
         if symbol == 'BTCEUR':
             price = str(self._cmp)
         elif symbol == 'BNBBTC':
-            price = str(K_BNBBTC)
+            price = str(self._BNBBTC)
         elif symbol == 'BNBEUR':
-            price = str(K_BNBEUR)
+            price = str(self._BNBEUR)
         else:
             price = str(0.0)
             log.critical(f'symbol not in simulator, returning {price}')
@@ -296,8 +292,8 @@ class FakeClient:
                 self._account_balance.s1.locked -= order.quantity
                 self._account_balance.s2.free += order.get_total()
             # eur_commission = order.get_total() * K_FEE
-            btc_commission = order.quantity * K_FEE
-            bnb_commission = btc_commission / K_BNBBTC
+            btc_commission = order.quantity * self._FEE  # K_FEE
+            bnb_commission = btc_commission / self._BNBBTC  # K_BNBBTC
             self._account_balance.bnb.free -= bnb_commission
             # print(f'fee: {order.get_total() * K_FEE}')
             # call binance user socket twice
@@ -309,8 +305,8 @@ class FakeClient:
             log.critical(f'trying to trade an order not placed {order.uid}')
 
     def _call_user_socket_order_traded(self, order: FakeOrder):
-        btc_commission = order.quantity * K_FEE
-        bnb_commission = btc_commission / K_BNBBTC
+        btc_commission = order.quantity * self._FEE  # K_FEE
+        bnb_commission = btc_commission / self._BNBBTC  # K_BNBBTC
         msg = dict(
             e='executionReport',
             x='TRADE',
@@ -344,5 +340,3 @@ class FakeClient:
             ]
         )
         self._user_socket_callback(msg)
-
-
