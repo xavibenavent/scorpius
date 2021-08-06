@@ -1,4 +1,4 @@
-# pp_session.py
+# sc_session.py
 
 import logging
 from datetime import datetime
@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Optional
 from binance import enums as k_binance
 
-from sc_market import Market, ClientMode
+from sc_market import Market
 from sc_order import Order, OrderStatus
 from sc_account_balance import AccountBalance
 from sc_pending_orders_book import PendingOrdersBook
@@ -18,30 +18,10 @@ from sc_balance_manager import BalanceManager
 from sc_concentrator import ConcentratorManager
 from sc_pt_manager import PTManager
 
+import configparser
+
 
 log = logging.getLogger('log')
-
-K_MINIMUM_DISTANCE_FOR_PLACEMENT = 35.0  # order activation distance
-K_MAX_DISTANCE_FOR_REMAINING_PLACED = 100.0
-K_MINIMUM_SHIFT_STEP = 15  # mp shift applied to equidistant point
-K_MAX_SHIFT = 50.0
-K_ORDER_PRICE_BUFFER = 5.0  # not used
-K_AUGMENTED_FEE = 10 / 100
-
-K_MIN_CYCLES_FOR_FIRST_SPLIT = 100  # the rationale for this parameter is to give time to complete (b1, s1)
-K_DISTANCE_FOR_FIRST_CHILDREN = 100  # 150
-K_DISTANCE_INTER_FIRST_CHILDREN = 25.0  # 50
-K_DISTANCE_FIRST_COMPENSATION = 150  # 200.0
-K_GAP_FIRST_COMPENSATION = 35  # 50.0
-
-# one placement per cycle control flag
-K_ONE_PLACE_PER_CYCLE_MODE = True
-
-K_INITIAL_PT_TO_CREATE = 1
-
-# pt creation
-PT_CREATED_COUNT_MAX = 100  # max number of pt created per session
-PT_CMP_CYCLE_COUNT = 30  # approximately secs (cmp update elapsed time)
 
 
 class QuitMode(Enum):
@@ -57,6 +37,15 @@ class Session:
             order_traded_callback=self.order_traded_callback,
             account_balance_callback=self.account_balance_callback
         )
+
+        # read parameters from config.ini
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+
+        self._min_dist_for_placement = float(config['SESSION']['min_dist_for_placement'])
+        self._max_dist_for_remaining_placed = float(config['SESSION']['max_dist_for_remaining_placed'])
+        self._one_placement_for_cycle = config['SESSION'].getboolean('one_placement_for_cycle')
+        self._pt_created_count_max = float(config['SESSION']['pt_created_count_max'])
 
         # get filters that will be checked before placing an order
         self.symbol_filters = self.market.get_symbol_info(symbol='BTCEUR')
@@ -167,7 +156,7 @@ class Session:
 
     def check_placed_list_for_move_back(self, cmp: float):
         for order in self.pob.placed:
-            if order.is_isolated(cmp=cmp, max_dist=K_MAX_DISTANCE_FOR_REMAINING_PLACED):
+            if order.is_isolated(cmp=cmp, max_dist=self._max_dist_for_remaining_placed):
                 self.pob.place_back_order(order=order)
                 # cancel order in Binance
                 self.market.cancel_orders(orders=[order])
@@ -179,7 +168,7 @@ class Session:
             order.cycles_count += 1
             if new_placement_allowed and order.is_ready_for_placement(
                     cmp=cmp,
-                    min_dist=K_MINIMUM_DISTANCE_FOR_PLACEMENT):
+                    min_dist=self._min_dist_for_placement):
                 # check balance
                 balance_enough, eur_liquidity, btc_liquidity = self.bm.is_balance_enough(order=order)
                 # if self.bm.is_balance_enough(order=order):
@@ -217,7 +206,7 @@ class Session:
                     log.critical('order removed from placed')
                     self.pob.placed.remove(order)
             # to control one new placement per cycle mode
-            if K_ONE_PLACE_PER_CYCLE_MODE:
+            if self._one_placement_for_cycle:
                 new_placement_allowed = False
         else:
             self.pob.place_back_order(order=order)
@@ -260,7 +249,7 @@ class Session:
                 # check whether a new pt is allowed or not
                 # if self.pt_created_count < PT_CREATED_COUNT_MAX and self.partial_traded_orders_count >= 0:
                 #     self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=self.last_cmp)
-                if self.pt_created_count < PT_CREATED_COUNT_MAX and len(self.pob.get_pending_orders()) == 0:
+                if self.pt_created_count < self._pt_created_count_max and len(self.pob.get_pending_orders()) == 0:
                     self.ptm.create_new_pt(cmp=self.last_cmp)
                 else:
                     log.info('no new pt created after the last traded order')

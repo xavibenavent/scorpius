@@ -9,7 +9,7 @@ import threading
 
 from sc_account_balance import AssetBalance, AccountBalance
 
-# from config import SIMULATOR_MODE
+# from config import SIMULATOR_MODE and parameters
 import configparser
 
 log = logging.getLogger('log')
