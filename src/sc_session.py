@@ -17,6 +17,7 @@ from sc_strategy_manager import StrategyManager
 from sc_balance_manager import BalanceManager
 from sc_concentrator import ConcentratorManager
 from sc_pt_manager import PTManager
+from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
 
 import configparser
 
@@ -135,14 +136,19 @@ class Session:
             self.cycles_from_last_trade += 1
 
             # 2. loop through placed orders and move to monitor list if isolated
-            self.check_placed_list_for_move_back(cmp=cmp)
+            # self.check_placed_list_for_move_back(cmp=cmp)
 
             # strategy manager and update of trades needed for new pt
             # self.partial_traded_orders_count += self.sm.assess_strategy_actions(cmp=cmp)
             self.sm.assess_strategy_actions(cmp=cmp)
 
-            # 4. loop through monitoring orders and place to Binance when appropriate
-            self.check_monitor_list_for_placing(cmp=cmp)
+            # todo: check active list for trading or parameters update
+            # it is important to check first the active list and the the monitor one
+            # with this order we guarantee there is only one status change per cycle
+            self.check_active_list_for_trading(cmp=cmp)
+
+            # 4. todo: loop through monitoring orders for activating
+            self.check_monitor_list_for_activating(cmp=cmp)
 
             # 5. check inactivity & liquidity
             self.check_inactivity(cmp=cmp)
@@ -158,42 +164,28 @@ class Session:
             self.ptm.create_new_pt(cmp=cmp)
             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
-    def check_placed_list_for_move_back(self, cmp: float):
-        for order in self.pob.placed:
-            if order.is_isolated(cmp=cmp, max_dist=self._max_dist_for_remaining_placed):
-                self.pob.place_back_order(order=order)
-                # cancel order in Binance
-                self.market.cancel_orders(orders=[order])
-
-    def check_monitor_list_for_placing(self, cmp: float):
-        new_placement_allowed = True
-        sorted_orders = sorted(self.pob.monitor, key=lambda x: x.get_abs_distance(cmp=cmp))
-        for order in sorted_orders:
+    def check_monitor_list_for_activating(self, cmp: float) -> None:
+        for order in self.pob.monitor:
             order.cycles_count += 1
-            if new_placement_allowed and order.is_ready_for_placement(
-                    cmp=cmp,
-                    min_dist=self._min_dist_for_placement):
-                # check balance
-                balance_enough, eur_liquidity, btc_liquidity = self.bm.is_balance_enough(order=order)
-                # if self.bm.is_balance_enough(order=order):
-                if balance_enough:
-                    new_placement_allowed = self._process_place_order(order=order)
-                else:
-                    if eur_liquidity >= 500:
-                        # split order
-                        print(f'split for eur with eur liquidity: {eur_liquidity:,.2f}')
-                        split_orders = self.cm.split_for_partial_placement(order=order)
-                        for split_order in split_orders:
-                            print(split_order)
-                        pass
-                    elif btc_liquidity > 0.01:
-                        # split order
-                        print(f'split for btc with btc liquidity: {btc_liquidity:,.6f}')
-                        split_orders = self.cm.split_for_partial_placement(order=order)
-                        for split_order in split_orders:
-                            print(split_order)
-                        pass
-                    break
+            if order.is_ready_for_activation(cmp=cmp):
+                self.pob.active_order(order=order)
+
+    def check_active_list_for_trading(self, cmp: float) -> None:
+        for order in self.pob.active:
+            order.cycles_count += 1
+            if order.is_ready_for_trading(cmp=cmp):
+                # check whether it is the first order traded in the pt or not
+                # pt = self.ptm.get_pt_by_pt_id(pt_id=order.pt_id)
+                if order.pt.status == PerfectTradeStatus.NEW:
+                    # todo: set the other order price and price parameters (C, L, T)
+                    if order.k_side == k_binance.SIDE_BUY:
+                        order.pt.status = PerfectTradeStatus.BUY_TRADED
+                        order.sibling_order.price = cmp + 100.0
+                    elif order.k_side == k_binance.SIDE_SELL:
+                        order.pt.status = PerfectTradeStatus.SELL_TRADED
+                        order.sibling_order.price = cmp - 100.0
+                    pass
+                self.pob.trade_order(order=order)
 
     def _process_place_order(self, order: Order) -> bool:
         new_placement_allowed = True

@@ -43,6 +43,12 @@ class PTManager:
             # create new perfect trade from orders and add to list
             new_pt = PerfectTrade(pt_id=pt_id, buy_order=b1, sell_order=s1)
             self.perfect_trades.append(new_pt)
+
+            # todo: set order references
+            b1.sibling_order = s1
+            s1.sibling_order = b1
+            b1.pt = new_pt
+            s1.pt = new_pt
         else:
             print('\n********** CRITICAL ERROR CREATING PT **********\n')
         return created_orders
@@ -84,6 +90,13 @@ class PTManager:
         for pt in self.perfect_trades:
             total += pt.get_actual_profit(cmp=cmp)
         return total
+
+    def get_pt_by_pt_id(self, pt_id: str) -> PerfectTrade:
+        for pt in self.perfect_trades:
+            if pt.pt_id == pt_id:
+                return pt
+        # todo: fix for production
+        raise Exception("there is no pt with this id in perfect trades list")
 
     def _get_b1s1(self,
                   mp: float,

@@ -8,7 +8,6 @@ from binance import enums as k_binance
 
 from sc_order import Order, OrderStatus
 from sc_pt_calculator import get_compensation
-# from polaris_old.pp_dbmanager import DBManager
 
 log = logging.getLogger('log')
 
@@ -17,7 +16,10 @@ class PendingOrdersBook:
     def __init__(self, orders: List[Order]):
 
         self.monitor = []
-        self.placed = []
+        self.active = []
+        # todo: remove placed list
+        # self.placed = []
+        self.traded = []
 
         self.concentrated_count = 1
 
@@ -35,22 +37,24 @@ class PendingOrdersBook:
     def remove_order(self, order: Order) -> None:
         self.monitor.remove(order)
 
-    def place_order(self, order: Order) -> None:
+    def active_order(self, order: Order) -> None:
         if order in self.monitor:
             self.monitor.remove(order)
-            self.placed.append(order)
-            # in session, once placement confirmed, will be set to status PLACED
-            order.set_status(OrderStatus.TO_BE_PLACED)
+            self.active.append(order)
+            order.set_status(OrderStatus.ACTIVE)
         else:
-            log.critical(f'trying to place an order not found in the monitor list: {order}')
+            log.critical(f'trying to active an order not found in the monitor list: {order}')
 
-    def place_back_order(self, order: Order) -> None:
-        if order in self.placed:
-            self.placed.remove(order)
-            self.monitor.append(order)
-            order.set_status(OrderStatus.MONITOR)
+    def trade_order(self, order: Order) -> None:
+        if order in self.active:
+            self.active.remove(order)
+            self.traded.append(order)
+            # todo: check that it is really traded
+            order.set_status(OrderStatus.TO_BE_TRADED)
+            # if first order to trade in PT, the set the other order price
+            # todo: implement it
         else:
-            log.critical(f'trying to place back to monitor an order not found in the placed list: {order}')
+            log.critical(f'trying to trade an order not found in the active list: {order}')
 
     def get_monitor_orders(self) -> List[Order]:
         return self.monitor
@@ -59,12 +63,12 @@ class PendingOrdersBook:
         return sorted(self.monitor, key=lambda x: x.get_momentum(cmp=cmp), reverse=True)
 
     def get_pending_orders(self) -> List[Order]:
-        return self.monitor + self.placed
+        return self.monitor + self.active
 
     def is_one_side(self) -> (bool, str):
         buy_count = 0
         sell_count = 0
-        for order in self.monitor + self.placed:
+        for order in self.monitor + self.active:
             if order.k_side == k_binance.SIDE_BUY:
                 buy_count += 1
             else:
@@ -113,7 +117,7 @@ class PendingOrdersBook:
         # create dataframe from orders list
         df_monitor = pd.DataFrame([order.__dict__ for order in self.monitor])
         df_monitor['status'] = 'monitor'
-        df_placed = pd.DataFrame([order.__dict__ for order in self.placed])
+        df_placed = pd.DataFrame([order.__dict__ for order in self.active])
         df_placed['status'] = 'placed'
         # append both dataframes
         df_pending = df_monitor.append(other=df_placed)
@@ -121,7 +125,7 @@ class PendingOrdersBook:
 
     def get_pending_orders_kpi(self, cmp: float, buy_fee: float, sell_fee: float) -> pd.DataFrame:
         # create all pending orders list
-        pending_orders = self.monitor + self.placed  # check it
+        pending_orders = self.monitor + self.active  # check it
         # filter orders by distance
         for order in pending_orders:
             if order.get_distance(cmp=cmp) < 50:
@@ -154,47 +158,6 @@ class PendingOrdersBook:
         df = pd.DataFrame(data=data_list, columns=['kpi', 'price', 'amount', 'side'])
         # df1 = df.append(other=data_list, ignore_index=True)
         return df
-
-    # @staticmethod
-    # def get_depth() -> float:
-    #     # difference between first sell and buy
-    #     na, min_sell_price, max_buy_price, nb = PendingOrdersBook.get_price_limits()
-    #     # if there are no buy sells then both buy values are 0
-    #     # the same applies for sell side
-    #     return abs(min_sell_price - max_buy_price)
-
-    # @staticmethod
-    # def get_span() -> float:
-    #     # difference between last sell and buy
-    #     # df = OrdersBook.get_df_from_pending_orders_table()
-    #     max_sell_price, na, nb, min_buy_price = PendingOrdersBook.get_price_limits()
-    #     return max_sell_price - min_buy_price
-
-    # @staticmethod
-    # def get_price_limits() -> (float, float, float, float):
-    #     # default return values
-    #     max_sell_price = 0
-    #     min_sell_price = 0
-    #     max_buy_price = 0
-    #     min_buy_price = 0
-    #     # get dataframe
-    #     df = PendingOrdersBook._get_df_from_pending_orders_table()
-    #     # get max and min only if the element in a side is greater than 0
-    #     if df[df['side'] == 'SELL'].shape[0] > 0:
-    #         max_sell_price = df.loc[df['side'] == 'SELL', 'price'].max()
-    #         min_sell_price = df.loc[df['side'] == 'SELL', 'price'].min()
-    #     if df[df['side'] == 'BUY'].shape[0] > 0:
-    #         min_buy_price = df.loc[df['side'] == 'BUY', 'price'].min()
-    #         max_buy_price = df.loc[df['side'] == 'BUY', 'price'].max()
-    #     # return 0 if no orders in one side (for each side)
-    #     return max_sell_price, min_sell_price, max_buy_price, min_buy_price
-
-    # @staticmethod
-    # def _get_df_from_pending_orders_table() -> pd.DataFrame:
-    #     # get dataframe from pending orders table in the database
-    #     cnx = DBManager.create_connection(file_name='src/database/orders.db')
-    #     df = pd.read_sql_query(f'SELECT * FROM pending_orders', cnx)
-    #     return df
 
     @staticmethod
     def get_balance_for_list(orders: List[Order]) -> (float, float):

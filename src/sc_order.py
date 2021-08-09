@@ -2,20 +2,24 @@
 
 import logging
 import secrets
-from datetime import datetime
+# from datetime import datetime
 from enum import Enum
 from binance import enums as k_binance
+from typing import Union
 
 log = logging.getLogger('log')
 
 K_ACTIVATION_DISTANCE = 25.0
 
 
+# todo: review available status
 class OrderStatus(Enum):
     MONITOR = 1
+    ACTIVE = 8
+    TO_BE_TRADED = 9  # status when it is sent for trading (market)
     TO_BE_PLACED = 6
     PLACED = 2
-    TRADED = 3
+    TRADED = 3  # status when trading has been confirmed
     CANCELED = 4
     ISOLATED = 5
     CMP = 6
@@ -23,9 +27,9 @@ class OrderStatus(Enum):
 
 class Order:
     def __init__(self,
-                 session_id: str,  # S_2021_05_01_20_08
+                 # session_id: str,  # S_2021_05_01_20_08
                  order_id: str,  # not actually used
-                 pt_id: str,
+                 # pt_id: str,
                  k_side: k_binance,
                  price: float,
                  amount: float,
@@ -35,30 +39,39 @@ class Order:
                  binance_id=0,  # int
                  name=''
                  ):
-        self.session_id = session_id
+        # session_id and pt_id will be accessed through pt
+        # self.session_id = session_id
         self.order_id = order_id
-        self.pt_id = pt_id
+        # self.pt_id = pt_id
         self.name = name
         self.k_side = k_side
         self.price = price
         self.amount = amount
         self.status = status
         self.bnb_commission = bnb_commission
-        self.btc_commission = 0.0
+        # self.btc_commission = 0.0
         self.binance_id = binance_id
 
+        # new strategy
+        self.sibling_order: Union[Order, None] = None
+        self.pt = None
+        # todo: set values
+        self.consolidated_price = 0
+        self.limit_price = 0
+        self.target_price = 0
+
         # session parameters
-        self.activation_distance = K_ACTIVATION_DISTANCE
+        # self.activation_distance = K_ACTIVATION_DISTANCE
 
-        self.creation = datetime.today()
+        # self.creation = datetime.today()
 
-        self.compensation_count = 0
-        self.split_count = 0
-        self.cycles_count = 0
-        self.concentration_count = 0
+        # self.compensation_count = 0
+        # self.split_count = 0
+        # self.cycles_count = 0
+        # self.concentration_count = 0
 
         # used to plot, to know at which cycle the order was traded
-        self.traded_cycle = 0
+        # self.traded_cycle = 0
 
         # set uid depending whether it is first creation or not
         if uid == '':
@@ -81,6 +94,18 @@ class Order:
 
     def is_ready_for_placement(self, cmp: float, min_dist: float) -> bool:
         return self.get_distance(cmp=cmp) < min_dist
+
+    def is_ready_for_activation(self, cmp: float) -> bool:
+        # todo: implement method
+        # get distance
+        raise Exception("this method has to be implemented")
+        # return self.get_distance(cmp=cmp) < min_dist
+
+    def is_ready_for_trading(self, cmp: float) -> bool:
+        # todo: implement method
+        # get distance
+        raise Exception("this method has to be implemented")
+        # return self.get_distance(cmp=cmp) < min_dist
 
     def is_isolated(self, cmp: float, max_dist: float) -> bool:
         return self.get_distance(cmp=cmp) > max_dist
@@ -115,9 +140,9 @@ class Order:
     def get_momentum(self, cmp: float):
         return abs(self.amount * (cmp - self.price))
 
-    def set_bnb_commission(self, commission: float, bnbbtc_rate: float) -> None:
-        self.bnb_commission = commission
-        self.btc_commission = self.bnb_commission * bnbbtc_rate
+    # def set_bnb_commission(self, commission: float, bnbbtc_rate: float) -> None:
+    #     self.bnb_commission = commission
+    #     self.btc_commission = self.bnb_commission * bnbbtc_rate
 
     def set_status(self, status: OrderStatus):
         old_status = self.status
@@ -133,7 +158,7 @@ class Order:
 
     def __repr__(self):
         return (
-                f'{self.k_side:4} - {self.session_id} - {self.pt_id:11} - '
+                f'{self.k_side:4} - {self.pt.pt_id:11} - '
                 f'{self.name:10} - {self.order_id:12} - {self.price:10,.2f} '
                 f'- {self.amount:12,.6f} - {self.bnb_commission:12,.6f} - {self.status.name:10}'
                 f'- {self.binance_id} - {self.uid}'
