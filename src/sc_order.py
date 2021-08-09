@@ -5,6 +5,7 @@ import secrets
 from enum import Enum
 from binance import enums as k_binance
 from typing import Union
+import configparser
 
 log = logging.getLogger('log')
 
@@ -67,6 +68,12 @@ class Order:
         else:
             self.uid = uid
 
+        # read config.ini
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        self.over_activation_shift = float(config['SESSION']['over_activation_shift'])
+        self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
+
     def to_dict_for_df(self):
         # get a dictionary from the object able to use in dash (through a df)
         d = {}
@@ -85,9 +92,9 @@ class Order:
         return self.get_distance(cmp=cmp) < min_dist
 
     def is_ready_for_activation(self, cmp: float) -> bool:
-        if self.k_side == k_binance.SIDE_BUY and cmp < self.price - 5.0:
+        if self.k_side == k_binance.SIDE_BUY and cmp < self.price - self.over_activation_shift:
             return True
-        elif self.k_side == k_binance.SIDE_SELL and cmp > self.price + 5.0:
+        elif self.k_side == k_binance.SIDE_SELL and cmp > self.price + self.over_activation_shift:
             return True
         return False
 
@@ -99,14 +106,14 @@ class Order:
             # if target_price < cmp < price does nothing
             elif cmp < self.target_price:
                 self.price = self.target_price
-                self.target_price -= 50.0  # todo: change to parameter from config.ini
+                self.target_price -= self.distance_to_target_price
         elif self.k_side == k_binance.SIDE_SELL:
             if cmp < self.price:
                 return True
             # if price < cmp < target_price does nothing
             elif cmp > self.target_price:
                 self.price = self.target_price
-                self.target_price += 50.0  # todo: change to parameter from config.ini
+                self.target_price += self.distance_to_target_price
 
         return False
 

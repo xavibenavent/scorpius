@@ -43,13 +43,14 @@ class Session:
         config = configparser.ConfigParser()
         config.read('config.ini')
 
-        self._min_dist_for_placement = float(config['SESSION']['min_dist_for_placement'])
-        self._max_dist_for_remaining_placed = float(config['SESSION']['max_dist_for_remaining_placed'])
-        self._one_placement_for_cycle = config['SESSION'].getboolean('one_placement_for_cycle')
-        self._pt_created_count_max = float(config['SESSION']['pt_created_count_max'])
+        self.symbol = config['BINANCE']['symbol']
+        self.target_total_net_profit = float(config['SESSION']['target_total_net_profit'])
+        self.cycles_count_for_inactivity = int(config['SESSION']['cycles_count_for_inactivity'])
+        self.new_pt_shift = float(config['SESSION']['new_pt_shift'])
+        self.isolated_distance = float(config['SESSION']['isolated_distance'])
 
         # get filters that will be checked before placing an order
-        self.symbol_filters = self.market.get_symbol_info(symbol='BTCEUR')
+        self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol)
 
         # ********** managers **********
         self.bm = BalanceManager(market=self.market)
@@ -64,10 +65,10 @@ class Session:
                              symbol_filters=self.symbol_filters,
                              session_id=self.session_id)
 
-        # *********** concentrator **********
+        self.last_cmp = self.market.get_cmp(self.symbol)
 
-        self.cmps = [40000.0]
-        self.cycles_serie = []  # TODO: change to series
+        self.cmps = [self.last_cmp]
+        self.cycles_series = []
         self.orders_book_depth = []
         self.orders_book_span = []
 
@@ -75,20 +76,11 @@ class Session:
         self.buy_count = 0
         self.sell_count = 0
         self.cmp_count = 0
-
-        # self.dashboard = None
-
-        self.new_pt_permission_granted = True
-
         self.cycles_from_last_trade = 0
 
         self.market.start_sockets()
 
-        self.last_cmp = self.market.get_cmp('BTCEUR')
-
         self.ticker_count = 0
-
-        # self.partial_traded_orders_count = 0
 
     # ********** dashboard callback functions **********
     def get_last_cmp(self):
@@ -99,6 +91,7 @@ class Session:
 
     def get_all_orders_dataframe(self) -> pd.DataFrame:
         # get list with all orders: pending (monitor + placed) & traded (completed + pending_pt_id)
+        # todo: check it
         all_orders = self.pob.get_pending_orders() + self.tob.get_all_traded_orders()
         # create dataframe
         df = pd.DataFrame([order.__dict__ for order in all_orders])
@@ -119,8 +112,7 @@ class Session:
         try:
             # 0.1: create first pt
             if self.ticker_count == 0 and cmp > 20000.0:
-                # self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=cmp)
-                # self.ptm.create_new_pt(cmp=cmp)
+                self.ptm.create_new_pt(cmp=cmp)
                 pass
 
             # 0.2: update cmp count to control timely pt creation
@@ -129,48 +121,47 @@ class Session:
 
             # these two lists will be used to plot
             self.cmps.append(cmp)
-            self.cycles_serie.append(self.cmp_count)
+            self.cycles_series.append(self.cmp_count)
 
             self.last_cmp = cmp
             self.cycles_from_last_trade += 1
-
-            # 2. loop through placed orders and move to monitor list if isolated
-            # self.check_placed_list_for_move_back(cmp=cmp)
 
             # strategy manager and update of trades needed for new pt
             # self.partial_traded_orders_count += self.sm.assess_strategy_actions(cmp=cmp)
             # self.sm.assess_strategy_actions(cmp=cmp)
 
-            # todo: check active list for trading or parameters update
             # it is important to check first the active list and the the monitor one
             # with this order we guarantee there is only one status change per cycle
             self.check_active_list_for_trading(cmp=cmp)
 
-            # 4. todo: loop through monitoring orders for activating
+            # 4. loop through monitoring orders for activating
             self.check_monitor_list_for_activating(cmp=cmp)
 
             # 5. check inactivity & liquidity
             self.check_inactivity(cmp=cmp)
 
-            # todo: check new feature regarding perfect trades
-            # self.ptm.show_pt_list_for_actual_cmp(cmp=cmp)
-
             # 8. check global net profit
             total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
-            if total_profit > 5.0:
+            if total_profit > self.target_total_net_profit:
+                # todo: start new session when target achieved
                 raise Exception("Target achieved!!!")
+            elif self.get_session_hours() > 2.0 and total_profit > -5.0:
+                raise Exception("terminated to minimize loss")
 
         except AttributeError as e:
             print(e)
 
+    def get_session_hours(self) -> float:
+        return round(self.cmp_count / 3600, 2)
+
     def check_inactivity(self, cmp):
-        if self.cycles_from_last_trade > 300:  # TODO: magic number (5')
+        if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
             self.ptm.create_new_pt(cmp=cmp)
             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
     def check_monitor_list_for_activating(self, cmp: float) -> None:
         for order in self.pob.monitor:
-            if order.is_ready_for_activation(cmp=cmp):  # or order.is_isolated(cmp=cmp, max_dist=1000.0):
+            if order.is_ready_for_activation(cmp=cmp):
                 self.pob.active_order(order=order)
                 # check condition for new pt:
                 # Once activated, if it is second order then create a new one
@@ -178,18 +169,20 @@ class Session:
                     # calculate shift depending on last traded order side
                     shift = 0.0
                     if order.k_side == k_binance.SIDE_BUY:
-                        shift = 40.0
+                        shift = self.new_pt_shift
                     else:
-                        shift = -40.0
+                        shift = -self.new_pt_shift
                     self.ptm.create_new_pt(cmp=cmp + shift)
                     self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
-            # if order.is_isolated(cmp=cmp, max_dist=250.0):
+
+            # trade isolated orders
+            # if order.is_isolated(cmp=cmp, max_dist=self.isolated_distance):
             #     self.pob.active_order(order=order)
 
     def check_active_list_for_trading(self, cmp: float) -> None:
         for order in self.pob.active:
             if order.is_ready_for_trading(cmp=cmp):
-                # todo: implement method for MARKET trade
+                # MARKET trade
                 self._trade_order(order=order)
 
     def _trade_order(self, order: Order):
@@ -228,8 +221,11 @@ class Session:
                 self.ptm.order_traded(order=order)
 
                 # check whether a new pt is allowed or not
-                if self.pt_created_count < self._pt_created_count_max and len(self.pob.get_pending_orders()) == 0:
-                    self.ptm.create_new_pt(cmp=self.last_cmp)
+                # Since a new pt is created when activating the secomd order,
+                # this point should never be reached
+                if len(self.pob.get_pending_orders()) == 0:
+                    raise Exception("no orders")
+                    # self.ptm.create_new_pt(cmp=self.last_cmp)
                 else:
                     log.info('no new pt created after the last traded order')
                 # since the traded orders has been identified, do not check more orders
@@ -255,29 +251,30 @@ class Session:
         return order_placed, status_received
 
 
-    def _place_order(self, order) -> (bool, Optional[str]):
-        order_placed = False
-        status_received = None
-        # place order
-        d = self.market.place_order(order=order)
-        if d:
-            order_placed = True
-            order.set_binance_id(new_id=d.get('binance_id'))
-            status_received = d.get('status')
-            # log.debug(f'********** ORDER PLACED **********      msg: {d}')
-        else:
-            log.critical(f'error placing LIMIT {order}')
-        return order_placed, status_received
+    # def _place_order(self, order) -> (bool, Optional[str]):
+    #     order_placed = False
+    #     status_received = None
+    #     # place order
+    #     d = self.market.place_order(order=order)
+    #     if d:
+    #         order_placed = True
+    #         order.set_binance_id(new_id=d.get('binance_id'))
+    #         status_received = d.get('status')
+    #         # log.debug(f'********** ORDER PLACED **********      msg: {d}')
+    #     else:
+    #         log.critical(f'error placing LIMIT {order}')
+    #     return order_placed, status_received
 
     def quit(self, quit_mode: QuitMode):
         # action depending upon quit mode
-        if quit_mode == QuitMode.CANCEL_ALL_PLACED:
-            print('********** CANCELLING ALL PLACED ORDERS **********')
-            self.market.cancel_orders(self.pob.placed)
-        elif quit_mode == QuitMode.PLACE_ALL_PENDING:
-            print('********** PLACE ALL PENDING ORDERS **********')
-            for order in self.pob.monitor:
-                self.market.place_order(order)
+        # todo: implement quit method when target is achieved
+        # if quit_mode == QuitMode.CANCEL_ALL_PLACED:
+        #     print('********** CANCELLING ALL PLACED ORDERS **********')
+        #     self.market.cancel_orders(self.pob.placed)
+        # elif quit_mode == QuitMode.PLACE_ALL_PENDING:
+        #     print('********** PLACE ALL PENDING ORDERS **********')
+        #     for order in self.pob.monitor:
+        #         self.market.place_order(order)
 
         # check for correct cancellation of all orders
         btc_bal = self.market.get_asset_balance(asset='BTC',

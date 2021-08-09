@@ -157,33 +157,33 @@ class Market:
             log.critical(e)
         return None  # msg['orderId'], msg['status'] == 'FILLED' or 'NEW'
 
-    def place_order(self, order: Order) -> Optional[dict]:
-        # TODO: check and test it
-        try:
-            msg = self.client.create_order(
-                symbol='BTCEUR',
-                side=order.k_side,
-                type=k_binance.ORDER_TYPE_LIMIT,
-                timeInForce=k_binance.TIME_IN_FORCE_GTC,
-                # TODO: check precision
-                quantity=order.get_amount(precision=6),
-                price=order.get_price_str(precision=2),
-                newClientOrderId=order.uid)
-            if msg:
-                d = dict(binance_id=msg['orderId'], status=msg.get('status'))
-                return d
-            else:
-                log.critical(f'error when placing order {order}')
-        except (
-                BinanceRequestException, BinanceAPIException,
-                BinanceOrderException, BinanceOrderMinAmountException,
-                BinanceOrderMinPriceException, BinanceOrderMinTotalException,
-                BinanceOrderUnknownSymbolException,
-                BinanceOrderInactiveSymbolException) as e:
-            log.critical(e)
-        except (ConnectionError, ReadTimeout) as e:
-            log.critical(e)
-        return None  # msg['orderId'], msg['status'] == 'FILLED' or 'NEW'
+    # def place_order(self, order: Order) -> Optional[dict]:
+    #     # TODO: check and test it
+    #     try:
+    #         msg = self.client.create_order(
+    #             symbol='BTCEUR',
+    #             side=order.k_side,
+    #             type=k_binance.ORDER_TYPE_LIMIT,
+    #             timeInForce=k_binance.TIME_IN_FORCE_GTC,
+    #             # TODO: check precision
+    #             quantity=order.get_amount(precision=6),
+    #             price=order.get_price_str(precision=2),
+    #             newClientOrderId=order.uid)
+    #         if msg:
+    #             d = dict(binance_id=msg['orderId'], status=msg.get('status'))
+    #             return d
+    #         else:
+    #             log.critical(f'error when placing order {order}')
+    #     except (
+    #             BinanceRequestException, BinanceAPIException,
+    #             BinanceOrderException, BinanceOrderMinAmountException,
+    #             BinanceOrderMinPriceException, BinanceOrderMinTotalException,
+    #             BinanceOrderUnknownSymbolException,
+    #             BinanceOrderInactiveSymbolException) as e:
+    #         log.critical(e)
+    #     except (ConnectionError, ReadTimeout) as e:
+    #         log.critical(e)
+    #     return None  # msg['orderId'], msg['status'] == 'FILLED' or 'NEW'
 
     def get_symbol_info(self, symbol: str) -> Optional[dict]:
         # return dict with the required values for checking order values

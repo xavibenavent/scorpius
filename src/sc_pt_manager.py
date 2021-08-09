@@ -2,6 +2,7 @@
 
 from typing import Optional, List
 from binance import enums as k_binance
+import configparser
 
 from sc_order import Order
 from sc_pending_orders_book import PendingOrdersBook
@@ -19,6 +20,12 @@ class PTManager:
         # list with all the perfect trades created
         self.perfect_trades: List[PerfectTrade] = []
 
+        # read config.ini
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
+
+
     def create_new_pt(self, cmp: float) -> float:
         created_orders = 0
 
@@ -29,8 +36,6 @@ class PTManager:
             # add orders to list
             self.pob.monitor.append(b1)
             self.pob.monitor.append(s1)
-
-            # todo: add pt
 
             # ********** update control variables **********
             # increase created counter
@@ -46,7 +51,7 @@ class PTManager:
             new_pt = PerfectTrade(pt_id=pt_id, buy_order=b1, sell_order=s1)
             self.perfect_trades.append(new_pt)
 
-            # todo: set order references
+            # set order references
             b1.sibling_order = s1
             s1.sibling_order = b1
             b1.pt = new_pt
@@ -72,11 +77,11 @@ class PTManager:
             if order.k_side == k_binance.SIDE_BUY:
                 pt.status = PerfectTradeStatus.BUY_TRADED
                 so.price = order.price + gap # price
-                so.target_price = so.price + 50.0  # target price
+                so.target_price = so.price + self.distance_to_target_price  # target price
             elif order.k_side == k_binance.SIDE_SELL:
                 pt.status = PerfectTradeStatus.SELL_TRADED
                 so.price = order.price - gap
-                so.target_price = so.price - 50.0
+                so.target_price = so.price - self.distance_to_target_price
         # to completed
         elif pt.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]:
             pt.status = PerfectTradeStatus.COMPLETED
