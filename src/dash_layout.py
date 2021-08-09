@@ -47,12 +47,18 @@ class DashLayout:
                     dbc.Col([
                         daux.get_pending_datatable(data=[{}])
                     ], width=4, className='sc-col'),
-                    dbc.Col(
+                    dbc.Col([
                         dbc.Card(
                             [
-                                dbc.CardBody([html.H6(id='pt_cpmpleted', children='0', className='pt-info')])
+                                dbc.CardBody([html.H6(id='actual-profit', children='0', className='pt-info')])
                             ]
-                        ), width=1, className='sc-col'
+                        ),
+                        dbc.Card(
+                            [
+                                dbc.CardBody([html.H6(id='cycle-count', children='0', className='pt-info')])
+                            ]
+                        )],
+                        width=1, className='sc-col'
                     )
                 ]),
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)

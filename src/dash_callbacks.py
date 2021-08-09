@@ -73,9 +73,9 @@ def update_figure(timer):
         dict(asset='bnb', amount=ab.bnb.locked, type='locked'),
     ])
 
-    print(df_btc)
-    print(df_eur)
-    print(df_bnb)
+    # print(df_btc)
+    # print(df_eur)
+    # print(df_bnb)
 
     fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.6)
     fig_eur = get_balance_bar_chart(df=df_eur, asset='eur', y_max=20000)
@@ -95,4 +95,16 @@ def update_table(timer):
     # filter by status for each table (monitor-placed & traded)
     df_pending = df1[df1.status.isin(['monitor', 'placed', 'cmp'])]
     return df_pending.to_dict('records')
+
+
+# ********** actual profit **********
+@app.callback(Output('actual-profit', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
+
+
+# ********** actual profit **********
+@app.callback(Output('cycle-count', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'{dfm.session.cmp_count / 3600:,.2f}'
 

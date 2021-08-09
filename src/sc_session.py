@@ -146,6 +146,10 @@ class Session:
 
             # 5. check inactivity & liquidity
             self.check_inactivity(cmp=cmp)
+
+            # todo: check new feature regarding perfect trades
+            # self.ptm.show_pt_list_for_actual_cmp(cmp=cmp)
+
         except AttributeError as e:
             print(e)
 
@@ -243,6 +247,9 @@ class Session:
                     self.tob.add_completed(order=order)
                 else:
                     self.tob.add_pending(order=order)
+
+                # todo: update perfect trades list
+                self.ptm.order_traded(order=order)
 
                 # update counter for next pt
                 # self.partial_traded_orders_count += 1

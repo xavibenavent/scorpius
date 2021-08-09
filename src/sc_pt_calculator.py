@@ -1,5 +1,21 @@
 # xb_pt_calculator.py
 import sys
+import configparser
+
+
+# get buy and sell prices given the net euro balance and the quantity (qb=qs)
+def get_prices_given_neb(mp:float):
+    # get parameters from config.ini
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    fee = float(config['PT_CREATION']['fee'])
+    quantity = float(config['PT_CREATION']['quantity'])
+    neb = float(config['PT_CREATION']['net_eur_balance'])
+
+    bp = mp * (1 - fee) - neb / (2 * quantity)
+    sp = mp * (1 + fee) + neb / (2 * quantity)
+
+    return bp, sp, quantity
 
 
 def get_pt_values(
