@@ -66,7 +66,7 @@ class Session:
 
         # *********** concentrator **********
 
-        self.cmps = []
+        self.cmps = [40000.0]
         self.cycles_serie = []  # TODO: change to series
         self.orders_book_depth = []
         self.orders_book_span = []
@@ -116,7 +116,6 @@ class Session:
     # ********** Binance socket callback functions **********
 
     def symbol_ticker_callback(self, cmp: float) -> None:
-        print(cmp)
         try:
             # 0.1: create first pt
             if self.ticker_count == 0 and cmp > 20000.0:
@@ -140,7 +139,7 @@ class Session:
 
             # strategy manager and update of trades needed for new pt
             # self.partial_traded_orders_count += self.sm.assess_strategy_actions(cmp=cmp)
-            self.sm.assess_strategy_actions(cmp=cmp)
+            # self.sm.assess_strategy_actions(cmp=cmp)
 
             # todo: check active list for trading or parameters update
             # it is important to check first the active list and the the monitor one
@@ -156,63 +155,53 @@ class Session:
             # todo: check new feature regarding perfect trades
             # self.ptm.show_pt_list_for_actual_cmp(cmp=cmp)
 
+            # 8. check global net profit
+            total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
+            if total_profit > 5.0:
+                raise Exception("Target achieved!!!")
+
         except AttributeError as e:
             print(e)
 
     def check_inactivity(self, cmp):
-        if self.cycles_from_last_trade > 125:  # TODO: magic number (5')
+        if self.cycles_from_last_trade > 300:  # TODO: magic number (5')
             self.ptm.create_new_pt(cmp=cmp)
             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
     def check_monitor_list_for_activating(self, cmp: float) -> None:
         for order in self.pob.monitor:
-            order.cycles_count += 1
-            if order.is_ready_for_activation(cmp=cmp):
+            if order.is_ready_for_activation(cmp=cmp):  # or order.is_isolated(cmp=cmp, max_dist=1000.0):
                 self.pob.active_order(order=order)
+                # check condition for new pt:
+                # Once activated, if it is second order then create a new one
+                if order.sibling_order.status == OrderStatus.TRADED:
+                    # calculate shift depending on last traded order side
+                    shift = 0.0
+                    if order.k_side == k_binance.SIDE_BUY:
+                        shift = 40.0
+                    else:
+                        shift = -40.0
+                    self.ptm.create_new_pt(cmp=cmp + shift)
+                    self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
+            # if order.is_isolated(cmp=cmp, max_dist=250.0):
+            #     self.pob.active_order(order=order)
 
     def check_active_list_for_trading(self, cmp: float) -> None:
         for order in self.pob.active:
-            order.cycles_count += 1
             if order.is_ready_for_trading(cmp=cmp):
-                # check whether it is the first order traded in the pt or not
-                # pt = self.ptm.get_pt_by_pt_id(pt_id=order.pt_id)
-                if order.pt.status == PerfectTradeStatus.NEW:
-                    # todo: set the other order price and price parameters (C, L, T)
-                    if order.k_side == k_binance.SIDE_BUY:
-                        order.pt.status = PerfectTradeStatus.BUY_TRADED
-                        order.sibling_order.price = cmp + 100.0
-                    elif order.k_side == k_binance.SIDE_SELL:
-                        order.pt.status = PerfectTradeStatus.SELL_TRADED
-                        order.sibling_order.price = cmp - 100.0
-                    pass
-                self.pob.trade_order(order=order)
+                # todo: implement method for MARKET trade
+                self._trade_order(order=order)
 
-    def _process_place_order(self, order: Order) -> bool:
-        new_placement_allowed = True
-        self.pob.place_order(order=order)
-        is_order_placed, new_status = self._place_order(order=order)
-        # new_status can be FILLED, if the order was traded right after being placed
-        if is_order_placed:
-            # 2. placed: (s: PLACED, t: pending_orders, l: placed)
-            if new_status == 'NEW':
-                order.set_status(status=OrderStatus.PLACED)
-            elif new_status == 'FILLED':
-                order.set_status(status=OrderStatus.TRADED)
-                if order in self.pob.placed:
-                    log.critical('order removed from placed')
-                    self.pob.placed.remove(order)
-            # to control one new placement per cycle mode
-            if self._one_placement_for_cycle:
-                new_placement_allowed = False
-        else:
-            self.pob.place_back_order(order=order)
-            log.critical(f'for unknown reason the order has not been placed: {order}')
-        return new_placement_allowed
+    def _trade_order(self, order: Order):
+        self.pob.trade_order(order=order)
+        is_order_placed, new_status = self._place_market_order(order=order)
+        if not is_order_placed:
+            raise Exception("MARKET order not placed")
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
-        # print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
+        print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
         # get the order by uid
-        for order in self.pob.placed:
+        for order in self.pob.active + self.pob.traded:
             if order.uid == uid:
                 print(f'********** order traded: {order}')
                 # set the cycle in which the order has been traded
@@ -225,29 +214,20 @@ class Session:
                 else:
                     self.sell_count += 1
                 # set commission and price
-                order.set_bnb_commission(
-                    commission=bnb_commission,
-                    bnbbtc_rate=self.market.get_cmp(symbol='BNBBTC'))
+                # order.set_bnb_commission(
+                #     commission=bnb_commission,
+                #     bnbbtc_rate=self.market.get_cmp(symbol='BNBBTC'))
+
+                # set traded order price
                 order.price = order_price
+
                 # change status
                 order.set_status(status=OrderStatus.TRADED)
-                # remove from placed list
-                self.pob.placed.remove(order)
-                # add to traded list (once removed from placed list) depending on whether is pt_id completed or not
-                if self.pob.has_completed_pt_id(order=order):
-                    # completed
-                    self.tob.add_completed(order=order)
-                else:
-                    self.tob.add_pending(order=order)
 
-                # todo: update perfect trades list
+                # update perfect trades list
                 self.ptm.order_traded(order=order)
 
-                # update counter for next pt
-                # self.partial_traded_orders_count += 1
                 # check whether a new pt is allowed or not
-                # if self.pt_created_count < PT_CREATED_COUNT_MAX and self.partial_traded_orders_count >= 0:
-                #     self.partial_traded_orders_count += self.ptm.create_new_pt(cmp=self.last_cmp)
                 if self.pt_created_count < self._pt_created_count_max and len(self.pob.get_pending_orders()) == 0:
                     self.ptm.create_new_pt(cmp=self.last_cmp)
                 else:
@@ -260,6 +240,21 @@ class Session:
         self.bm.update_current(last_ab=ab)
 
     # ********** check methods **********
+    def _place_market_order(self, order) -> (bool, Optional[str]):
+        order_placed = False
+        status_received = None
+        # place order
+        d = self.market.place_market_order(order=order)
+        if d:
+            order_placed = True
+            order.set_binance_id(new_id=d.get('binance_id'))
+            status_received = d.get('status')
+            log.debug(f'********** MARKET ORDER PLACED **********      msg: {d}')
+        else:
+            log.critical(f'error placing MARKET {order}')
+        return order_placed, status_received
+
+
     def _place_order(self, order) -> (bool, Optional[str]):
         order_placed = False
         status_received = None
@@ -271,7 +266,7 @@ class Session:
             status_received = d.get('status')
             # log.debug(f'********** ORDER PLACED **********      msg: {d}')
         else:
-            log.critical(f'error placing {order}')
+            log.critical(f'error placing LIMIT {order}')
         return order_placed, status_received
 
     def quit(self, quit_mode: QuitMode):

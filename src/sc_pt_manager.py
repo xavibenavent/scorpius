@@ -30,6 +30,8 @@ class PTManager:
             self.pob.monitor.append(b1)
             self.pob.monitor.append(s1)
 
+            # todo: add pt
+
             # ********** update control variables **********
             # increase created counter
             self.pt_created_count += 1
@@ -54,31 +56,32 @@ class PTManager:
         return created_orders
 
     def order_traded(self, order: Order):
-        # update status of the appropriate perfect trade
-        for pt in self.perfect_trades:
-            if pt.pt_id == order.pt_id:
-                if order.k_side == k_binance.SIDE_BUY:
-                    if pt.status == PerfectTradeStatus.NEW:
-                        pt.status = PerfectTradeStatus.BUY_TRADED
-                    elif pt.status == PerfectTradeStatus.SELL_TRADED:
-                        pt.status = PerfectTradeStatus.COMPLETED
-                    else:
-                        # log error
-                        pass
-                elif order.k_side == k_binance.SIDE_SELL:
-                    if pt.status == PerfectTradeStatus.NEW:
-                        pt.status = PerfectTradeStatus.SELL_TRADED
-                    elif pt.status == PerfectTradeStatus.BUY_TRADED:
-                        pt.status = PerfectTradeStatus.COMPLETED
-                    else:
-                        # log error
-                        pass
-                else:
-                    # log error
-                    pass
+        # update status of the appropriate perfect trade depending on order side
+        pt = order.pt
+        so = order.sibling_order
 
-                # once updated the pt, the loop through pt list is terminated
-                break
+        # check whether it is the first order traded in the pt or not
+        if pt.status == PerfectTradeStatus.NEW:
+            # update the other order price and target_price
+            # update perfect trade status
+            # get approximate gap * 2
+            b1_price, s1_price, quantity = get_prices_given_neb(mp=order.price)
+            gap = s1_price - b1_price
+            print(f'gap: {gap}')
+
+            if order.k_side == k_binance.SIDE_BUY:
+                pt.status = PerfectTradeStatus.BUY_TRADED
+                so.price = order.price + gap # price
+                so.target_price = so.price + 50.0  # target price
+            elif order.k_side == k_binance.SIDE_SELL:
+                pt.status = PerfectTradeStatus.SELL_TRADED
+                so.price = order.price - gap
+                so.target_price = so.price - 50.0
+        # to completed
+        elif pt.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]:
+            pt.status = PerfectTradeStatus.COMPLETED
+
+
 
     def show_pt_list_for_actual_cmp(self, cmp: float):
         print(f'cmp: {cmp}')
@@ -89,6 +92,13 @@ class PTManager:
         total = 0
         for pt in self.perfect_trades:
             total += pt.get_actual_profit(cmp=cmp)
+        return total
+
+    def get_pt_completed_profit(self) -> float:
+        total = 0
+        for pt in self.perfect_trades:
+            if pt.status == PerfectTradeStatus.COMPLETED:
+                total += pt.get_actual_profit(cmp=0)
         return total
 
     def get_pt_by_pt_id(self, pt_id: str) -> PerfectTrade:
@@ -113,9 +123,7 @@ class PTManager:
         if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=b1_price):
             # create orders
             b1 = Order(
-                session_id=self.session_id,
                 order_id=order_id,
-                pt_id='PENDING',
                 k_side=k_binance.SIDE_BUY,
                 price=b1_price,
                 amount=quantity,
@@ -127,9 +135,7 @@ class PTManager:
 
         if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=s1_price):
             s1 = Order(
-                session_id=self.session_id,
                 order_id=order_id,
-                pt_id='PENDING',
                 k_side=k_binance.SIDE_SELL,
                 price=s1_price,
                 amount=quantity,

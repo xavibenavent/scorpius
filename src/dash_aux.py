@@ -95,14 +95,14 @@ def get_pending_datatable(data: List[dict]):
         style_data_conditional=[
             {
                 'if': {
-                    'filter_query': '{k_side} = SELL && {status} = placed',
+                    'filter_query': '{k_side} = SELL && {status} = active',
                     'column_id': ['pt_id', 'name', 'price', 'amount', 'total', 'status'],
                 },
                 'color': 'red'
             },
             {
                 'if': {
-                    'filter_query': '{k_side} = BUY && {status} = placed',
+                    'filter_query': '{k_side} = BUY && {status} = active',
                     'column_id': ['pt_id', 'name', 'price', 'amount', 'total', 'status'],
                 },
                 'color': 'green'
@@ -112,14 +112,21 @@ def get_pending_datatable(data: List[dict]):
                     'filter_query': '{k_side} = SELL && {status} = monitor',
                     'column_id': ['pt_id', 'name', 'price', 'amount', 'total', 'status'],
                 },
-                'color': 'pink'
+                'color': 'Crimson'
             },
             {
                 'if': {
                     'filter_query': '{k_side} = BUY && {status} = monitor',
                     'column_id': ['pt_id', 'name', 'price', 'amount', 'total', 'status'],
                 },
-                'color': 'Aquamarine'
+                'color': 'LimeGreen'
+            },
+            {
+                'if': {
+                    'filter_query': '{status} = traded',
+                    'column_id': ['pt_id', 'name', 'price', 'amount', 'total', 'status'],
+                },
+                'color': 'Black'
             },
             {
                 'if': {

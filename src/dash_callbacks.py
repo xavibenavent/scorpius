@@ -93,7 +93,7 @@ def update_table(timer):
     # sort by price
     df1 = df.sort_values(by=['price'], ascending=False)
     # filter by status for each table (monitor-placed & traded)
-    df_pending = df1[df1.status.isin(['monitor', 'placed', 'cmp'])]
+    df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
     return df_pending.to_dict('records')
 
 
@@ -108,3 +108,14 @@ def display_value(value):
 def display_value(value):
     return f'{dfm.session.cmp_count / 3600:,.2f}'
 
+
+# ********** actual profit **********
+@app.callback(Output('pt-completed-profit', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'{dfm.session.ptm.get_pt_completed_profit():,.2f}'
+
+
+# ********** actual profit **********
+@app.callback(Output('traded-profit', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'{dfm.session.ptm.get_pt_completed_profit():,.2f}'

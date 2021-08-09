@@ -57,7 +57,21 @@ class DashLayout:
                             [
                                 dbc.CardBody([html.H6(id='cycle-count', children='0', className='pt-info')])
                             ]
-                        )],
+                        ),
+                        dbc.Card(
+                            [
+                                dbc.CardBody([html.H6(id='pt-completed-profit', children='0', className='pt-info')])
+                            ]
+                        ),
+                        dbc.Card(
+                            [
+                                dbc.CardBody([
+                                    html.H6("prof", className="card-title"),
+                                    html.H6(id='traded-profit', children='0', className='pt-info')
+                                ])
+                            ]
+                        ),
+                    ],
                         width=1, className='sc-col'
                     )
                 ]),

@@ -114,6 +114,85 @@ class FakeClient:
     def get_mode(self) -> FakeCmpMode:
         return self._fake_cmp_mode
 
+    def order_market_buy(self, **kwargs) -> dict:
+        order = FakeOrder(
+            uid=kwargs.get('newClientOrderId'),
+            side='BUY',
+            price=self._cmp,
+            quantity=kwargs.get('quantity')
+        )
+        status = 'NEW'
+
+        # check enough balance
+        if order.side == 'BUY' \
+                and self._account_balance.get_free_price_s2() < order.get_total():
+            log.critical(f'not enough balance to place the order')
+            return {}
+        elif order.side == 'SELL' \
+                and self._account_balance.get_free_amount_s1() < order.quantity:
+            log.critical(f'not enough amount to place the order')
+            return {}
+
+        # place
+        self._placed_orders_count += 1
+        self._place_order(order=order)
+        self._trade_order(order=order)
+        status = 'FILLED'
+
+        return {
+            "symbol": kwargs.get('symbol'),
+            "orderId": self._placed_orders_count,
+            "clientOrderId": order.uid,
+            "transactTime": 1507725176595,
+            "price": order.price,
+            "origQty": order.quantity,
+            "executedQty": '0.0',
+            "status": status,
+            "timeInForce": "GTC",
+            "type": "LIMIT",
+            "side": order.side
+        }
+
+    def order_market_sell(self, **kwargs) -> dict:
+        order = FakeOrder(
+            uid=kwargs.get('newClientOrderId'),
+            side='SELL',
+            price=self._cmp,
+            quantity=kwargs.get('quantity')
+        )
+        status = 'NEW'
+
+        # check enough balance
+        if order.side == 'BUY' \
+                and self._account_balance.get_free_price_s2() < order.get_total():
+            log.critical(f'not enough balance to place the order')
+            return {}
+        elif order.side == 'SELL' \
+                and self._account_balance.get_free_amount_s1() < order.quantity:
+            log.critical(f'not enough amount to place the order')
+            return {}
+
+        # place
+        self._placed_orders_count += 1
+        self._place_order(order=order)
+        self._trade_order(order=order)
+        status = 'FILLED'
+
+        return {
+            "symbol": kwargs.get('symbol'),
+            "orderId": self._placed_orders_count,
+            "clientOrderId": order.uid,
+            "transactTime": 1507725176595,
+            "price": order.price,
+            "origQty": order.quantity,
+            "executedQty": '0.0',
+            "status": status,
+            "timeInForce": "GTC",
+            "type": "LIMIT",
+            "side": order.side
+        }
+
+
     def create_order(self, **kwargs) -> dict:
         order = FakeOrder(
             uid=kwargs.get('newClientOrderId'),
@@ -280,6 +359,20 @@ class FakeClient:
             self._account_balance.s1.locked += order.quantity
         # call user socket callback
         self._call_user_socket_balance_update()
+
+    # def _place_market_order(self, order: FakeOrder):
+    #     self._placed_orders.append(order)
+    #     if order.side == 'BUY':
+    #         self._account_balance.s2.free -= order.get_total()
+    #         self._account_balance.s2.locked += order.get_total()
+    #     else:
+    #         self._account_balance.s1.free -= order.quantity
+    #         self._account_balance.s1.locked += order.quantity
+    #     # call user socket callback
+    #     self._call_user_socket_balance_update()
+    #
+    #     # trade immediately
+    #     self._trade_order(order=order)
 
     def _trade_order(self, order: FakeOrder):
         if order in self._placed_orders:

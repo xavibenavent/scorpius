@@ -17,8 +17,6 @@ class PendingOrdersBook:
 
         self.monitor = []
         self.active = []
-        # todo: remove placed list
-        # self.placed = []
         self.traded = []
 
         self.concentrated_count = 1
@@ -42,6 +40,7 @@ class PendingOrdersBook:
             self.monitor.remove(order)
             self.active.append(order)
             order.set_status(OrderStatus.ACTIVE)
+            # the pt status is not changed until the order is traded
         else:
             log.critical(f'trying to active an order not found in the monitor list: {order}')
 
@@ -49,10 +48,8 @@ class PendingOrdersBook:
         if order in self.active:
             self.active.remove(order)
             self.traded.append(order)
-            # todo: check that it is really traded
             order.set_status(OrderStatus.TO_BE_TRADED)
-            # if first order to trade in PT, the set the other order price
-            # todo: implement it
+            # when confirmed through the binance socket the status will be changed to TRADED
         else:
             log.critical(f'trying to trade an order not found in the active list: {order}')
 
@@ -64,6 +61,9 @@ class PendingOrdersBook:
 
     def get_pending_orders(self) -> List[Order]:
         return self.monitor + self.active
+
+    def get_traded_orders(self) -> List[Order]:
+        return self.traded
 
     def is_one_side(self) -> (bool, str):
         buy_count = 0
@@ -79,20 +79,6 @@ class PendingOrdersBook:
             return True, k_binance.SIDE_BUY
         else:
             return False, ''
-
-    def get_pending_pt_id(self) -> List[str]:
-        # return the list of pt_id not completed
-        pending_pt_id = []
-        for order in self.get_pending_orders():
-            if order.pt_id not in pending_pt_id:
-                pending_pt_id.append(order.pt_id)
-        return pending_pt_id
-
-    def has_completed_pt_id(self, order: Order) -> bool:
-        if order.pt_id in self.get_pending_pt_id():
-            return False
-        else:
-            return True
 
     def get_order(self, uid: str) -> Order:
         # for order in self.get_all_orders():

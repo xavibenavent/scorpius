@@ -25,6 +25,10 @@ class PerfectTrade:
 
         self.status = PerfectTradeStatus.NEW
 
+    def order_traded(self, order: Order):
+        raise Exception("not implemented")
+        pass
+
     def get_actual_profit(self, cmp:float) -> float:
         # get parameters needed from config.ini
         config = configparser.ConfigParser()

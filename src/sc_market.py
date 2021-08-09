@@ -128,6 +128,35 @@ class Market:
 
     # ********** calls to binance api **********
 
+    def place_market_order(self, order: Order) -> Optional[dict]:
+        try:
+            msg = {}
+            if order.k_side == k_binance.SIDE_BUY:
+                msg = self.client.order_market_buy(
+                    symbol=self.symbol,
+                    quantity=order.get_amount(precision=6),
+                    newClientOrderId=order.uid)
+            elif order.k_side == k_binance.SIDE_SELL:
+                msg = self.client.order_market_sell(
+                    symbol=self.symbol,
+                    quantity=order.get_amount(precision=6),
+                    newClientOrderId=order.uid)
+            if msg:
+                d = dict(binance_id=msg['orderId'], status=msg.get('status'))
+                return d
+            else:
+                log.critical(f'error when placing order {order}')
+        except (
+                BinanceRequestException, BinanceAPIException,
+                BinanceOrderException, BinanceOrderMinAmountException,
+                BinanceOrderMinPriceException, BinanceOrderMinTotalException,
+                BinanceOrderUnknownSymbolException,
+                BinanceOrderInactiveSymbolException) as e:
+            log.critical(e)
+        except (ConnectionError, ReadTimeout) as e:
+            log.critical(e)
+        return None  # msg['orderId'], msg['status'] == 'FILLED' or 'NEW'
+
     def place_order(self, order: Order) -> Optional[dict]:
         # TODO: check and test it
         try:
