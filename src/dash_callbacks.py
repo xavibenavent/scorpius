@@ -117,6 +117,9 @@ def display_value(value):
 
 
 # ********** actual profit **********
-@app.callback(Output('traded-profit', 'children'), Input('update', 'n_intervals'))
+@app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.session.ptm.get_pt_completed_profit():,.2f}'
+    pt_count = len(dfm.session.ptm.perfect_trades)
+    trades_count = dfm.session.buy_count + dfm.session.sell_count
+    # print(pt_count, trades_count)
+    return f'{pt_count} / {trades_count}'

@@ -90,23 +90,6 @@ class Session:
         else:
             return 0
 
-    # def get_all_orders_dataframe(self) -> pd.DataFrame:
-    #     # get list with all orders: pending (monitor + placed) & traded (completed + pending_pt_id)
-    #     # todo: check it
-    #     all_orders = self.pob.get_pending_orders() + self.tob.get_all_traded_orders()
-    #     # create dataframe
-    #     df = pd.DataFrame([order.__dict__ for order in all_orders])
-    #     # delete status column because it returns a tuple and raises an error in the dash callback
-    #     df1 = df.drop(columns='status', axis=1)
-    #     return df1
-
-    # def get_all_orders_dataframe_with_cmp(self) -> pd.DataFrame:
-    #     df = self.get_all_orders_dataframe()
-    #     # create cmp order-like and add to dataframe
-    #     cmp_order = dict(pt_id='CMP', status_name='cmp', price=self.last_cmp)
-    #     df1 = df.append(other=cmp_order, ignore_index=True)
-    #     return df1
-
     # ********** Binance socket callback functions **********
 
     def symbol_ticker_callback(self, cmp: float) -> None:
@@ -144,9 +127,11 @@ class Session:
             # 8. check global net profit
             total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
             if total_profit > self.target_total_net_profit:
+                self.quit_particular_session()
                 # todo: start new session when target achieved
                 raise Exception("Target achieved!!!")
             elif self.get_session_hours() > 2.0 and total_profit > -5.0:
+                self.quit_particular_session()
                 raise Exception("terminated to minimize loss")
 
         except AttributeError as e:
@@ -161,35 +146,42 @@ class Session:
             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
     def check_monitor_list_for_activating(self, cmp: float) -> None:
-        for order in self.pob.monitor:
-            if order.is_ready_for_activation(cmp=cmp):
-                self.pob.active_order(order=order)
+        for pt in self.ptm.perfect_trades:
+            if pt.status != PerfectTradeStatus.COMPLETED:
+                for order in pt.orders:
+                    if order.status == OrderStatus.MONITOR and order.is_ready_for_activation(cmp=cmp):
+                        # self.pob.active_order(order=order)
+                        order.set_status(OrderStatus.ACTIVE)
 
-                # check condition for new pt:
-                # Once activated, if it is second order then create a new one
-                if order.pt.pt_type == 'NORMAL':
-                    if order.sibling_order.status == OrderStatus.TRADED:
-                        # calculate shift depending on last traded order side
-                        shift = 0.0
-                        if order.k_side == k_binance.SIDE_BUY:
-                            shift = self.new_pt_shift
-                        else:
-                            shift = -self.new_pt_shift
-                        self.ptm.create_new_pt(cmp=cmp + shift)
-                        self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
+                        # check condition for new pt:
+                        # Once activated, if it is the last order to trade in the pt, then create a new pt
+                        # only if it was created as NORMAL
+                        # it is enough checking the sibling order because a compensated/split pt will have another type
+                        if pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
+                            # calculate shift depending on last traded order side
+                            shift = 0.0
+                            if order.k_side == k_binance.SIDE_BUY:
+                                shift = self.new_pt_shift
+                            else:
+                                shift = -self.new_pt_shift
+                            self.ptm.create_new_pt(cmp=cmp + shift)
+                            self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
             # trade isolated orders
             # if order.is_isolated(cmp=cmp, max_dist=self.isolated_distance):
             #     self.pob.active_order(order=order)
 
     def check_active_list_for_trading(self, cmp: float) -> None:
-        for order in self.pob.active:
-            if order.is_ready_for_trading(cmp=cmp):
-                # MARKET trade
-                self._trade_order(order=order)
+        for pt in self.ptm.perfect_trades:
+            if pt.status != PerfectTradeStatus.COMPLETED:
+                for order in pt.orders:
+                    if order.status == OrderStatus.ACTIVE and order.is_ready_for_trading(cmp=cmp):
+                        # MARKET trade
+                        self._trade_order(order=order)
 
     def _trade_order(self, order: Order):
-        self.pob.trade_order(order=order)
+        # self.pob.trade_order(order=order)
+        order.set_status(OrderStatus.TO_BE_TRADED)
         is_order_placed, new_status = self._place_market_order(order=order)
         if not is_order_placed:
             raise Exception("MARKET order not placed")
@@ -197,42 +189,46 @@ class Session:
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
         print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
         # get the order by uid
-        for order in self.pob.active + self.pob.traded:
-            if order.uid == uid:
-                print(f'********** order traded: {order}')
-                # set the cycle in which the order has been traded
-                order.traded_cycle = self.cmp_count
-                # reset counter
-                self.cycles_from_last_trade = 0
-                # update buy & sell count
-                if order.k_side == k_binance.SIDE_BUY:
-                    self.buy_count += 1
-                else:
-                    self.sell_count += 1
-                # set commission and price
-                order.set_bnb_commission(
-                    commission=bnb_commission,
-                    bnbeur_rate=self.market.get_cmp(symbol='BNBEUR'))
+        for pt in self.ptm.perfect_trades:
+            if pt.status != PerfectTradeStatus.COMPLETED:
+                for order in pt.orders:
+                     # for order in self.pob.active + self.pob.traded:
+                    if order.uid == uid:
+                        print(f'********** order traded: {order}')
+                        # set the cycle in which the order has been traded
+                        order.traded_cycle = self.cmp_count
+                        # reset counter
+                        self.cycles_from_last_trade = 0
+                        # update buy & sell count
+                        if order.k_side == k_binance.SIDE_BUY:
+                            self.buy_count += 1
+                        else:
+                            self.sell_count += 1
+                        # set commission and price
+                        order.set_bnb_commission(
+                            commission=bnb_commission,
+                            bnbeur_rate=self.market.get_cmp(symbol='BNBEUR'))
 
-                # set traded order price
-                order.price = order_price
+                        # set traded order price
+                        order.price = order_price
 
-                # change status
-                order.set_status(status=OrderStatus.TRADED)
+                        # change status
+                        order.set_status(status=OrderStatus.TRADED)
 
-                # update perfect trades list
-                self.ptm.order_traded(order=order)
+                        # update perfect trades list
+                        self.ptm.order_traded(order=order)
 
-                # check whether a new pt is allowed or not
-                # Since a new pt is created when activating the secomd order,
-                # this point should never be reached
-                if len(self.pob.get_pending_orders()) == 0:
-                    raise Exception("no orders")
-                    # self.ptm.create_new_pt(cmp=self.last_cmp)
-                else:
-                    log.info('no new pt created after the last traded order')
-                # since the traded orders has been identified, do not check more orders
-                break
+                        # # check whether a new pt is allowed or not
+                        # # Since a new pt is created when activating the secomd order,
+                        # # this point should never be reached
+                        # if len(self.pob.get_pending_orders()) == 0:
+                        #     raise Exception("no orders")
+                        #     # self.ptm.create_new_pt(cmp=self.last_cmp)
+                        # else:
+                        #     log.info('no new pt created after the last traded order')
+
+                        # since the traded orders has been identified, do not check more orders
+                        break
 
     def account_balance_callback(self, ab: AccountBalance) -> None:
         # update of current balance from Binance
@@ -255,40 +251,10 @@ class Session:
 
     def quit_particular_session(self):
         # trade all remaining orders
-        for pt in self.ptm.perfect_trades:
-            for order in pt.orders:
-                if order.status not in [OrderStatus.TRADED, OrderStatus.TO_BE_TRADED]:
-                    self._trade_order(order=order)
-
-        print('all remaining orders traded')
-        time.sleep(4.0)
-        self.market.stop()
-        print('market stop')
-        neb = self.ptm.get_total_actual_profit(cmp=0)
-        neb2 = self. ptm.get_pt_completed_profit()
-        print(f'neb: {neb}   neb2: {neb2}')
-
-    def quit(self, quit_mode: QuitMode):
-        # action depending upon quit mode
-        # todo: implement quit method when target is achieved
-        # if quit_mode == QuitMode.CANCEL_ALL_PLACED:
-        #     print('********** CANCELLING ALL PLACED ORDERS **********')
-        #     self.market.cancel_orders(self.pob.placed)
-        # elif quit_mode == QuitMode.PLACE_ALL_PENDING:
-        #     print('********** PLACE ALL PENDING ORDERS **********')
-        #     for order in self.pob.monitor:
-        #         self.market.place_order(order)
-
-        # check for correct cancellation of all orders
-        btc_bal = self.market.get_asset_balance(asset='BTC',
-                                                tag='check for zero locked')
-        eur_bal = self.market.get_asset_balance(asset='EUR',
-                                                tag='check for zero locked')
-        if btc_bal.locked != 0 or eur_bal.locked != 0:
-            log.critical('after cancellation of all orders, locked balance should be 0')
-            log.critical(btc_bal)
-            log.critical(eur_bal)
-        else:
-            log.info(f'LOCKED BALANCE CHECK CORRECT: btc_balance: {btc_bal} - eur_balance: {eur_bal}')
+        orders = self.ptm.get_orders_by_request([OrderStatus.MONITOR, OrderStatus.ACTIVE])
+        for order in orders:
+            self._trade_order(order=order)
+            print(f'trading order {order.k_side} {order.status} {order.price}')
+            time.sleep(0.1)
 
         self.market.stop()

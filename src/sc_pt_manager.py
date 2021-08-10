@@ -33,8 +33,8 @@ class PTManager:
 
         if b1 and s1:
             # add orders to list
-            self.pob.monitor.append(b1)
-            self.pob.monitor.append(s1)
+            # self.pob.monitor.append(b1)
+            # self.pob.monitor.append(s1)
 
             # ********** update control variables **********
             # increase created counter
@@ -110,6 +110,15 @@ class PTManager:
                 # since the pt is completed, the cmp value does not matter
                 total += pt.get_actual_profit(cmp=0)
         return total
+
+    def get_orders_by_request(self, status_required: List[OrderStatus]):
+        requested_orders: List[Order] = []
+        for pt in self.perfect_trades:
+            for order in pt.orders:
+                if order.status in status_required:
+                    requested_orders.append(order)
+        return requested_orders
+
 
     def _get_b1s1(self,
                   mp: float,
