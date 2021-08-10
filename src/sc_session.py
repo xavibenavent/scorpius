@@ -1,6 +1,7 @@
 # sc_session.py
 
 import logging
+import time
 from datetime import datetime
 from enum import Enum
 import pandas as pd
@@ -89,22 +90,22 @@ class Session:
         else:
             return 0
 
-    def get_all_orders_dataframe(self) -> pd.DataFrame:
-        # get list with all orders: pending (monitor + placed) & traded (completed + pending_pt_id)
-        # todo: check it
-        all_orders = self.pob.get_pending_orders() + self.tob.get_all_traded_orders()
-        # create dataframe
-        df = pd.DataFrame([order.__dict__ for order in all_orders])
-        # delete status column because it returns a tuple and raises an error in the dash callback
-        df1 = df.drop(columns='status', axis=1)
-        return df1
+    # def get_all_orders_dataframe(self) -> pd.DataFrame:
+    #     # get list with all orders: pending (monitor + placed) & traded (completed + pending_pt_id)
+    #     # todo: check it
+    #     all_orders = self.pob.get_pending_orders() + self.tob.get_all_traded_orders()
+    #     # create dataframe
+    #     df = pd.DataFrame([order.__dict__ for order in all_orders])
+    #     # delete status column because it returns a tuple and raises an error in the dash callback
+    #     df1 = df.drop(columns='status', axis=1)
+    #     return df1
 
-    def get_all_orders_dataframe_with_cmp(self) -> pd.DataFrame:
-        df = self.get_all_orders_dataframe()
-        # create cmp order-like and add to dataframe
-        cmp_order = dict(pt_id='CMP', status_name='cmp', price=self.last_cmp)
-        df1 = df.append(other=cmp_order, ignore_index=True)
-        return df1
+    # def get_all_orders_dataframe_with_cmp(self) -> pd.DataFrame:
+    #     df = self.get_all_orders_dataframe()
+    #     # create cmp order-like and add to dataframe
+    #     cmp_order = dict(pt_id='CMP', status_name='cmp', price=self.last_cmp)
+    #     df1 = df.append(other=cmp_order, ignore_index=True)
+    #     return df1
 
     # ********** Binance socket callback functions **********
 
@@ -252,20 +253,20 @@ class Session:
             log.critical(f'error placing MARKET {order}')
         return order_placed, status_received
 
+    def quit_particular_session(self):
+        # trade all remaining orders
+        for pt in self.ptm.perfect_trades:
+            for order in pt.orders:
+                if order.status not in [OrderStatus.TRADED, OrderStatus.TO_BE_TRADED]:
+                    self._trade_order(order=order)
 
-    # def _place_order(self, order) -> (bool, Optional[str]):
-    #     order_placed = False
-    #     status_received = None
-    #     # place order
-    #     d = self.market.place_order(order=order)
-    #     if d:
-    #         order_placed = True
-    #         order.set_binance_id(new_id=d.get('binance_id'))
-    #         status_received = d.get('status')
-    #         # log.debug(f'********** ORDER PLACED **********      msg: {d}')
-    #     else:
-    #         log.critical(f'error placing LIMIT {order}')
-    #     return order_placed, status_received
+        print('all remaining orders traded')
+        time.sleep(4.0)
+        self.market.stop()
+        print('market stop')
+        neb = self.ptm.get_total_actual_profit(cmp=0)
+        neb2 = self. ptm.get_pt_completed_profit()
+        print(f'neb: {neb}   neb2: {neb2}')
 
     def quit(self, quit_mode: QuitMode):
         # action depending upon quit mode

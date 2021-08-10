@@ -28,7 +28,7 @@ class PTManager:
     def create_new_pt(self, cmp: float, pt_type='NORMAL') -> float:
         created_orders = 0
 
-        # create new orders
+        # create and get new orders
         b1, s1 = self._get_b1s1(mp=cmp)
 
         if b1 and s1:

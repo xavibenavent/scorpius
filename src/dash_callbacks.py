@@ -25,7 +25,8 @@ def on_button_click(n):
     if n is None:
         return ''
     else:
-        dfm.session.quit(quit_mode=QuitMode.CANCEL_ALL_PLACED)
+        # dfm.session.quit(quit_mode=QuitMode.CANCEL_ALL_PLACED)
+        dfm.session.quit_particular_session()
         return 'cmp stop'
 
 
