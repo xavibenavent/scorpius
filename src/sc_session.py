@@ -209,9 +209,9 @@ class Session:
                 else:
                     self.sell_count += 1
                 # set commission and price
-                # order.set_bnb_commission(
-                #     commission=bnb_commission,
-                #     bnbbtc_rate=self.market.get_cmp(symbol='BNBBTC'))
+                order.set_bnb_commission(
+                    commission=bnb_commission,
+                    bnbeur_rate=self.market.get_cmp(symbol='BNBEUR'))
 
                 # set traded order price
                 order.price = order_price

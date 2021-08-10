@@ -4,7 +4,7 @@ import logging
 import secrets
 from enum import Enum
 from binance import enums as k_binance
-from typing import Union
+from typing import Union, Optional
 import configparser
 
 log = logging.getLogger('log')
@@ -20,14 +20,6 @@ class OrderStatus(Enum):
     TO_BE_TRADED = 9  # status when it is sent for trading (market)
     TRADED = 3  # status when trading has been confirmed
     CANCELED = 4
-
-    # used to view cmp in dashboard
-    CMP = 6
-
-    # legacy
-    TO_BE_PLACED = 6
-    PLACED = 2
-    ISOLATED = 5
 
 
 class Order:
@@ -53,6 +45,16 @@ class Order:
 
         self.pt_id = '001'
 
+        # read config.ini
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        self.over_activation_shift = float(config['SESSION']['over_activation_shift'])
+        self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
+        self.fee = float(config['PT_CREATION']['fee'])
+
+        # set theoretical eur commission, it will be updated when the order is traded
+        self.eur_commission = self.price * self.amount * self.fee
+
         # new strategy
         # both are set just after order creation, when both orders and pt are known
         self.sibling_order: Union[Order, None] = None
@@ -60,19 +62,13 @@ class Order:
 
         # todo: set values
         self.sign = 1 if self.k_side == k_binance.SIDE_SELL else -1
-        self.target_price = self.price + (self.sign * 50.0)  # todo: set as parameter 100.0
+        self.target_price = self.price + (self.sign * self.distance_to_target_price)
 
         # set uid depending whether it is first creation or not
         if uid == '':
             self.uid = secrets.token_hex(8)
         else:
             self.uid = uid
-
-        # read config.ini
-        config = configparser.ConfigParser()
-        config.read('config.ini')
-        self.over_activation_shift = float(config['SESSION']['over_activation_shift'])
-        self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
 
     def to_dict_for_df(self):
         # get a dictionary from the object able to use in dash (through a df)
@@ -147,8 +143,34 @@ class Order:
     def get_signed_total(self) -> float:
         return - (self.price * self.get_signed_amount())
 
+    def get_virtual_profit_with_cost(self, cmp: Optional[float] = None) -> float:
+        # raise Exception("todo: implement set eur_commission once the order is traded")
+
+        # if the parameter cmp is passed, then this is the value to consider
+        price = self.price
+        if cmp:
+            price = cmp
+
+        virtual_profit = 0
+        if self.k_side == k_binance.SIDE_BUY:
+            virtual_profit = -(self.amount * price) - self.get_eur_commission(cmp=price)
+        else:
+            virtual_profit = self.amount * price - self.get_eur_commission(cmp=price)
+        return virtual_profit
+
+    def get_eur_commission(self, cmp: float) -> float:
+        if self.status == OrderStatus.TRADED:
+            return self.eur_commission
+        else:
+            return cmp * self.amount * self.fee
+
     def get_momentum(self, cmp: float):
         return abs(self.amount * (cmp - self.price))
+
+    def set_bnb_commission(self, commission: float, bnbeur_rate: float) -> None:
+        self.bnb_commission = commission
+        self.eur_commission = commission * bnbeur_rate
+        print(f'bnb comm: {self.bnb_commission}   eur comm: {self.eur_commission}')
 
     def set_status(self, status: OrderStatus):
         old_status = self.status

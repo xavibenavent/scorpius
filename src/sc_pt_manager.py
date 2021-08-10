@@ -47,7 +47,8 @@ class PTManager:
             created_orders = -2
 
             # create new perfect trade from orders and add to list
-            new_pt = PerfectTrade(pt_id=pt_id, buy_order=b1, sell_order=s1, pt_type=pt_type)
+            # new_pt = PerfectTrade(pt_id=pt_id, buy_order=b1, sell_order=s1, pt_type=pt_type)
+            new_pt = PerfectTrade(pt_id=pt_id, orders=[b1, s1], pt_type=pt_type)
             self.perfect_trades.append(new_pt)
 
             # set order references
