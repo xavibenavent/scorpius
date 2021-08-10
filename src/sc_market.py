@@ -2,6 +2,7 @@
 
 import sys
 import logging
+import time
 from typing import Callable, Union, Any, Optional, List
 from twisted.internet import reactor
 from binance.client import Client
@@ -51,6 +52,7 @@ class Market:
         self.client: Union[Client, FakeClient] = self._set_client(client_mode=self.client_mode)
 
     def start_sockets(self):
+        time.sleep(1)
         if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:  # not self.simulator_mode:
             # sockets only started in binance mode (not in simulator mode)
             self._start_sockets()

@@ -57,6 +57,7 @@ class StrategyManager:
 
         # 2. assess compensation in monitor list
         # trades_to_new_pt_delta += self.check_monitor_list_for_compensation(cmp=cmp)
+        self.check_monitor_orders_for_compensation(cmp=cmp)
 
         # 3. assess extreme pairs b1-s1 to concentrate
         # TODO: implement it
@@ -94,6 +95,9 @@ class StrategyManager:
         else:
             # select orders to concentrate based on momentum
             sorted_by_momentum = self.pob.get_monitor_sorted_by_momentum(cmp=cmp)
+
+    def check_monitor_orders_for_compensation(self, cmp: float) -> None:
+        pass
 
     def check_monitor_list_for_compensation(self, cmp: float) -> int:
         trades_to_new_pt_delta = 0

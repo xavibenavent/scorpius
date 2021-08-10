@@ -19,6 +19,7 @@ from sc_balance_manager import BalanceManager
 from sc_concentrator import ConcentratorManager
 from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
+from sc_pt_calculator import get_compensation
 
 import configparser
 
@@ -49,6 +50,9 @@ class Session:
         self.cycles_count_for_inactivity = int(config['SESSION']['cycles_count_for_inactivity'])
         self.new_pt_shift = float(config['SESSION']['new_pt_shift'])
         self.isolated_distance = float(config['SESSION']['isolated_distance'])
+        self.compensation_distance = float(config['SESSION']['compensation_distance'])
+        self.compensation_gap = float(config['SESSION']['compensation_gap'])
+        self.fee = float(config['PT_CREATION']['fee'])
 
         # get filters that will be checked before placing an order
         self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol)
@@ -79,7 +83,8 @@ class Session:
         self.cmp_count = 0
         self.cycles_from_last_trade = 0
 
-        self.market.start_sockets()
+        # todo: start manually from button
+        # self.market.start_sockets()
 
         self.ticker_count = 0
 
@@ -114,6 +119,9 @@ class Session:
             # self.partial_traded_orders_count += self.sm.assess_strategy_actions(cmp=cmp)
             # self.sm.assess_strategy_actions(cmp=cmp)
 
+            # loop through monitoring orders for compensation
+            # self.check_monitor_orders_for_compensation(cmp=cmp)
+
             # it is important to check first the active list and the the monitor one
             # with this order we guarantee there is only one status change per cycle
             self.check_active_list_for_trading(cmp=cmp)
@@ -144,6 +152,67 @@ class Session:
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
             self.ptm.create_new_pt(cmp=cmp, pt_type='FROM_INACTIVITY')
             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
+
+    def check_monitor_orders_for_compensation(self, cmp: float) -> None:
+        # get monitor orders
+        orders = self.ptm.get_orders_by_request([OrderStatus.MONITOR])
+        for order in orders:
+            if order.pt.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]:
+                if order.order_id != 'CONCENTRATED' and order.get_abs_distance(cmp=cmp) > self.compensation_distance:
+                    # compensate
+                    b1, s1 = self.compensate_order(order=order, ref_mp=cmp, ref_gap=self.compensation_gap)
+                    # set values
+                    b1.sibling_order = None
+                    b1.pt = order.pt
+                    s1.sibling_order = None
+                    s1.pt = order.pt
+                    # add to pt orders list
+                    order.pt.orders.append(b1)
+                    order.pt.orders.append(s1)
+                    # change original order status
+                    order.status = OrderStatus.CANCELED
+                    # change pt type to avoid generating a new pt after trading the new orders
+                    order.pt.pt_type = 'FROM_COMPENSATION'
+
+    def compensate_order(self, order: Order, ref_mp: float, ref_gap: float) -> (Order, Order):
+        # raise Exception('implement it')
+
+        amount, total, _ = BalanceManager.get_balance_for_list([order])
+
+        # get equivalent pair b1-s1
+        s1_p, b1_p, s1_qty, b1_qty = get_compensation(
+            cmp=ref_mp,
+            gap=ref_gap,
+            qty_bal=order.get_signed_amount(),
+            price_bal=order.get_signed_total(),  # todo: assess whether it has to be signed or not
+            buy_fee=self.fee,
+            sell_fee=self.fee
+        )
+
+        # validate values received for b1 and s1
+        if s1_p < 0 or b1_p < 0 or s1_qty < 0 or b1_qty < 0:
+            raise Exception(f'!!!!!!!!!! negative value(s) after compensation: b1p: {b1_p} - b1q: {b1_qty} !!!!!!!!!!'
+                         f'- s1p: {s1_p} - s1q: {s1_qty}')
+        else:
+            # create both orders
+            b1 = Order(
+                order_id='CONCENTRATED',
+                k_side=k_binance.SIDE_BUY,
+                price=b1_p,
+                amount=b1_qty,
+                uid=Order.get_new_uid(),
+                name='con-b1'
+            )
+            s1 = Order(
+                order_id='CONCENTRATED',
+                k_side=k_binance.SIDE_SELL,
+                price=s1_p,
+                amount=s1_qty,
+                status=OrderStatus.MONITOR,
+                uid=Order.get_new_uid(),
+                name='con-s1'
+            )
+            return b1, s1
 
     def check_monitor_list_for_activating(self, cmp: float) -> None:
         for pt in self.ptm.perfect_trades:

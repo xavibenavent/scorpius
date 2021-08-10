@@ -76,5 +76,5 @@ class BalanceManager:
             balance_amount += order.get_signed_amount()
             balance_total += order.get_signed_total()
             balance_commission += order.bnb_commission
-            comm_btc += order.btc_commission
-        return balance_amount, balance_total, balance_commission, comm_btc
+            # comm_btc += order.btc_commission
+        return balance_amount, balance_total, balance_commission  # , comm_btc

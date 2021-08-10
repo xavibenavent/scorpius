@@ -30,6 +30,16 @@ def on_button_click(n):
         return 'cmp stop'
 
 
+@app.callback(Output('msg-start', 'children'), Input('button-start', 'n_clicks'))
+def on_button_click(n):
+    print('click')
+    if n is None:
+        return ''
+    else:
+        dfm.session.market.start_sockets()
+        return 'cmp start'
+
+
 @app.callback(Output('msg-2', 'children'), Input('button-new-pt', 'n_clicks'))
 def on_button_click(n):
     if n:
