@@ -50,23 +50,32 @@ class DashLayout:
                     dbc.Col([
                         dbc.Card(
                             [
-                                dbc.CardBody([html.H6(id='actual-profit', children='0', className='pt-info')])
-                            ]
-                        ),
-                        dbc.Card(
-                            [
-                                dbc.CardBody([html.H6(id='cycle-count', children='0', className='pt-info')])
-                            ]
-                        ),
-                        dbc.Card(
-                            [
-                                dbc.CardBody([html.H6(id='pt-completed-profit', children='0', className='pt-info')])
+                                dbc.CardBody([
+                                    html.H6("time [h]", className="card-title"),
+                                    html.H6(id='cycle-count', children='0', className='pt-info')
+                                ])
                             ]
                         ),
                         dbc.Card(
                             [
                                 dbc.CardBody([
-                                    html.H6("prof", className="card-title"),
+                                    html.H6("trade all", className="card-title"),
+                                    html.H6(id='actual-profit', children='0', className='pt-info')
+                                ])
+                            ]
+                        ),
+                        dbc.Card(
+                            [
+                                dbc.CardBody([
+                                    html.H1("completed", className="card-title"),
+                                    html.H6(id='pt-completed-profit', children='0', className='pt-info')
+                                ])
+                            ]
+                        ),
+                        dbc.Card(
+                            [
+                                dbc.CardBody([
+                                    html.H6("***", className="card-title"),
                                     html.H6(id='traded-profit', children='0', className='pt-info')
                                 ])
                             ]
