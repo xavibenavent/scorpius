@@ -25,8 +25,7 @@ class PTManager:
         config.read('config.ini')
         self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
 
-
-    def create_new_pt(self, cmp: float) -> float:
+    def create_new_pt(self, cmp: float, pt_type='NORMAL') -> float:
         created_orders = 0
 
         # create new orders
@@ -48,7 +47,7 @@ class PTManager:
             created_orders = -2
 
             # create new perfect trade from orders and add to list
-            new_pt = PerfectTrade(pt_id=pt_id, buy_order=b1, sell_order=s1)
+            new_pt = PerfectTrade(pt_id=pt_id, buy_order=b1, sell_order=s1, pt_type=pt_type)
             self.perfect_trades.append(new_pt)
 
             # set order references

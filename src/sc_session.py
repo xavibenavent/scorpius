@@ -156,24 +156,26 @@ class Session:
 
     def check_inactivity(self, cmp):
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
-            self.ptm.create_new_pt(cmp=cmp)
+            self.ptm.create_new_pt(cmp=cmp, pt_type='FROM_INACTIVITY')
             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
     def check_monitor_list_for_activating(self, cmp: float) -> None:
         for order in self.pob.monitor:
             if order.is_ready_for_activation(cmp=cmp):
                 self.pob.active_order(order=order)
+
                 # check condition for new pt:
                 # Once activated, if it is second order then create a new one
-                if order.sibling_order.status == OrderStatus.TRADED:
-                    # calculate shift depending on last traded order side
-                    shift = 0.0
-                    if order.k_side == k_binance.SIDE_BUY:
-                        shift = self.new_pt_shift
-                    else:
-                        shift = -self.new_pt_shift
-                    self.ptm.create_new_pt(cmp=cmp + shift)
-                    self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
+                if order.pt.pt_type == 'NORMAL':
+                    if order.sibling_order.status == OrderStatus.TRADED:
+                        # calculate shift depending on last traded order side
+                        shift = 0.0
+                        if order.k_side == k_binance.SIDE_BUY:
+                            shift = self.new_pt_shift
+                        else:
+                            shift = -self.new_pt_shift
+                        self.ptm.create_new_pt(cmp=cmp + shift)
+                        self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
             # trade isolated orders
             # if order.is_isolated(cmp=cmp, max_dist=self.isolated_distance):

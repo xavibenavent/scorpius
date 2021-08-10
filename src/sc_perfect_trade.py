@@ -17,11 +17,13 @@ class PerfectTrade:
     def __init__(self,
                  pt_id: str,
                  buy_order: Order,
-                 sell_order: Order
+                 sell_order: Order,
+                 pt_type='NORMAL'
                  ):
         self.pt_id = pt_id
         self.buy_order = buy_order
         self.sell_order = sell_order
+        self.pt_type = pt_type
 
         self.status = PerfectTradeStatus.NEW
 
