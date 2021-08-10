@@ -225,19 +225,19 @@ class Session:
                         # self.pob.active_order(order=order)
                         order.set_status(OrderStatus.ACTIVE)
 
-                        # check condition for new pt:
-                        # Once activated, if it is the last order to trade in the pt, then create a new pt
-                        # only if it was created as NORMAL
-                        # it is enough checking the sibling order because a compensated/split pt will have another type
-                        if pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
-                            # calculate shift depending on last traded order side
-                            shift = 0.0
-                            if order.k_side == k_binance.SIDE_BUY:
-                                shift = self.new_pt_shift
-                            else:
-                                shift = -self.new_pt_shift
-                            self.ptm.create_new_pt(cmp=cmp + shift)
-                            self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
+                        # # check condition for new pt:
+                        # # Once activated, if it is the last order to trade in the pt, then create a new pt
+                        # # only if it was created as NORMAL
+                        # # it is enough checking the sibling order because a compensated/split pt will have another type
+                        # if pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
+                        #     # calculate shift depending on last traded order side
+                        #     shift = 0.0
+                        #     if order.k_side == k_binance.SIDE_BUY:
+                        #         shift = self.new_pt_shift
+                        #     else:
+                        #         shift = -self.new_pt_shift
+                        #     self.ptm.create_new_pt(cmp=cmp + shift)
+                        #     self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
             # trade isolated orders
             # if order.is_isolated(cmp=cmp, max_dist=self.isolated_distance):
@@ -264,7 +264,6 @@ class Session:
         for pt in self.ptm.perfect_trades:
             if pt.status != PerfectTradeStatus.COMPLETED:
                 for order in pt.orders:
-                     # for order in self.pob.active + self.pob.traded:
                     if order.uid == uid:
                         print(f'********** order traded: {order}')
                         # set the cycle in which the order has been traded
@@ -290,14 +289,19 @@ class Session:
                         # update perfect trades list
                         self.ptm.order_traded(order=order)
 
-                        # # check whether a new pt is allowed or not
-                        # # Since a new pt is created when activating the secomd order,
-                        # # this point should never be reached
-                        # if len(self.pob.get_pending_orders()) == 0:
-                        #     raise Exception("no orders")
-                        #     # self.ptm.create_new_pt(cmp=self.last_cmp)
-                        # else:
-                        #     log.info('no new pt created after the last traded order')
+                        # check condition for new pt:
+                        # Once activated, if it is the last order to trade in the pt, then create a new pt
+                        # only if it was created as NORMAL
+                        # it is enough checking the sibling order because a compensated/split pt will have another type
+                        if pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
+                            # calculate shift depending on last traded order side
+                            shift = 0.0
+                            if order.k_side == k_binance.SIDE_BUY:
+                                shift = self.new_pt_shift
+                            else:
+                                shift = -self.new_pt_shift
+                            self.ptm.create_new_pt(cmp=order_price + shift)
+                            self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
                         # since the traded orders has been identified, do not check more orders
                         break

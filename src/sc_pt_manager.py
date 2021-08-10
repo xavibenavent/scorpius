@@ -25,9 +25,7 @@ class PTManager:
         config.read('config.ini')
         self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
 
-    def create_new_pt(self, cmp: float, pt_type='NORMAL') -> float:
-        created_orders = 0
-
+    def create_new_pt(self, cmp: float, pt_type='NORMAL') -> None:
         # create and get new orders
         b1, s1 = self._get_b1s1(mp=cmp)
 
@@ -38,8 +36,6 @@ class PTManager:
             pt_id = f'{self.pt_created_count:03}'
             b1.pt_id = pt_id
             s1.pt_id = pt_id
-            # set number of trades needed for next pt creation
-            created_orders = -2
 
             # create new perfect trade from orders and add to list
             # new_pt = PerfectTrade(pt_id=pt_id, buy_order=b1, sell_order=s1, pt_type=pt_type)
@@ -53,9 +49,8 @@ class PTManager:
             s1.pt = new_pt
         else:
             print('\n********** CRITICAL ERROR CREATING PT **********\n')
-        return created_orders
 
-    def order_traded(self, order: Order):
+    def order_traded(self, order: Order) -> None:
         # update status of the appropriate perfect trade depending on order side
         pt = order.pt
         so = order.sibling_order
