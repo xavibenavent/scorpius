@@ -154,25 +154,28 @@ class Session:
             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
     def check_monitor_orders_for_compensation(self, cmp: float) -> None:
-        # get monitor orders
-        orders = self.ptm.get_orders_by_request([OrderStatus.MONITOR])
+        # get monitor orders of pt with one order traded
+        orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR],
+            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
         for order in orders:
-            if order.pt.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]:
-                if order.order_id != 'CONCENTRATED' and order.get_abs_distance(cmp=cmp) > self.compensation_distance:
-                    # compensate
-                    b1, s1 = self.compensate_order(order=order, ref_mp=cmp, ref_gap=self.compensation_gap)
-                    # set values
-                    b1.sibling_order = None
-                    b1.pt = order.pt
-                    s1.sibling_order = None
-                    s1.pt = order.pt
-                    # add to pt orders list
-                    order.pt.orders.append(b1)
-                    order.pt.orders.append(s1)
-                    # change original order status
-                    order.status = OrderStatus.CANCELED
-                    # change pt type to avoid generating a new pt after trading the new orders
-                    order.pt.pt_type = 'FROM_COMPENSATION'
+            # if order.pt.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]:
+            if order.order_id != 'CONCENTRATED' and order.get_abs_distance(cmp=cmp) > self.compensation_distance:
+                # compensate
+                b1, s1 = self.compensate_order(order=order, ref_mp=cmp, ref_gap=self.compensation_gap)
+                # set values
+                b1.sibling_order = None
+                b1.pt = order.pt
+                s1.sibling_order = None
+                s1.pt = order.pt
+                # add to pt orders list
+                order.pt.orders.append(b1)
+                order.pt.orders.append(s1)
+                # change original order status
+                order.status = OrderStatus.CANCELED
+                # change pt type to avoid generating a new pt after trading the new orders
+                order.pt.pt_type = 'FROM_COMPENSATION'
 
     def compensate_order(self, order: Order, ref_mp: float, ref_gap: float) -> (Order, Order):
         # raise Exception('implement it')
@@ -320,7 +323,10 @@ class Session:
 
     def quit_particular_session(self):
         # trade all remaining orders
-        orders = self.ptm.get_orders_by_request([OrderStatus.MONITOR, OrderStatus.ACTIVE])
+        orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
         for order in orders:
             self._trade_order(order=order)
             print(f'trading order {order.k_side} {order.status} {order.price}')

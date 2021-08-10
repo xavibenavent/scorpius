@@ -32,11 +32,6 @@ class PTManager:
         b1, s1 = self._get_b1s1(mp=cmp)
 
         if b1 and s1:
-            # add orders to list
-            # self.pob.monitor.append(b1)
-            # self.pob.monitor.append(s1)
-
-            # ********** update control variables **********
             # increase created counter
             self.pt_created_count += 1
             # set pt_id based on created counter
@@ -111,14 +106,15 @@ class PTManager:
                 total += pt.get_actual_profit(cmp=0)
         return total
 
-    def get_orders_by_request(self, status_required: List[OrderStatus]):
+    def get_orders_by_request(self, orders_status: List[OrderStatus], pt_status: List[PerfectTradeStatus]):
         requested_orders: List[Order] = []
-        for pt in self.perfect_trades:
+        # get list of perfect trades that match the condition
+        requested_pts = [pt for pt in self.perfect_trades if pt.status in pt_status]
+        for pt in requested_pts:
             for order in pt.orders:
-                if order.status in status_required:
+                if order.status in orders_status:
                     requested_orders.append(order)
         return requested_orders
-
 
     def _get_b1s1(self,
                   mp: float,

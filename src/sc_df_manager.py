@@ -4,6 +4,7 @@ import pandas as pd
 
 from sc_session import Session
 from sc_order import OrderStatus
+from sc_perfect_trade import PerfectTradeStatus
 
 print('sc_df_manager.py')
 
@@ -14,9 +15,11 @@ class DataframeManager:
         print('Session init')
 
     def get_all_orders_df(self) -> pd.DataFrame:
-        # get list with all orders: pending (monitor + placed) & traded (completed + pending_pt_id)
-        # all_orders = self.session.pob.get_pending_orders() + self.session.pob.get_traded_orders()  # self.session.tob.get_all_traded_orders()
-        all_orders = self.session.ptm.get_orders_by_request([OrderStatus.MONITOR, OrderStatus.ACTIVE])
+        # get list with all orders:
+        all_orders = self.session.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
+                       PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
         # create dataframe
         df = pd.DataFrame([order.to_dict_for_df() for order in all_orders])
         return df
