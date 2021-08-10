@@ -4,7 +4,7 @@ from typing import Optional, List
 from binance import enums as k_binance
 import configparser
 
-from sc_order import Order
+from sc_order import Order, OrderStatus
 from sc_pending_orders_book import PendingOrdersBook
 from sc_pt_calculator import get_prices_given_neb  # get_pt_values
 from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
@@ -82,36 +82,34 @@ class PTManager:
                 pt.status = PerfectTradeStatus.SELL_TRADED
                 so.price = order.price - gap
                 so.target_price = so.price - self.distance_to_target_price
-        # to completed
+
+        # check whether the pt is partially traded or completed
         elif pt.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]:
-            pt.status = PerfectTradeStatus.COMPLETED
+            completed = True
+            # check if all orders have been traded
+            for order in pt.orders:
+                if order.status != OrderStatus.TRADED:
+                    completed = False
+                    break
 
-
-
-    def show_pt_list_for_actual_cmp(self, cmp: float):
-        print(f'cmp: {cmp}')
-        for pt in self.perfect_trades:
-            print(f'pt: {pt.pt_id}  value: {pt.get_actual_profit(cmp=cmp)}')
+            if completed:
+                pt.status = PerfectTradeStatus.COMPLETED
 
     def get_total_actual_profit(self, cmp: float) -> float:
+        # return the total profit considering that all remaining orders are traded at current cmp
         total = 0
         for pt in self.perfect_trades:
             total += pt.get_actual_profit(cmp=cmp)
         return total
 
     def get_pt_completed_profit(self) -> float:
+        # return the total profit considering only the completed perfect trades
         total = 0
         for pt in self.perfect_trades:
             if pt.status == PerfectTradeStatus.COMPLETED:
+                # since the pt is completed, the cmp value does not matter
                 total += pt.get_actual_profit(cmp=0)
         return total
-
-    def get_pt_by_pt_id(self, pt_id: str) -> PerfectTrade:
-        for pt in self.perfect_trades:
-            if pt.pt_id == pt_id:
-                return pt
-        # todo: fix for production
-        raise Exception("there is no pt with this id in perfect trades list")
 
     def _get_b1s1(self,
                   mp: float,

@@ -27,6 +27,7 @@ class PerfectTrade:
         self.status = PerfectTradeStatus.NEW
 
     def get_actual_profit(self, cmp:float) -> float:
+        # return the pt profit considering that all remaining orders are traded at current cmp
         pt_profit = 0
 
         if self.status == PerfectTradeStatus.NEW:
