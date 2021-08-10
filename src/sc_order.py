@@ -144,8 +144,6 @@ class Order:
         return - (self.price * self.get_signed_amount())
 
     def get_virtual_profit_with_cost(self, cmp: Optional[float] = None) -> float:
-        # raise Exception("todo: implement set eur_commission once the order is traded")
-
         # if the parameter cmp is passed, then this is the value to consider
         price = self.price
         if cmp:
