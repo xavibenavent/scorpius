@@ -1,4 +1,4 @@
-# xb_logger.py
+# sc_logger.py
 
 import logging
 
@@ -12,7 +12,7 @@ class XBLogger:
         ch = logging.FileHandler(filename='log/scorpius.log', mode='w')
 
         # setup output string
-        s1 = '%(threadName)-20s, %(filename)-20s, %(funcName)-25s, %(levelname)-8s'
+        s1 = '%(levelname)-8s, %(asctime)s, %(filename)-20s, %(funcName)-25s'
         s2 = '- %(message)s'
         format_s = s1 + s2
 
@@ -20,4 +20,4 @@ class XBLogger:
         ch.setFormatter(formatter)
         log.addHandler(ch)
 
-        # %(asctime)s, %(filename)-20s, %(funcName)-25s
+        # %(threadName)-20s, %(asctime)s, %(filename)-20s, %(funcName)-25s

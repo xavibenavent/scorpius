@@ -3,10 +3,13 @@
 from typing import Optional, List
 from binance import enums as k_binance
 import configparser
+import logging
 
 from sc_order import Order, OrderStatus
 from sc_pt_calculator import get_prices_given_neb  # get_pt_values
 from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
+
+log = logging.getLogger('log')
 
 
 class PTManager:
@@ -165,3 +168,9 @@ class PTManager:
             # log.critical(f'trying to create an order that do not meet limits: {dynamic_parameters}')
 
         return b1, s1
+
+    def log_perfect_trades_info(self):
+        for pt in self.perfect_trades:
+            log.info(f'perfect trade {pt.pt_id} {pt.pt_type} {pt.status.name}')
+            for order in pt.orders:
+                log.info(f'  order {order.k_side} {order.get_amount()} {order.get_price_str()} {order.status.name}')
