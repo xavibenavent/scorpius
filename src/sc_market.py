@@ -193,6 +193,8 @@ class Market:
         except (BinanceAPIException, BinanceRequestException) as e:
             log.critical(e)
 
+
+
     def get_cmp(self, symbol: str) -> float:
         cmp = self.client.get_avg_price(symbol=symbol)
         return float(cmp['price'])

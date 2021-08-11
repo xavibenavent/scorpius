@@ -309,6 +309,12 @@ class Session:
                         # since the traded orders has been identified, do not check more orders
                         break
 
+    def assess_new_pt_creation(self) -> bool:
+        new_pt_allowed = False
+        pass
+        return new_pt_allowed
+
+
     def account_balance_callback(self, ab: AccountBalance) -> None:
         # update of current balance from Binance
         self.bm.update_current(last_ab=ab)
