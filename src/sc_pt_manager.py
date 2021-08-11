@@ -5,14 +5,12 @@ from binance import enums as k_binance
 import configparser
 
 from sc_order import Order, OrderStatus
-from sc_pending_orders_book import PendingOrdersBook
 from sc_pt_calculator import get_prices_given_neb  # get_pt_values
 from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
 
 
 class PTManager:
-    def __init__(self, pob: PendingOrdersBook, symbol_filters, session_id: str):
-        self.pob = pob
+    def __init__(self, symbol_filters, session_id: str):
         self.symbol_filters = symbol_filters
         self.session_id = session_id
         self.pt_created_count = 0
@@ -66,7 +64,7 @@ class PTManager:
 
             if order.k_side == k_binance.SIDE_BUY:
                 pt.status = PerfectTradeStatus.BUY_TRADED
-                so.price = order.price + gap # price
+                so.price = order.price + gap  # price
                 so.target_price = so.price + self.distance_to_target_price  # target price
             elif order.k_side == k_binance.SIDE_SELL:
                 pt.status = PerfectTradeStatus.SELL_TRADED
@@ -123,7 +121,7 @@ class PTManager:
         # return the eur & btc needed to trade all 'alive' orders at its own price
         alive_orders = self.get_all_alive_orders()
         # get total eur needed to trade all alive buy orders
-        eur_needed= sum([order.get_total() for order in alive_orders if order.k_side == k_binance.SIDE_BUY])
+        eur_needed = sum([order.get_total() for order in alive_orders if order.k_side == k_binance.SIDE_BUY])
         # get total btc needed to trade all alive sell orders
         btc_needed = sum([order.get_amount() for order in alive_orders if order.k_side == k_binance.SIDE_SELL])
 
@@ -152,7 +150,7 @@ class PTManager:
             )
         else:
             pass
-            # log.critical(f'trying to create an order that do not meet limits: {dynamic_parameters}')
+            # log.critical(f'order do not meet limits: {dynamic_parameters}')
 
         if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=s1_price):
             s1 = Order(

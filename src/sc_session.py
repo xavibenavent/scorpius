@@ -4,7 +4,6 @@ import logging
 import time
 from datetime import datetime
 from enum import Enum
-import pandas as pd
 
 from typing import Optional
 from binance import enums as k_binance
@@ -12,13 +11,9 @@ from binance import enums as k_binance
 from sc_market import Market
 from sc_order import Order, OrderStatus
 from sc_account_balance import AccountBalance
-from sc_pending_orders_book import PendingOrdersBook
-from sc_traded_orders_book import TradedOrdersBook
-from sc_strategy_manager import StrategyManager
 from sc_balance_manager import BalanceManager
-from sc_concentrator import ConcentratorManager
 from sc_pt_manager import PTManager
-from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
+from sc_perfect_trade import PerfectTradeStatus
 from sc_pt_calculator import get_compensation
 
 import configparser
@@ -61,16 +56,12 @@ class Session:
 
         # ********** managers **********
         self.bm = BalanceManager(market=self.market)
-        self.pob = PendingOrdersBook(orders=[])
-        self.tob = TradedOrdersBook()
-        self.cm = ConcentratorManager(pob=self.pob, tob=self.tob)
-        self.sm = StrategyManager(pob=self.pob, cm=self.cm, bm=self.bm)
 
         self.session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
 
-        self.ptm = PTManager(pob=self.pob,
-                             symbol_filters=self.symbol_filters,
-                             session_id=self.session_id)
+        self.ptm = PTManager(
+            symbol_filters=self.symbol_filters,
+            session_id=self.session_id)
 
         self.last_cmp = self.market.get_cmp(self.symbol)
 
@@ -118,10 +109,6 @@ class Session:
 
             self.last_cmp = cmp
             self.cycles_from_last_trade += 1
-
-            # strategy manager and update of trades needed for new pt
-            # self.partial_traded_orders_count += self.sm.assess_strategy_actions(cmp=cmp)
-            # self.sm.assess_strategy_actions(cmp=cmp)
 
             # loop through monitoring orders for compensation
             # self.check_monitor_orders_for_compensation(cmp=cmp)
@@ -200,8 +187,7 @@ class Session:
 
         # validate values received for b1 and s1
         if s1_p < 0 or b1_p < 0 or s1_qty < 0 or b1_qty < 0:
-            raise Exception(f'!!!!!!!!!! negative value(s) after compensation: b1p: {b1_p} - b1q: {b1_qty} !!!!!!!!!!'
-                         f'- s1p: {s1_p} - s1q: {s1_qty}')
+            raise Exception(f'negative value(s) after compensation: b1p: {b1_p} b1q: {b1_qty} 1p: {s1_p} s1q: {s1_qty}')
         else:
             # create both orders
             b1 = Order(
@@ -287,11 +273,11 @@ class Session:
                         # it is enough checking the sibling order because a compensated/split pt will have another type
                         if pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
                             # calculate shift depending on last traded order side
-                            shift = 0.0
+                            shift: float
                             if order.k_side == k_binance.SIDE_BUY:
                                 shift = self.new_pt_shift
                             else:
-                                shift = -self.new_pt_shift
+                                shift = self.new_pt_shift * (-1)
                             self.ptm.create_new_pt(cmp=order_price + shift)
                             self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
