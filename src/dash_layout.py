@@ -85,6 +85,11 @@ class DashLayout:
                         width=1, className='sc-col'
                     )
                 ]),
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Graph(id='profit-line', figure={}, config={'displayModeBar': False})
+                    ])
+                ]),
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)
             ],)
         ])

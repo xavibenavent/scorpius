@@ -77,6 +77,8 @@ class Session:
         self.orders_book_depth = []
         self.orders_book_span = []
 
+        self.total_profit_series = []
+
         self.pt_created_count = 0
         self.buy_count = 0
         self.sell_count = 0
@@ -134,6 +136,7 @@ class Session:
 
             # 8. check global net profit
             total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
+            self.total_profit_series.append(total_profit)
             if total_profit > self.target_total_net_profit:
                 self.quit_particular_session()
                 # todo: start new session when target achieved
@@ -336,4 +339,5 @@ class Session:
             print(f'trading order {order.k_side} {order.status} {order.price}')
             time.sleep(0.1)
 
+        # todo: mark stop and delay for 3"
         self.market.stop()
