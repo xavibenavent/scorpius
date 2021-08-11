@@ -111,6 +111,24 @@ class PTManager:
                     requested_orders.append(order)
         return requested_orders
 
+    def get_all_alive_orders(self) -> List[Order]:
+        # 0. get 'alive' buy & sell orders (monitor + active)
+        orders_alive = self.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        return orders_alive
+
+    def get_total_eur_btc_needed(self) -> (float, float):
+        # return the eur & btc needed to trade all 'alive' orders at its own price
+        alive_orders = self.get_all_alive_orders()
+        # get total eur needed to trade all alive buy orders
+        eur_needed= sum([order.get_total() for order in alive_orders if order.k_side == k_binance.SIDE_BUY])
+        # get total btc needed to trade all alive sell orders
+        btc_needed = sum([order.get_amount() for order in alive_orders if order.k_side == k_binance.SIDE_SELL])
+
+        return eur_needed, btc_needed
+
     def _get_b1s1(self,
                   mp: float,
                   ) -> (Optional[Order], Optional[Order]):

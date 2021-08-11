@@ -53,6 +53,8 @@ class Session:
         self.compensation_distance = float(config['SESSION']['compensation_distance'])
         self.compensation_gap = float(config['SESSION']['compensation_gap'])
         self.fee = float(config['PT_CREATION']['fee'])
+        self.quantity = float(config['PT_CREATION']['quantity'])
+        self.net_eur_balance = float(config['PT_CREATION']['net_eur_balance'])
 
         # get filters that will be checked before placing an order
         self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol)
@@ -77,7 +79,7 @@ class Session:
         self.orders_book_depth = []
         self.orders_book_span = []
 
-        self.total_profit_series = []
+        self.total_profit_series = [0.0]
 
         self.pt_created_count = 0
         self.buy_count = 0
@@ -141,7 +143,7 @@ class Session:
                 self.quit_particular_session()
                 # todo: start new session when target achieved
                 raise Exception("Target achieved!!!")
-            elif self.get_session_hours() > 2.0 and total_profit > -5.0:
+            elif self.get_session_hours() > 24.0 and total_profit > -5.0:
                 self.quit_particular_session()
                 raise Exception("terminated to minimize loss")
 
@@ -153,8 +155,9 @@ class Session:
 
     def check_inactivity(self, cmp):
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
-            self.ptm.create_new_pt(cmp=cmp, pt_type='FROM_INACTIVITY')
-            self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
+            if self.allow_new_pt_creation(cmp=cmp):
+                self.ptm.create_new_pt(cmp=cmp, pt_type='FROM_INACTIVITY')
+                self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
 
     def check_monitor_orders_for_compensation(self, cmp: float) -> None:
         # get monitor orders of pt with one order traded
@@ -228,20 +231,6 @@ class Session:
                         # self.pob.active_order(order=order)
                         order.set_status(OrderStatus.ACTIVE)
 
-                        # # check condition for new pt:
-                        # # Once activated, if it is the last order to trade in the pt, then create a new pt
-                        # # only if it was created as NORMAL
-                        # # it is enough checking the sibling order because a compensated/split pt will have another type
-                        # if pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
-                        #     # calculate shift depending on last traded order side
-                        #     shift = 0.0
-                        #     if order.k_side == k_binance.SIDE_BUY:
-                        #         shift = self.new_pt_shift
-                        #     else:
-                        #         shift = -self.new_pt_shift
-                        #     self.ptm.create_new_pt(cmp=cmp + shift)
-                        #     self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
-
             # trade isolated orders
             # if order.is_isolated(cmp=cmp, max_dist=self.isolated_distance):
             #     self.pob.active_order(order=order)
@@ -309,11 +298,16 @@ class Session:
                         # since the traded orders has been identified, do not check more orders
                         break
 
-    def assess_new_pt_creation(self) -> bool:
-        new_pt_allowed = False
-        pass
-        return new_pt_allowed
-
+    def allow_new_pt_creation(self, cmp: float) -> bool:
+        # get total eur & btc needed to trade all alive orders at their own price
+        eur_needed, btc_needed = self.ptm.get_total_eur_btc_needed()
+        # 1. check available liquidity (eur & btc) vs needed when trading both orders
+        if self.market.get_asset_liquidity(asset='EUR') < eur_needed + (self.quantity * cmp):
+            return False
+        elif self.market.get_asset_liquidity(asset='BTC') < btc_needed + self.quantity:
+            return False
+        else:
+            return True
 
     def account_balance_callback(self, ab: AccountBalance) -> None:
         # update of current balance from Binance

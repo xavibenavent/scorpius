@@ -2,7 +2,7 @@
 
 from dash.dependencies import Input, Output
 from dash_app import app
-from dash_aux import get_balance_bar_chart, get_profit_line_chart
+from dash_aux import get_balance_bar_chart, get_profit_line_chart, get_cmp_line_chart
 from sc_session import QuitMode
 from sc_df_manager import DataframeManager
 
@@ -84,9 +84,9 @@ def update_figure(timer):
         dict(asset='bnb', amount=ab.bnb.locked, type='locked'),
     ])
 
-    fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.6)
-    fig_eur = get_balance_bar_chart(df=df_eur, asset='eur', y_max=20000)
-    fig_bnb = get_balance_bar_chart(df=df_bnb, asset='bnb', y_max=50)
+    fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.3)
+    fig_eur = get_balance_bar_chart(df=df_eur, asset='eur', y_max=15000)
+    fig_bnb = get_balance_bar_chart(df=df_bnb, asset='bnb', y_max=40)
     return fig_btc, fig_eur, fig_bnb
 
 
@@ -131,10 +131,33 @@ def display_value(value):
     return f'{pt_count} / {trades_count}'
 
 
+# ********** actual profit **********
+@app.callback(Output('eur-needed', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    eur_needed, btc_needed = dfm.session.ptm.get_total_eur_btc_needed()
+    return f'{eur_needed:,.2f}'
+
+
+# ********** actual profit **********
+@app.callback(Output('btc-needed', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    _, btc_needed = dfm.session.ptm.get_total_eur_btc_needed()
+    return f'{btc_needed:,.4f}'
+
+
 @app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
 def update_profit_line(timer):
     pls = dfm.session.total_profit_series
     df = pd.DataFrame(data=pls, columns=['cmp'])
     df['rate'] = df.index
     fig = get_profit_line_chart(df=df, pls=pls)
+    return fig
+
+
+@app.callback(Output('cmp-line', 'figure'), Input('update', 'n_intervals'))
+def update_profit_line(timer):
+    cmps = dfm.session.cmps
+    df = pd.DataFrame(data=cmps, columns=['cmp'])
+    df['rate'] = df.index
+    fig = get_cmp_line_chart(df=df, cmps=cmps)
     return fig

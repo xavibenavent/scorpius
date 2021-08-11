@@ -83,13 +83,56 @@ class DashLayout:
                         ),
                     ],
                         width=1, className='sc-col'
+                    ),
+                    dbc.Col([
+                        dbc.Card(
+                            [
+                                dbc.CardBody([
+                                    html.H6("eur alive", className="card-title"),
+                                    html.H6(id='eur-needed', children='0', className='pt-info')
+                                ])
+                            ]
+                        ),
+                        dbc.Card(
+                            [
+                                dbc.CardBody([
+                                    html.H6("btc alive", className="card-title"),
+                                    html.H6(id='btc-needed', children='0', className='pt-info')
+                                ])
+                            ]
+                        ),
+                        dbc.Card(
+                            [
+                                dbc.CardBody([
+                                    html.H1("***", className="card-title"),
+                                    html.H6(id='***', children='0', className='pt-info')
+                                ])
+                            ]
+                        ),
+                        dbc.Card(
+                            [
+                                dbc.CardBody([
+                                    html.H6("****", className="card-title"),
+                                    html.H6(id='****', children='0', className='pt-info')
+                                ])
+                            ]
+                        ),
+                    ],
+                        width=1, className='sc-col'
                     )
+
                 ]),
                 dbc.Row([
                     dbc.Col([
                         dcc.Graph(id='profit-line', figure={}, config={'displayModeBar': False})
-                    ])
+                    ], width=6, className='sc-col')
                 ]),
+                dbc.Row([
+                    dbc.Col([
+                        dcc.Graph(id='cmp-line', figure={}, config={'displayModeBar': False})
+                    ], width=6, className='sc-col')
+                ]),
+
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)
             ],)
         ])

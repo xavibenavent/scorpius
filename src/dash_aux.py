@@ -142,19 +142,29 @@ def get_pending_datatable(data: List[dict]):
 
 
 def get_profit_line_chart(df: pd.DataFrame, pls: List[float]) -> Figure:
-    fig = px.line(df, x='rate', y='cmp')
+    fig = px.line(df, x='rate', y='cmp', range_y=[-20, 6])
     fig.update_layout(
         margin=dict(t=0, r=0, l=0, b=20),
-        paper_bgcolor='rgba(0, 0, 0, 0)',
-        plot_bgcolor='rgba(0, 0, 0, 0)',
-        yaxis=dict(title=None, showgrid=False, showticklabels=True),
+        # paper_bgcolor='rgba(0, 0, 0, 0)',
+        # plot_bgcolor='rgba(0, 0, 0, 0)',
+        yaxis=dict(title='profit line', showgrid=True, showticklabels=True),
         xaxis=dict(title=None, showgrid=False, showticklabels=True),
-        height=300,
-        width=800)
+        height=230,
+        # width=800,
+    )
+    return fig
 
-    # dynamic color
-    if pls[-1] > 0:
-        return fig.update_traces(fill='tozeroy', line={'color': 'green'})
-    else:
-        return fig.update_traces(fill='tozeroy', line={'color': 'red'})
 
+def get_cmp_line_chart(df: pd.DataFrame, cmps: List[float]) -> Figure:
+    fig = px.line(df, x='rate', y='cmp', range_y=[38000.0, 42000.0])
+    fig.update_layout(
+        margin=dict(t=0, r=0, l=0, b=20),
+        # paper_bgcolor='rgba(0, 0, 0, 0)',
+        # plot_bgcolor='rgba(0, 0, 0, 0)',
+        yaxis=dict(title='cmp line', showgrid=True, showticklabels=True),
+        xaxis=dict(title=None, showgrid=False, showticklabels=True),
+        height=230,
+        # width=800,
+    )
+    fig.update_traces(line={'color': 'green'})
+    return fig

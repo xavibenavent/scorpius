@@ -193,7 +193,10 @@ class Market:
         except (BinanceAPIException, BinanceRequestException) as e:
             log.critical(e)
 
-
+    def get_asset_liquidity(self, asset: str) -> float:
+        asset_balance = self.get_asset_balance(asset=asset, tag='')
+        asset_liquidity = asset_balance.free
+        return asset_liquidity
 
     def get_cmp(self, symbol: str) -> float:
         cmp = self.client.get_avg_price(symbol=symbol)
