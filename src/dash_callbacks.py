@@ -122,25 +122,41 @@ def update_table(timer):
     return df_pending.to_dict('records')
 
 
-# ********** actual profit **********
-@app.callback(Output('actual-profit', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
-
-
-# ********** actual profit **********
+# ********** time [h] **********
 @app.callback(Output('cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     return f'{dfm.session.cmp_count / 3600:,.2f}'
 
 
-# ********** actual profit **********
+# ********** stop at cmp **********
+@app.callback(Output('actual-profit', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    # return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
+    return f'{dfm.session.ptm.get_stop_cmp_profit(cmp=dfm.session.cmps[-1]):,.2f}'
+
+
+# ********** stop at price **********
+@app.callback(Output('stop-price-profit', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    # return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
+    return f'{dfm.session.ptm.get_stop_price_profit(cmp=dfm.session.cmps[-1]):,.2f}'
+
+
+# ********** completed profit **********
 @app.callback(Output('pt-completed-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     return f'{dfm.session.ptm.get_pt_completed_profit():,.2f}'
 
 
-# ********** actual profit **********
+# ********** traded orders profit **********
+@app.callback(Output('traded-orders-profit', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    # called the method in session to check buy_count == sell_count
+    return dfm.session.get_traded_orders_profit()
+
+
+
+# ********** PT count / traded orders count **********
 @app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     pt_count = len(dfm.session.ptm.perfect_trades)

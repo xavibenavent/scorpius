@@ -90,10 +90,12 @@ class Session:
     def get_session_hours(self) -> float:
         return round(self.cmp_count / 3600, 2)
 
-    # def get_equivalent_order_values(self) -> (float, float):
-    #     return self.ptm.get_equivalent_alive_order(
-    #         initial_ab=self.bm.initial_ab,
-    #         current_ab=self.bm.current_ab)
+    def get_traded_orders_profit(self) -> str:
+        # get profit only if buy_orders_count == sell_orders_count
+        if self.buy_count == self.sell_count:
+            return f'{self.ptm.get_traded_orders_profit():,.2f}'
+        else:
+            return 'N/A'
 
     # ********** Binance socket callback functions **********
     def symbol_ticker_callback(self, cmp: float) -> None:

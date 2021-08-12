@@ -92,13 +92,58 @@ class PTManager:
 
     def get_total_actual_profit(self, cmp: float) -> float:
         # return the total profit considering that all remaining orders are traded at current cmp
+        # perfect trades with status NEW are not considered
         total = 0
         for pt in self.perfect_trades:
             total += pt.get_actual_profit(cmp=cmp)
         return total
 
+    def get_stop_cmp_profit(self, cmp: float) -> float:
+        # return the total profit considering that all remaining orders are traded at current cmp
+        # perfect trades with status NEW are not considered
+        total = 0
+        orders = self.get_orders_by_request(
+            orders_status=[OrderStatus.ACTIVE, OrderStatus.MONITOR, OrderStatus.TRADED],
+            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED]
+        )
+        for order in orders:
+            if order.status in [OrderStatus.MONITOR, OrderStatus.ACTIVE]:
+                total += order.get_virtual_profit_with_cost(cmp=cmp)
+            elif order.status == OrderStatus.TRADED:
+                total += order.get_virtual_profit_with_cost()
+        return total
+
+    def get_stop_price_profit(self, cmp: float) -> float:
+        # return the total profit considering that all remaining orders are traded at current cmp
+        # perfect trades with status NEW are not considered
+        # MONITOR orders are considered to be traded at their price
+        total = 0
+        orders = self.get_orders_by_request(
+            orders_status=[OrderStatus.ACTIVE, OrderStatus.MONITOR, OrderStatus.TRADED],
+            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED]
+        )
+        for order in orders:
+            if order.status == OrderStatus.MONITOR:
+                total += order.get_virtual_profit_with_cost()
+            elif order.status == OrderStatus.ACTIVE:
+                total += order.get_virtual_profit_with_cost(cmp=cmp)
+            elif order.status == OrderStatus.TRADED:
+                total += order.get_virtual_profit_with_cost()
+        return total
+
+    def get_traded_orders_profit(self) -> float:
+        # return the total profit considering traded orders
+        total = 0
+        orders = self.get_orders_by_request(
+            orders_status=[OrderStatus.TRADED],
+            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED]
+        )
+        for order in orders:
+            total += order.get_virtual_profit_with_cost()
+        return total
+
     def get_pt_completed_profit(self) -> float:
-        # return the total profit considering only the completed perfect trades
+        # return the total profit considering only the COMPLETED perfect trades
         total = 0
         for pt in self.perfect_trades:
             if pt.status == PerfectTradeStatus.COMPLETED:
