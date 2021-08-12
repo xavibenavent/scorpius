@@ -20,14 +20,32 @@ def display_value(value):
 
 
 # ********** buttons *********
-@app.callback(Output('msg', 'children'), Input('button-stop', 'n_clicks'))
+@app.callback(Output('msg', 'children'), Input('button-stop-cmp', 'n_clicks'))
 def on_button_click(n):
     if n is None:
         return ''
     else:
-        # dfm.session.quit(quit_mode=QuitMode.CANCEL_ALL_PLACED)
-        dfm.session.quit_particular_session()
+        dfm.session.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
         return 'cmp stop'
+
+
+@app.callback(Output('stop-price', 'children'), Input('button-stop-price', 'n_clicks'))
+def on_button_click(n):
+    if n is None:
+        return ''
+    else:
+        dfm.session.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+        return 'cmp stop'
+
+
+@app.callback(Output('stop-cancel', 'children'), Input('button-stop-cancel', 'n_clicks'))
+def on_button_click(n):
+    if n is None:
+        return ''
+    else:
+        dfm.session.quit_particular_session(quit_mode=QuitMode.CANCEL_ALL)
+        return 'cmp stop'
+
 
 
 @app.callback(Output('msg-start', 'children'), Input('button-start', 'n_clicks'))

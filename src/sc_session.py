@@ -23,8 +23,9 @@ log = logging.getLogger('log')
 
 
 class QuitMode(Enum):
-    CANCEL_ALL_PLACED = 1
+    CANCEL_ALL = 1
     PLACE_ALL_PENDING = 2
+    TRADE_ALL_PENDING = 3
 
 
 class Session:
@@ -229,14 +230,24 @@ class Session:
             return b1, s1
 
     def _trade_order(self, order: Order):
+        # MARKET
         # before placing it in binance, the order is set to TO_BE_TRADED
         # the status will be changed to TRADED when the confirmation is received through the socket callback
         order.set_status(OrderStatus.TO_BE_TRADED)
 
         is_order_placed = self._place_market_order(order=order)
         if not is_order_placed:
-            log.critical(f'order not place in binance {order}')
+            log.critical(f'market order not place in binance {order}')
             raise Exception("MARKET order not placed")
+
+    def _place_order(self, order: Order):
+        # LIMIT
+        order.set_status(status=OrderStatus.TO_BE_TRADED)
+        is_order_placed = self._place_limit_order(order=order)
+        if not is_order_placed:
+            log.critical(f'limit order not place in binance {order}')
+            raise Exception("LIMIT order not placed")
+
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
         # print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
@@ -328,7 +339,21 @@ class Session:
             log.critical(f'error placing MARKET {order}')
         return order_placed
 
-    def quit_particular_session(self):
+    def _place_limit_order(self, order: Order) -> (bool, Optional[str]):
+        order_placed = False
+        status_received = None
+        # place order
+        d = self.market.place_limit_order(order=order)
+        if d:
+            order_placed = True
+            order.set_binance_id(new_id=d.get('binance_id'))
+            status_received = d.get('status')
+            log.debug(f'********** LIMIT ORDER PLACED **********      msg: {d}')
+        else:
+            log.critical(f'error placing order {order}')
+        return order_placed, status_received
+
+    def quit_particular_session(self, quit_mode: QuitMode):
         # trade all remaining orders
         log.info('session terminated')
         orders = self.ptm.get_orders_by_request(
@@ -336,9 +361,16 @@ class Session:
             pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
         )
         for order in orders:
-            self._trade_order(order=order)
-            log.info(f'trading order {order.k_side} {order.status} {order.price}')
-            time.sleep(0.1)
+            if quit_mode == QuitMode.PLACE_ALL_PENDING:
+                self._place_order(order=order)
+                log.info(f'placing limit order {order.k_side} {order.status} {order.price}')
+                time.sleep(0.1)
+            elif quit_mode == QuitMode.TRADE_ALL_PENDING:
+                self._trade_order(order=order)
+                log.info(f'trading market order {order.k_side} {order.status} {order.price}')
+                time.sleep(0.1)
+            elif quit_mode == QuitMode.CANCEL_ALL:
+                pass
 
         # log final info
         self.ptm.log_perfect_trades_info()
