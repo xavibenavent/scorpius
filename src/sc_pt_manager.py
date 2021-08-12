@@ -8,6 +8,7 @@ import logging
 from sc_order import Order, OrderStatus
 from sc_pt_calculator import get_prices_given_neb  # get_pt_values
 from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
+from sc_account_balance import AccountBalance
 
 log = logging.getLogger('log')
 
@@ -25,6 +26,9 @@ class PTManager:
         config = configparser.ConfigParser()
         config.read('config.ini')
         self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
+        self.fee = float(config['PT_CREATION']['fee'])
+        self.net_eur_balance = float(config['PT_CREATION']['net_eur_balance'])
+
 
     def create_new_pt(self, cmp: float, pt_type='NORMAL') -> None:
         # create and get new orders
@@ -130,14 +134,25 @@ class PTManager:
 
         return eur_needed, btc_needed
 
-    # def get_equivalent_alive_order(self -> (float, float):
+    # def get_equivalent_alive_order(self, initial_ab: AccountBalance, current_ab: AccountBalance) -> (float, float):
     #     # get quantity & price of a single equivalent order that would achieve the targets (neb)
-    #     # initial_eur =
-    #     # current_eur =
-    #     # initial_qty =
-    #     # current_qty =
-    #     # qty = initial_qty - current_qty
-    #     # price = (initial_eur - current_eur + neb) / (qty * (1 - fee))
+    #     initial_eur = initial_ab.s2.free
+    #     current_eur = current_ab.s2.free
+    #     initial_qty = initial_ab.s1.free
+    #     current_qty = current_ab.s1.free
+    #
+    #     # get all traded fees
+    #     traded_orders = self.get_orders_by_request(
+    #         orders_status=[OrderStatus.TRADED],
+    #         pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED]
+    #     )
+    #     all_traded_fees = sum([order.eur_commission for order in traded_orders])
+    #     qty = initial_qty - current_qty  # if one sell order is traded => qty > 0
+    #     price: float
+    #     if qty != 0.0:
+    #         price = (initial_eur - current_eur + self.net_eur_balance + all_traded_fees) / qty
+    #     else:
+    #         price = 0.0
     #     return qty, price
 
     def _get_b1s1(self,

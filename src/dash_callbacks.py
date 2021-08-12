@@ -145,6 +145,19 @@ def display_value(value):
     return f'{btc_needed:,.4f}'
 
 
+# ********** actual profit **********
+@app.callback(Output('equivalent-price', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'***'
+
+
+# ********** actual profit **********
+@app.callback(Output('equivalent-qty', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'***'
+
+
+
 @app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
 def update_profit_line(timer):
     pls = dfm.session.total_profit_series

@@ -104,16 +104,16 @@ class DashLayout:
                         dbc.Card(
                             [
                                 dbc.CardBody([
-                                    html.H1("***", className="card-title"),
-                                    html.H6(id='***', children='0', className='pt-info')
+                                    html.H1("eq. price", className="card-title"),
+                                    html.H6(id='equivalent-price', children='0', className='pt-info')
                                 ])
                             ]
                         ),
                         dbc.Card(
                             [
                                 dbc.CardBody([
-                                    html.H6("****", className="card-title"),
-                                    html.H6(id='****', children='0', className='pt-info')
+                                    html.H6("eq. qty", className="card-title"),
+                                    html.H6(id='equivalent-qty', children='0', className='pt-info')
                                 ])
                             ]
                         ),

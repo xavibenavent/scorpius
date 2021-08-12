@@ -89,11 +89,16 @@ class Session:
     def get_session_hours(self) -> float:
         return round(self.cmp_count / 3600, 2)
 
+    # def get_equivalent_order_values(self) -> (float, float):
+    #     return self.ptm.get_equivalent_alive_order(
+    #         initial_ab=self.bm.initial_ab,
+    #         current_ab=self.bm.current_ab)
+
     # ********** Binance socket callback functions **********
     def symbol_ticker_callback(self, cmp: float) -> None:
         try:
             # 0.1: create first pt
-            if self.cmp_count == 5:
+            if self.cmp_count == 1:
                 if self.allow_new_pt_creation(cmp=cmp):
                     self.ptm.create_new_pt(cmp=cmp)
                 else:
@@ -126,6 +131,7 @@ class Session:
             self.check_inactivity(cmp=cmp)
 
             # 8. check global net profit
+            # return the total profit considering that all remaining orders are traded at current cmp
             total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
             self.total_profit_series.append(total_profit)
             if total_profit > self.target_total_net_profit:
