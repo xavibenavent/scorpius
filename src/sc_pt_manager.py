@@ -130,6 +130,16 @@ class PTManager:
 
         return eur_needed, btc_needed
 
+    # def get_equivalent_alive_order(self -> (float, float):
+    #     # get quantity & price of a single equivalent order that would achieve the targets (neb)
+    #     # initial_eur =
+    #     # current_eur =
+    #     # initial_qty =
+    #     # current_qty =
+    #     # qty = initial_qty - current_qty
+    #     # price = (initial_eur - current_eur + neb) / (qty * (1 - fee))
+    #     return qty, price
+
     def _get_b1s1(self,
                   mp: float,
                   ) -> (Optional[Order], Optional[Order]):
