@@ -47,7 +47,6 @@ def on_button_click(n):
         return 'cmp stop'
 
 
-
 @app.callback(Output('msg-start', 'children'), Input('button-start', 'n_clicks'))
 def on_button_click(n):
     print('click')
@@ -104,7 +103,7 @@ def update_figure(timer):
 
     fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.3)
     fig_eur = get_balance_bar_chart(df=df_eur, asset='eur', y_max=15000)
-    fig_bnb = get_balance_bar_chart(df=df_bnb, asset='bnb', y_max=40)
+    fig_bnb = get_balance_bar_chart(df=df_bnb, asset='bnb', y_max=50)
     return fig_btc, fig_eur, fig_bnb
 
 

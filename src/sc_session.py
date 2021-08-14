@@ -78,7 +78,7 @@ class Session:
         self.cycles_from_last_trade = 0
 
         # todo: start manually from button
-        self.market.start_sockets()
+        # self.market.start_sockets()
 
     # ********** dashboard callback functions **********
     def get_last_cmp(self) -> float:

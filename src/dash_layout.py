@@ -147,7 +147,7 @@ class DashLayout:
                 dbc.CardBody(
                     [
                         html.H6(id='symbol', children='BTCEUR', className='symbol'),
-                        html.H6(id='cmp', children='', className="card-title"),
+                        html.H6(id='cmp', children='', className="card-title-symbol-cmp"),
                         html.H6(id='msg', children=''),
                         html.H6(id='stop-price', children=''),
                         html.H6(id='stop-cancel', children=''),
