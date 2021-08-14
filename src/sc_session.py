@@ -29,24 +29,21 @@ class QuitMode(Enum):
 
 
 class Session:
-    def __init__(self, session_id: str, session_stopped_callback: Callable[[str, float, float], None], market: Market):
+    def __init__(self,
+                 session_id: str,
+                 session_stopped_callback: Callable[[str, float, float], None],
+                 market: Market,
+                 balance_manager: BalanceManager
+                 ):
 
         self.session_id = session_id
         self.session_stopped_callback = session_stopped_callback
         self.market = market
+        self.bm = balance_manager
 
         print('session')
 
         self.session_active = True
-
-        # self.market = Market(
-        #     symbol_ticker_callback=self.symbol_ticker_callback,
-        #     order_traded_callback=self.order_traded_callback,
-        #     account_balance_callback=self.account_balance_callback
-        # )
-
-        # new in sm_001
-        # self.session_stop_callback: Callable[[str, float], None]
 
         # read parameters from config.ini
         config = configparser.ConfigParser()
@@ -68,11 +65,7 @@ class Session:
         self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol)
 
         # ********** managers **********
-        self.bm = BalanceManager(market=self.market)
-
-
-        # self.session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
-        # self.session_id: str
+        # self.bm = BalanceManager(market=self.market)
 
         self.ptm = PTManager(
             symbol_filters=self.symbol_filters,
@@ -90,9 +83,6 @@ class Session:
         self.sell_count = 0
         self.cmp_count = 0
         self.cycles_from_last_trade = 0
-
-        # todo: start manually from button
-        # self.market.start_sockets()
 
     # ********** dashboard callback functions **********
     def get_last_cmp(self) -> float:

@@ -7,6 +7,7 @@ import logging
 from sc_session import Session
 from sc_market import Market
 from sc_account_balance import AccountBalance
+from sc_balance_manager import BalanceManager
 
 log = logging.getLogger('log')
 
@@ -14,9 +15,14 @@ log = logging.getLogger('log')
 class SessionManager:
     def __init__(self):
         print('session manager')
-        self.market = Market(symbol_ticker_callback=None, order_traded_callback=None, account_balance_callback=None)
+        self.market = Market(
+            symbol_ticker_callback=self.fake_symbol_socket_callback,
+            order_traded_callback=self.fake_order_socket_callback,
+            account_balance_callback=self.fake_account_socket_callback)
 
         self.session: Optional[Session] = None
+
+        self.bm = BalanceManager(market=self.market)
 
         self.session_count = 0
         self.global_profit = 0
@@ -56,7 +62,8 @@ class SessionManager:
         self.session = Session(
             session_id=session_id,
             session_stopped_callback=self.session_stopped,
-            market=self.market
+            market=self.market,
+            balance_manager=self.bm
         )
 
         self.market.symbol_ticker_callback = self.session.symbol_ticker_callback

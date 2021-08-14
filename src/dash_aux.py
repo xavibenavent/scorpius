@@ -142,7 +142,7 @@ def get_pending_datatable(data: List[dict]):
 
 
 def get_profit_line_chart(df: pd.DataFrame, pls: List[float]) -> Figure:
-    fig = px.line(df, x='rate', y='cmp', range_y=[-20, 6])
+    fig = px.line(df, x='rate', y='cmp', range_y=[-6, 3])
     fig.update_layout(
         margin=dict(t=0, r=0, l=0, b=20),
         # paper_bgcolor='rgba(0, 0, 0, 0)',
