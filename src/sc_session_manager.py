@@ -75,6 +75,9 @@ class SessionManager:
         self.session_count += 1
         log.info(f'******** NEW SESSION ********')
         log.info(f'{session_id}')
+        print()
+        print(f'******** NEW SESSION ********')
+        print(f'{session_id}')
 
     def fake_symbol_socket_callback(self, foo: float):
         pass
