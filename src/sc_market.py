@@ -80,7 +80,7 @@ class Market:
         # called from Binance API each time an order is traded and
         # each time the account balance changes
         event_type: str = msg['e']
-        print(event_type)
+        # print(event_type)
         if event_type == 'executionReport':
             if (msg['x'] == 'TRADE') and (msg["X"] == 'FILLED'):
                 # order traded

@@ -168,7 +168,7 @@ class Order:
     def set_bnb_commission(self, commission: float, bnbeur_rate: float) -> None:
         self.bnb_commission = commission
         self.eur_commission = commission * bnbeur_rate
-        print(f'bnb comm: {self.bnb_commission}   eur comm: {self.eur_commission}')
+        # print(f'bnb comm: {self.bnb_commission}   eur comm: {self.eur_commission}')
 
     def set_status(self, status: OrderStatus):
         old_status = self.status

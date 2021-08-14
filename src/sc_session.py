@@ -29,7 +29,7 @@ class QuitMode(Enum):
 
 
 class Session:
-    def __init__(self, session_id: str, session_stopped_callback: Callable[[str, float], None], market: Market):
+    def __init__(self, session_id: str, session_stopped_callback: Callable[[str, float, float], None], market: Market):
 
         self.session_id = session_id
         self.session_stopped_callback = session_stopped_callback
@@ -62,6 +62,7 @@ class Session:
         self.fee = float(config['PT_CREATION']['fee'])
         self.quantity = float(config['PT_CREATION']['quantity'])
         self.net_eur_balance = float(config['PT_CREATION']['net_eur_balance'])
+        self.max_negative_profit_allowed = float(config['SESSION']['max_negative_profit_allowed'])
 
         # get filters that will be checked before placing an order
         self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol)
@@ -157,7 +158,7 @@ class Session:
                     self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
                     # todo: start new session when target achieved
                     # raise Exception("Target achieved!!!")
-                elif total_profit < -25.0:  # todo: move to parameter at config.ini
+                elif total_profit < self.max_negative_profit_allowed:  # todo: move to parameter at config.ini
                     self.session_active = False
                     self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
                     # raise Exception("terminated to minimize loss")
@@ -422,7 +423,11 @@ class Session:
 
         log.info(f'session {self.session_id} stopped with net profit: {net_profit:,.2f}')
 
-        self.session_stopped_callback(self.session_id, net_profit if abs(net_profit) < 3 else 0)
+        self.session_stopped_callback(
+            self.session_id,
+            net_profit if abs(net_profit) < 3 else 0,
+            self.cmp_count
+        )
 
         # todo: mark stop and delay for 3"
         # self.market.stop()

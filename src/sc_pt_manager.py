@@ -67,7 +67,7 @@ class PTManager:
             # get approximate gap * 2
             b1_price, s1_price, quantity = get_prices_given_neb(mp=order.price)
             gap = s1_price - b1_price
-            print(f'gap: {gap}')
+            # print(f'gap: {gap}')
 
             if order.k_side == k_binance.SIDE_BUY:
                 pt.status = PerfectTradeStatus.BUY_TRADED

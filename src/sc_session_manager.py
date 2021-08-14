@@ -20,6 +20,7 @@ class SessionManager:
 
         self.session_count = 0
         self.global_profit = 0
+        self.global_cmp_count = 0
 
         # todo: not sure whether it will work
         self.market.start_sockets()
@@ -27,18 +28,21 @@ class SessionManager:
         # start first session
         self.start_new_session()
 
-    def session_stopped(self, session_id: str, net_profit: float):
+    def session_stopped(self, session_id: str, net_profit: float, cmp_count: float):
         print(f'session stopped with id: {session_id} net profit: {net_profit}')
         log.info(f'session stopped with id: {session_id} net profit: {net_profit}')
 
         self.global_profit += net_profit
+        self.global_cmp_count += cmp_count
+
+        print(f'********** sessions count: {self.session_count} **********')
+        print(f'********** partial cmp count: {self.global_cmp_count / 3600:,.2f} [hours]')
+        print(f'********** partial global profit: {self.global_profit:,.2f} **********')
+
         if self.session_count < 100:
-            print(f'********** sessions count: {self.session_count} **********')
-            print(f'********** partial global profit: {self.global_profit} **********')
             self.start_new_session()
         else:
             self.market.stop()
-            print(f'global profit: {self.global_profit}')
             raise Exception('********** GLOBAL SESSION MANAGER FINISHED **********')
 
     def start_new_session(self):
