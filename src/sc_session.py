@@ -78,7 +78,7 @@ class Session:
         self.cycles_from_last_trade = 0
 
         # todo: start manually from button
-        # self.market.start_sockets()
+        self.market.start_sockets()
 
     # ********** dashboard callback functions **********
     def get_last_cmp(self) -> float:
@@ -138,12 +138,15 @@ class Session:
             total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
             self.total_profit_series.append(total_profit)
             if total_profit > self.target_total_net_profit:
-                self.quit_particular_session()
+                self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
                 # todo: start new session when target achieved
                 raise Exception("Target achieved!!!")
-            elif self.get_session_hours() > 24.0 and total_profit > -5.0:
-                self.quit_particular_session()
+            elif total_profit < -20.0:
+                self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
                 raise Exception("terminated to minimize loss")
+            # elif self.get_session_hours() > 2.0 and total_profit > -5.0:
+            #     self.quit_particular_session()
+            #     raise Exception("terminated to minimize loss")
 
         except AttributeError as e:
             print(e)
@@ -334,22 +337,66 @@ class Session:
 
     def quit_particular_session(self, quit_mode: QuitMode):
         # trade all remaining orders
+        log.info(f'********** STOP {quit_mode.name} **********')
         log.info('session terminated')
-        orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+
+        # ACTIVE orders (trade all at market price no matter the quit mode)
+        active_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.ACTIVE],
             pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
         )
-        for order in orders:
-            if quit_mode == QuitMode.PLACE_ALL_PENDING:
-                self._place_limit_order(order=order)
-                log.info(f'placing limit order {order.k_side} {order.status} {order.price}')
-                time.sleep(0.1)
-            elif quit_mode == QuitMode.TRADE_ALL_PENDING:
+        log.info('ACTIVE orders:')
+        for order in active_orders:
+            if quit_mode in [QuitMode.PLACE_ALL_PENDING, QuitMode.TRADE_ALL_PENDING]:
                 self._place_market_order(order=order)
                 log.info(f'trading market order {order.k_side} {order.status} {order.price}')
                 time.sleep(0.1)
             elif quit_mode == QuitMode.CANCEL_ALL:
                 pass
+
+        # MONITOR orders (depending on the quit mode will be traded at market price or placed at order price)
+        monitor_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR],
+            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        log.info('MONITOR orders:')
+        if quit_mode == QuitMode.PLACE_ALL_PENDING:  # place all monitor orders
+            for order in monitor_orders:
+                self._place_limit_order(order=order)
+                log.info(f'trading limit order {order.k_side} {order.status} {order.price}')
+                time.sleep(0.1)
+
+        elif quit_mode == QuitMode.TRADE_ALL_PENDING:  # trade diff orders at reference side (BUY or SELL)
+            # get diff to know at which side to trade & set reference orders
+            diff = 0
+            buy_orders = []
+            sell_orders = []
+            for order in monitor_orders:
+                if order.k_side == k_binance.SIDE_BUY:
+                    buy_orders.append(order)
+                    diff += 1
+                elif order.k_side == k_binance.SIDE_SELL:
+                    sell_orders.append(order)
+                    diff -= 1
+
+            log.info(f'diff: {diff}')
+            # trade only diff count orders at market price (cmp), at the right side
+            if diff == 0:
+                pass
+            elif diff > 0:  # BUY SIDE
+                log.info('BUY SIDE')
+                for i in range(diff):
+                    order = buy_orders[i]
+                    self._place_market_order(order=order)
+                    log.info(f'trading reference market order {order.k_side} {order.status}')
+                    time.sleep(0.1)
+            elif diff < 0:  # SELL SIDE
+                log.info('SELL SIDE')
+                for i in range(-diff):
+                    order = sell_orders[i]
+                    self._place_market_order(order=order)
+                    log.info(f'trading reference market order {order.k_side} {order.status}')
+                    time.sleep(0.1)
 
         # log final info
         self.ptm.log_perfect_trades_info()
