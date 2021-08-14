@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from enum import Enum
 
-from typing import Optional
+from typing import Optional, Callable
 from binance import enums as k_binance
 
 from sc_market import Market
@@ -29,13 +29,24 @@ class QuitMode(Enum):
 
 
 class Session:
-    def __init__(self):
+    def __init__(self, session_id: str, session_stopped_callback: Callable[[str, float], None], market: Market):
+
+        self.session_id = session_id
+        self.session_stopped_callback = session_stopped_callback
+        self.market = market
+
         print('session')
-        self.market = Market(
-            symbol_ticker_callback=self.symbol_ticker_callback,
-            order_traded_callback=self.order_traded_callback,
-            account_balance_callback=self.account_balance_callback
-        )
+
+        self.session_active = True
+
+        # self.market = Market(
+        #     symbol_ticker_callback=self.symbol_ticker_callback,
+        #     order_traded_callback=self.order_traded_callback,
+        #     account_balance_callback=self.account_balance_callback
+        # )
+
+        # new in sm_001
+        # self.session_stop_callback: Callable[[str, float], None]
 
         # read parameters from config.ini
         config = configparser.ConfigParser()
@@ -58,7 +69,9 @@ class Session:
         # ********** managers **********
         self.bm = BalanceManager(market=self.market)
 
-        self.session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
+
+        # self.session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
+        # self.session_id: str
 
         self.ptm = PTManager(
             symbol_filters=self.symbol_filters,
@@ -99,57 +112,61 @@ class Session:
 
     # ********** Binance socket callback functions **********
     def symbol_ticker_callback(self, cmp: float) -> None:
-        try:
-            # 0.1: create first pt
-            if self.cmp_count == 1:
-                if self.allow_new_pt_creation(cmp=cmp):
-                    self.ptm.create_new_pt(cmp=cmp)
-                else:
-                    log.critical("initial pt not allowed")
-                    raise Exception("initial pt not allowed")
+        if self.session_active:
+            try:
+                # 0.1: create first pt
+                if self.cmp_count == 1:
+                    if self.allow_new_pt_creation(cmp=cmp):
+                        self.ptm.create_new_pt(cmp=cmp)
+                    else:
+                        log.critical("initial pt not allowed")
+                        raise Exception("initial pt not allowed")
 
-            # 0.2: update cmp count to control timely pt creation
-            self.cmp_count += 1
+                # 0.2: update cmp count to control timely pt creation
+                self.cmp_count += 1
 
-            # these two lists will be used to plot
-            self.cmps.append(cmp)
-            # self.cycles_series.append(self.cmp_count)
+                # these two lists will be used to plot
+                self.cmps.append(cmp)
+                # self.cycles_series.append(self.cmp_count)
 
-            # self.last_cmp = cmp
+                # self.last_cmp = cmp
 
-            # counter used to detect inactivity
-            self.cycles_from_last_trade += 1
+                # counter used to detect inactivity
+                self.cycles_from_last_trade += 1
 
-            # loop through monitoring orders for compensation
-            # self.check_monitor_orders_for_compensation(cmp=cmp)
+                # loop through monitoring orders for compensation
+                # self.check_monitor_orders_for_compensation(cmp=cmp)
 
-            # it is important to check first the active list and then the monitor one
-            # with this order we guarantee there is only one status change per cycle
-            self.check_active_list_for_trading(cmp=cmp)
+                # it is important to check first the active list and then the monitor one
+                # with this order we guarantee there is only one status change per cycle
+                self.check_active_list_for_trading(cmp=cmp)
 
-            # 4. loop through monitoring orders for activating
-            self.check_monitor_list_for_activating(cmp=cmp)
+                # 4. loop through monitoring orders for activating
+                self.check_monitor_list_for_activating(cmp=cmp)
 
-            # 5. check inactivity & liquidity
-            self.check_inactivity(cmp=cmp)
+                # 5. check inactivity & liquidity
+                self.check_inactivity(cmp=cmp)
 
-            # 8. check global net profit
-            # return the total profit considering that all remaining orders are traded at current cmp
-            total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
-            self.total_profit_series.append(total_profit)
-            if total_profit > self.target_total_net_profit:
-                self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-                # todo: start new session when target achieved
-                raise Exception("Target achieved!!!")
-            elif total_profit < -20.0:
-                self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
-                raise Exception("terminated to minimize loss")
-            # elif self.get_session_hours() > 2.0 and total_profit > -5.0:
-            #     self.quit_particular_session()
-            #     raise Exception("terminated to minimize loss")
+                # ********** SESSION EXIT POINT ********
+                # 8. check global net profit
+                # return the total profit considering that all remaining orders are traded at current cmp
+                total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
+                self.total_profit_series.append(total_profit)
+                if total_profit > self.target_total_net_profit:
+                    self.session_active = False
+                    self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+                    # todo: start new session when target achieved
+                    # raise Exception("Target achieved!!!")
+                elif total_profit < -25.0:  # todo: move to parameter at config.ini
+                    self.session_active = False
+                    self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+                    # raise Exception("terminated to minimize loss")
+                # elif self.get_session_hours() > 2.0 and total_profit > -5.0:
+                #     self.quit_particular_session()
+                #     raise Exception("terminated to minimize loss")
 
-        except AttributeError as e:
-            print(e)
+            except AttributeError as e:
+                print(e)
 
     def check_monitor_list_for_activating(self, cmp: float) -> None:
         for pt in self.ptm.perfect_trades:
@@ -401,5 +418,11 @@ class Session:
         # log final info
         self.ptm.log_perfect_trades_info()
 
+        net_profit = self.ptm.get_stop_cmp_profit(cmp=self.cmps[-1])
+
+        log.info(f'session {self.session_id} stopped with net profit: {net_profit:,.2f}')
+
+        self.session_stopped_callback(self.session_id, net_profit if abs(net_profit) < 3 else 0)
+
         # todo: mark stop and delay for 3"
-        self.market.stop()
+        # self.market.stop()

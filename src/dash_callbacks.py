@@ -16,7 +16,7 @@ dfm = DataframeManager()
 # ********** cmp **********
 @app.callback(Output('cmp', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.session.get_last_cmp():,.2f}'
+    return f'{dfm.sm.session.get_last_cmp():,.2f}'
 
 
 # ********** buttons *********
@@ -25,7 +25,7 @@ def on_button_click(n):
     if n is None:
         return ''
     else:
-        dfm.session.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+        dfm.sm.session.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
         return 'cmp stop'
 
 
@@ -34,7 +34,7 @@ def on_button_click(n):
     if n is None:
         return ''
     else:
-        dfm.session.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+        dfm.sm.session.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
         return 'cmp stop'
 
 
@@ -43,7 +43,7 @@ def on_button_click(n):
     if n is None:
         return ''
     else:
-        dfm.session.quit_particular_session(quit_mode=QuitMode.CANCEL_ALL)
+        dfm.sm.session.quit_particular_session(quit_mode=QuitMode.CANCEL_ALL)
         return 'cmp stop'
 
 
@@ -53,28 +53,28 @@ def on_button_click(n):
     if n is None:
         return ''
     else:
-        dfm.session.market.start_sockets()
+        dfm.sm.session.market.start_sockets()
         return 'cmp start'
 
 
 @app.callback(Output('msg-2', 'children'), Input('button-new-pt', 'n_clicks'))
 def on_button_click(n):
     if n:
-        dfm.session.ptm.create_new_pt(dfm.session.get_last_cmp())
+        dfm.sm.session.ptm.create_new_pt(dfm.sm.session.get_last_cmp())
     return ''
 
 
 @app.callback(Output('msg-increase-cmp', 'children'), Input('increase-cmp', 'n_clicks'))
 def on_button_click(n):
     if n:
-        dfm.session.market.update_fake_client_cmp(step=10.0)
+        dfm.sm.session.market.update_fake_client_cmp(step=10.0)
     return ''
 
 
 @app.callback(Output('msg-decrease-cmp', 'children'), Input('decrease-cmp', 'n_clicks'))
 def on_button_click(n):
     if n:
-        dfm.session.market.update_fake_client_cmp(step=-10.0)
+        dfm.sm.session.market.update_fake_client_cmp(step=-10.0)
     return ''
 
 
@@ -86,7 +86,7 @@ def on_button_click(n):
 )
 def update_figure(timer):
     # ab = dfm.session.bm.get_account_balance()
-    ab = dfm.session.bm.current_ab
+    ab = dfm.sm.session.bm.current_ab
 
     df_btc = pd.DataFrame([
         dict(asset='btc', amount=ab.s1.free, type='free'),
@@ -124,42 +124,42 @@ def update_table(timer):
 # ********** time [h] **********
 @app.callback(Output('cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.session.cmp_count / 3600:,.2f}'
+    return f'{dfm.sm.session.cmp_count / 3600:,.2f}'
 
 
 # ********** stop at cmp **********
 @app.callback(Output('actual-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
-    return f'{dfm.session.ptm.get_stop_cmp_profit(cmp=dfm.session.cmps[-1]):,.2f}'
+    return f'{dfm.sm.session.ptm.get_stop_cmp_profit(cmp=dfm.sm.session.cmps[-1]):,.2f}'
 
 
 # ********** stop at price **********
 @app.callback(Output('stop-price-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
-    return f'{dfm.session.ptm.get_stop_price_profit(cmp=dfm.session.cmps[-1]):,.2f}'
+    return f'{dfm.sm.session.ptm.get_stop_price_profit(cmp=dfm.sm.session.cmps[-1]):,.2f}'
 
 
 # ********** completed profit **********
 @app.callback(Output('pt-completed-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.session.ptm.get_pt_completed_profit():,.2f}'
+    return f'{dfm.sm.session.ptm.get_pt_completed_profit():,.2f}'
 
 
 # ********** traded orders profit **********
 @app.callback(Output('traded-orders-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # called the method in session to check buy_count == sell_count
-    return dfm.session.get_traded_orders_profit()
+    return dfm.sm.session.get_traded_orders_profit()
 
 
 
 # ********** PT count / traded orders count **********
 @app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    pt_count = len(dfm.session.ptm.perfect_trades)
-    trades_count = dfm.session.buy_count + dfm.session.sell_count
+    pt_count = len(dfm.sm.session.ptm.perfect_trades)
+    trades_count = dfm.sm.session.buy_count + dfm.sm.session.sell_count
     # print(pt_count, trades_count)
     return f'{pt_count} / {trades_count}'
 
@@ -167,14 +167,14 @@ def display_value(value):
 # ********** actual profit **********
 @app.callback(Output('eur-needed', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    eur_needed, btc_needed = dfm.session.ptm.get_total_eur_btc_needed()
+    eur_needed, btc_needed = dfm.sm.session.ptm.get_total_eur_btc_needed()
     return f'{eur_needed:,.2f}'
 
 
 # ********** actual profit **********
 @app.callback(Output('btc-needed', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    _, btc_needed = dfm.session.ptm.get_total_eur_btc_needed()
+    _, btc_needed = dfm.sm.session.ptm.get_total_eur_btc_needed()
     return f'{btc_needed:,.4f}'
 
 
@@ -193,7 +193,7 @@ def display_value(value):
 
 @app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
 def update_profit_line(timer):
-    pls = dfm.session.total_profit_series
+    pls = dfm.sm.session.total_profit_series
     df = pd.DataFrame(data=pls, columns=['cmp'])
     df['rate'] = df.index
     fig = get_profit_line_chart(df=df, pls=pls)
@@ -202,7 +202,7 @@ def update_profit_line(timer):
 
 @app.callback(Output('cmp-line', 'figure'), Input('update', 'n_intervals'))
 def update_profit_line(timer):
-    cmps = dfm.session.cmps
+    cmps = dfm.sm.session.cmps
     df = pd.DataFrame(data=cmps, columns=['cmp'])
     df['rate'] = df.index
     fig = get_cmp_line_chart(df=df, cmps=cmps)

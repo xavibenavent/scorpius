@@ -29,9 +29,9 @@ class ClientMode(Enum):
 
 class Market:
     def __init__(self,
-                 symbol_ticker_callback: Callable[[float], None],
-                 order_traded_callback: Callable[[str, float, float], None],
-                 account_balance_callback: Callable[[AccountBalance], None]):
+                 symbol_ticker_callback: Optional[Callable[[float], None]],
+                 order_traded_callback: Optional[Callable[[str, float, float], None]],
+                 account_balance_callback: Optional[Callable[[AccountBalance], None]]):
 
         self.symbol_ticker_callback: Callable[[float], None] = symbol_ticker_callback
         self.order_traded_callback: Callable[[str, float, float], None] = order_traded_callback
