@@ -90,24 +90,24 @@ class DashLayout:
                         dbc.Card(
                             [
                                 dbc.CardBody([
-                                    html.H6("eur alive", className="card-title"),
-                                    html.H6(id='eur-needed', children='0', className='pt-info')
+                                    html.H6("global [h]", className="card-title"),
+                                    html.H6(id='global-cycle-count', children='0', className='pt-info')
                                 ])
                             ]
                         ),
                         dbc.Card(
                             [
                                 dbc.CardBody([
-                                    html.H6("btc alive", className="card-title"),
-                                    html.H6(id='btc-needed', children='0', className='pt-info')
+                                    html.H6("global count", className="card-title"),
+                                    html.H6(id='session-count', children='0', className='session-count-info')
                                 ])
                             ]
                         ),
                         dbc.Card(
                             [
                                 dbc.CardBody([
-                                    html.H1("pt completed", className="card-title"),
-                                    html.H6(id='pt-completed-profit', children='0', className='pt-info')
+                                    html.H1("placed orders", className="card-title"),
+                                    html.H6(id='global-placed-orders', children='0', className='placed-orders-info')
                                 ])
                             ]
                         ),

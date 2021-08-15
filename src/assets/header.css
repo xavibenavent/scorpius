@@ -47,3 +47,12 @@
     font-size: 15px;
 }
 
+.session-count-info {
+    font-size: 30px;
+}
+
+.placed-orders-info {
+    font-size: 30px;
+    color: red;
+}
+

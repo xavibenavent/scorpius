@@ -156,7 +156,7 @@ def get_profit_line_chart(df: pd.DataFrame, pls: List[float]) -> Figure:
 
 
 def get_cmp_line_chart(df: pd.DataFrame, cmps: List[float]) -> Figure:
-    fig = px.line(df, x='rate', y='cmp', range_y=[38000.0, 42000.0])
+    fig = px.line(df, x='rate', y='cmp')  # , range_y=[38000.0, 42000.0])
     fig.update_layout(
         margin=dict(t=0, r=0, l=0, b=20),
         # paper_bgcolor='rgba(0, 0, 0, 0)',

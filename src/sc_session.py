@@ -368,6 +368,7 @@ class Session:
             pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
         )
         log.info('MONITOR orders:')
+        diff = 0
         if quit_mode == QuitMode.PLACE_ALL_PENDING:  # place all monitor orders
             for order in monitor_orders:
                 self._place_limit_order(order=order)
@@ -376,7 +377,6 @@ class Session:
 
         elif quit_mode == QuitMode.TRADE_ALL_PENDING:  # trade diff orders at reference side (BUY or SELL)
             # get diff to know at which side to trade & set reference orders
-            diff = 0
             buy_orders = []
             sell_orders = []
             for order in monitor_orders:
@@ -416,8 +416,6 @@ class Session:
         self.session_stopped_callback(
             self.session_id,
             net_profit if abs(net_profit) < 3 else 0,
-            self.cmp_count
+            self.cmp_count,
+            abs(diff)  # number of orders placed at its own price
         )
-
-        # todo: mark stop and delay for 3"
-        # self.market.stop()

@@ -24,9 +24,12 @@ class SessionManager:
 
         self.bm = BalanceManager(market=self.market)
 
+        # global sessions info
         self.session_count = 0
+
         self.global_profit = 0
         self.global_cmp_count = 0
+        self.placed_orders_count = 0
 
         # todo: not sure whether it will work
         self.market.start_sockets()
@@ -34,16 +37,18 @@ class SessionManager:
         # start first session
         self.start_new_session()
 
-    def session_stopped(self, session_id: str, net_profit: float, cmp_count: float):
+    def session_stopped(self, session_id: str, net_profit: float, cmp_count: int, placed_orders_count: int) -> None:
         print(f'session stopped with id: {session_id} net profit: {net_profit}')
         log.info(f'session stopped with id: {session_id} net profit: {net_profit}')
 
         self.global_profit += net_profit
         self.global_cmp_count += cmp_count
+        self.placed_orders_count += placed_orders_count
 
         print(f'********** sessions count: {self.session_count} **********')
-        print(f'********** partial cmp count: {self.global_cmp_count / 3600:,.2f} [hours]')
+        print(f'********** partial cmp count: {self.global_cmp_count / 3600.0:,.2f} [hours]')
         print(f'********** partial global profit: {self.global_profit:,.2f} **********')
+        print(f'********** placed orders count: {self.placed_orders_count} **********')
 
         if self.session_count < 100:
             self.start_new_session()
@@ -66,13 +71,17 @@ class SessionManager:
             balance_manager=self.bm
         )
 
+        # after having the session created, set again the callback functions that were None
         self.market.symbol_ticker_callback = self.session.symbol_ticker_callback
         self.market.order_traded_callback = self.session.order_traded_callback
         self.market.account_balance_callback = self.session.account_balance_callback
 
+        # set callback function in session to be called when it is finished
         self.session.session_stop_callback = self.session_stopped
 
         self.session_count += 1
+
+        # info
         log.info(f'******** NEW SESSION ********')
         log.info(f'{session_id}')
         print()

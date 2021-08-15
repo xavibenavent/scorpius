@@ -154,7 +154,6 @@ def display_value(value):
     return dfm.sm.session.get_traded_orders_profit()
 
 
-
 # ********** PT count / traded orders count **********
 @app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
@@ -164,11 +163,30 @@ def display_value(value):
     return f'{pt_count} / {trades_count}'
 
 
-# ********** actual profit **********
+# ********** eur needed **********
 @app.callback(Output('eur-needed', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     eur_needed, btc_needed = dfm.sm.session.ptm.get_total_eur_btc_needed()
     return f'{eur_needed:,.2f}'
+
+
+# ********** session cycle count **********
+@app.callback(Output('global-cycle-count', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'{dfm.sm.global_cmp_count/3600.0:,.2f}'
+
+
+# ********** session cycle count **********
+@app.callback(Output('global-placed-orders', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'{dfm.sm.placed_orders_count}'
+
+
+
+# ********** session count **********
+@app.callback(Output('session-count', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'{dfm.sm.session_count}'
 
 
 # ********** actual profit **********
@@ -188,7 +206,6 @@ def display_value(value):
 @app.callback(Output('equivalent-qty', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     return f'***'
-
 
 
 @app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
