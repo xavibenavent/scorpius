@@ -28,10 +28,10 @@ class DashLayout:
                         dbc.Button("Stop-cancel", id='button-stop-cancel', color="dark", block=True, className='sc-button'),
                         dbc.Button('+ 10.0 €', id='increase-cmp', color='light', block=True, className='sc-button'),
                         dbc.Button('- 10.0 €', id='decrease-cmp', color='light', block=True, className='sc-button'),
-                    ], width=1),
+                    ], xs=3, sm=3, md=3, lg=3, xl=3),  # width=1),
                     dbc.Col([
                         self.get_card()
-                    ], width=2),
+                    ], xs=6, sm=6, md=6, lg=6, xl=6),  # width=2),
                     # ********** balance bar charts **********
                     dbc.Col(
                         dcc.Graph(id='btc-balance-chart'),
