@@ -21,6 +21,7 @@ class DashLayout:
                 html.H1(id='title', children='Scorpius Session V1.0'),
                 dbc.Row([
                     dbc.Col([
+                        self.get_card(),
                         dbc.Button('New PT', id='button-new-pt', color='info', block=True, className='sc-button'),
                         dbc.Button('Start Session', id='button-start', color='success', block=True, className='sc-button'),
                         dbc.Button("Stop at cmp", id='button-stop-cmp', color="warning", block=True, className='sc-button'),
@@ -28,28 +29,25 @@ class DashLayout:
                         dbc.Button("Stop-cancel", id='button-stop-cancel', color="dark", block=True, className='sc-button'),
                         dbc.Button('+ 10.0 €', id='increase-cmp', color='light', block=True, className='sc-button'),
                         dbc.Button('- 10.0 €', id='decrease-cmp', color='light', block=True, className='sc-button'),
-                    ], xs=3, sm=3, md=3, lg=3, xl=3),  # width=1),
+                    ], xs=2, sm=2, md=2, lg=2, xl=2),  # width=1),
                     dbc.Col([
-                        self.get_card()
-                    ], xs=6, sm=6, md=6, lg=6, xl=6),  # width=2),
-                    # ********** balance bar charts **********
-                    dbc.Col(
-                        dcc.Graph(id='btc-balance-chart'),
-                        width={'size': 1, 'offset': 0},
-                    ),
-                    dbc.Col(
-                        dcc.Graph(id='eur-balance-chart'),
-                        width={'size': 1, 'offset': 0}
-                    ),
-                    dbc.Col(
-                        dcc.Graph(id='bnb-balance-chart'),
-                        width={'size': 1, 'offset': 0}
-                    ),
-
-                    # ********** pending orders table **********
-                    dbc.Col([
-                        daux.get_pending_datatable(data=[{}])
-                    ], width=4, className='sc-col'),
+                        dbc.Row([
+                            dbc.Col([
+                                dcc.Graph(id='btc-balance-chart', className='balance-chart'),
+                            ]),  # xs=2, sm=2, md=2, lg=2, xl=2),
+                            dbc.Col([
+                                dcc.Graph(id='eur-balance-chart', className='balance-chart'),
+                            ]),  # , xs=2, sm=2, md=2, lg=2, xl=2),
+                            dbc.Col([
+                                dcc.Graph(id='bnb-balance-chart', className='balance-chart'),
+                            ]),  # , xs=2, sm=2, md=2, lg=2, xl=2),
+                        ]),
+                        dbc.Row([
+                            dbc.Col([
+                                daux.get_pending_datatable(data=[{}])
+                            ])  #, xs=6, sm=6, md=6, lg=6, xl=6)
+                        ])
+                    ], xs=6, sm=6, md=6, lg=6, xl=6),
                     dbc.Col([
                         dbc.Card(
                             [
@@ -83,9 +81,7 @@ class DashLayout:
                                 ])
                             ]
                         ),
-                    ],
-                        width=1, className='sc-col'
-                    ),
+                    ], xs=2, sm=2, md=2, lg=2, xl=2),
                     dbc.Col([
                         dbc.Card(
                             [
@@ -119,20 +115,17 @@ class DashLayout:
                                 ])
                             ]
                         ),
-                    ],
-                        width=1, className='sc-col'
-                    )
-
+                    ], xs=2, sm=2, md=2, lg=2, xl=2),
                 ]),
                 dbc.Row([
                     dbc.Col([
                         dcc.Graph(id='profit-line', figure={}, config={'displayModeBar': False})
-                    ], width=6, className='sc-col')
+                    ], xs=12, sm=12, md=12, lg=12, xl=12)
                 ]),
                 dbc.Row([
                     dbc.Col([
                         dcc.Graph(id='cmp-line', figure={}, config={'displayModeBar': False})
-                    ], width=6, className='sc-col')
+                    ], xs=12, sm=12, md=12, lg=12, xl=12)
                 ]),
 
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)

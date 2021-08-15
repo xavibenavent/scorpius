@@ -18,8 +18,8 @@ def get_balance_bar_chart(df: pd.DataFrame, asset: str, y_max: float) -> Figure:
         color='type',
         barmode='stack',
         range_y=[0, y_max],
-        width=220,
-        height=400,
+        # width=220,  # 220,
+        # height=400,
         color_discrete_sequence=['green', 'red']
     )
     fig.update_layout(showlegend=False)  # , transition_duration=300)
@@ -31,7 +31,7 @@ def get_balance_bar_chart(df: pd.DataFrame, asset: str, y_max: float) -> Figure:
         fig.update_traces(texttemplate='%{y:,.2f}')
     else:
         fig.update_traces(texttemplate='%{y:,.6f}')
-    fig.update_layout(plot_bgcolor='#fff', margin_l=0)
+    fig.update_layout(plot_bgcolor='#fff', margin_l=0, margin_r=0)
     return fig
 
 
