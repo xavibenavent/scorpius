@@ -44,7 +44,7 @@
 
 /* profit info */
 .card-title {
-    font-size: 15px;
+    font-size: 12px;
 }
 
 .session-count-info {
@@ -54,5 +54,10 @@
 .placed-orders-info {
     font-size: 30px;
     color: red;
+}
+
+.global-profit {
+    font-size: 30px;
+    color: green;
 }
 

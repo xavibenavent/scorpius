@@ -148,10 +148,10 @@ def display_value(value):
 
 
 # ********** traded orders profit **********
-@app.callback(Output('traded-orders-profit', 'children'), Input('update', 'n_intervals'))
+@app.callback(Output('global-partial-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # called the method in session to check buy_count == sell_count
-    return dfm.sm.session.get_traded_orders_profit()
+    return f'{dfm.sm.global_profit:,.2f}'
 
 
 # ********** PT count / traded orders count **********
@@ -163,11 +163,11 @@ def display_value(value):
     return f'{pt_count} / {trades_count}'
 
 
-# ********** eur needed **********
-@app.callback(Output('eur-needed', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    eur_needed, btc_needed = dfm.sm.session.ptm.get_total_eur_btc_needed()
-    return f'{eur_needed:,.2f}'
+# # ********** eur needed **********
+# @app.callback(Output('eur-needed', 'children'), Input('update', 'n_intervals'))
+# def display_value(value):
+#     eur_needed, btc_needed = dfm.sm.session.ptm.get_total_eur_btc_needed()
+#     return f'{eur_needed:,.2f}'
 
 
 # ********** session cycle count **********
@@ -182,18 +182,17 @@ def display_value(value):
     return f'{dfm.sm.placed_orders_count}'
 
 
-
 # ********** session count **********
 @app.callback(Output('session-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     return f'{dfm.sm.session_count}'
 
 
-# ********** actual profit **********
-@app.callback(Output('btc-needed', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    _, btc_needed = dfm.sm.session.ptm.get_total_eur_btc_needed()
-    return f'{btc_needed:,.4f}'
+# # ********** actual profit **********
+# @app.callback(Output('btc-needed', 'children'), Input('update', 'n_intervals'))
+# def display_value(value):
+#     _, btc_needed = dfm.sm.session.ptm.get_total_eur_btc_needed()
+#     return f'{btc_needed:,.4f}'
 
 
 # ********** actual profit **********

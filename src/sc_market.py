@@ -229,7 +229,10 @@ class Market:
 
     def get_cmp(self, symbol: str) -> float:
         cmp = self.client.get_avg_price(symbol=symbol)
-        return float(cmp['price'])
+        if cmp:
+            return float(cmp['price'])
+        else:
+            return 0.0
 
     def cancel_orders(self, orders: List[Order]):
         log.info('********** CANCELLING PLACED ORDER(S) **********')

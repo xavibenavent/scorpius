@@ -114,8 +114,8 @@ class DashLayout:
                         dbc.Card(
                             [
                                 dbc.CardBody([
-                                    html.H6("traded ords", className="card-title"),
-                                    html.H6(id='traded-orders-profit', children='0', className='pt-info')
+                                    html.H6("global profit", className="card-title"),
+                                    html.H6(id='global-partial-profit', children='0', className='global-profit')
                                 ])
                             ]
                         ),
