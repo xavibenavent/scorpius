@@ -96,48 +96,6 @@ def update_figure(timer):
            f'{ab.bnb.free:,.6f}', f'{ab.bnb.locked:,.6f}'
 
 
-# @app.callback(
-#     Output(component_id='btc-balance-chart', component_property='figure'),
-#     Output(component_id='eur-balance-chart', component_property='figure'),
-#     Output(component_id='bnb-balance-chart', component_property='figure'),
-#     Input(component_id='update', component_property='n_intervals')
-# )
-# def update_figure(timer):
-#     # ab = dfm.session.bm.get_account_balance()
-#     ab = dfm.sm.session.bm.current_ab
-#
-#     df_btc = pd.DataFrame([
-#         dict(asset='btc', amount=ab.s1.free, type='free'),
-#         dict(asset='btc', amount=ab.s1.locked, type='locked'),
-#     ])
-#     df_eur = pd.DataFrame([
-#         dict(asset='eur', amount=ab.s2.free, type='free'),
-#         dict(asset='eur', amount=ab.s2.locked, type='locked'),
-#     ])
-#     df_bnb = pd.DataFrame([
-#         dict(asset='bnb', amount=ab.bnb.free, type='free'),
-#         dict(asset='bnb', amount=ab.bnb.locked, type='locked'),
-#     ])
-#
-#     fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.3)
-#     fig_eur = get_balance_bar_chart(df=df_eur, asset='eur', y_max=15000)
-#     fig_bnb = get_balance_bar_chart(df=df_bnb, asset='bnb', y_max=50)
-#     return fig_btc, fig_eur, fig_bnb
-
-
-# @app.callback(
-#     Output('pending-table', 'data'),
-#     Input('update', 'n_intervals')
-# )
-# def update_table(timer):
-#     df = dfm.get_all_orders_df_with_cmp()
-#     # sort by price
-#     df1 = df.sort_values(by=['price'], ascending=False)
-#     # filter by status for each table (monitor-placed & traded)
-#     df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
-#     return df_pending.to_dict('records')
-
-
 @app.callback(
     Output('new-table', 'children'),
     Input('update', 'n_intervals')

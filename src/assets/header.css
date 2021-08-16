@@ -1,24 +1,24 @@
 .app-overall {
-    /* background-color: #111111;
-    opacity: 0.9; */
-    /* background-color: #272b30; */
 }
 
-.app-header {
-    height: 100px;
-    line-height: 100px;
-    border-bottom: thin orange solid;
-}
+/* ********** buttons ********** */
 
-.app-header .app-header--title {
-    font-size: 100px;
-    padding-left: 5px;
-}
-
-.symbol-title {
+.sc-button {
     font-size: 25px;
-    /* color: white; */
+    margin: 10px;
+    height: 90px;
+    opacity: 0.3;
+    border-radius: 8px;
+    transition-duration: 0.4s;
 }
+
+/* it does not work */
+.sc-button:hover {
+  background-color: #4CAF50; /* Green */
+  color: white;
+}
+
+/* ********** symbol and balance ********** */
 
 .symbol-cmp {
     font-size: 40px;
@@ -26,21 +26,9 @@
     color: orange;
 }
 
-
-.button-group {
-    width: 100%;
-}
-
-.sc-button {
-    font-size: 25px;
-    margin: 10px;
-    height: 100px;
-    /*width: 15%;*/
-}
-
 .locked {
     font-size: 30px;
-    color: coral;
+    color: Tomato;
     text-align: right;
 }
 
@@ -57,7 +45,16 @@
 
 .liquidity-card {
     /*background-color: rgba(245, 245, 245, 0.4);*/
-    opacity: 0.5;
+    /*opacity: 0.6;*/
+}
+
+.liquidity-card-title {
+    font-size: 50px;
+    color: DarkSeaGreen;
+}
+.symbol-card-title {
+    font-size: 50px;
+    color: orange;
 }
 
 .session-info {

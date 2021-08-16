@@ -22,6 +22,7 @@ class DashLayout:
                     html.H1(id='title', children='Scorpius Session V1.0'),
                 ]),
                 html.Br(),
+                # buttons
                 dbc.Row([
                     dbc.Col([
                         dbc.Button('New PT', id='button-new-pt', block=True, className='sc-button'),
@@ -49,11 +50,12 @@ class DashLayout:
                     ]),
                 ]),
                 html.Br(),
+                html.Br(),
                 dbc.Row([
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
-                                html.H6(id='symbol', children='BTCEUR', className='symbol-title'),
+                                html.H6(id='symbol', children='BTCEUR', className='symbol-card-title'),
                                 html.H6(id='cmp-foo', children='-', className='locked'),
                                 html.H6(id='cmp', children='', className="symbol-cmp"),
                             ])
@@ -62,7 +64,7 @@ class DashLayout:
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
-                                html.H6("EUR", className="card-title"),
+                                html.H6("EUR", className="liquidity-card-title"),
                                 html.H6(id='eur-locked', children='0.00', className='locked'),
                                 html.H6(id='eur-free', children='0.00', className='free')
                             ])
@@ -71,7 +73,7 @@ class DashLayout:
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
-                                html.H6("BTC", className="card-title"),
+                                html.H6("BTC", className="liquidity-card-title"),
                                 html.H6(id='btc-locked', children='0.00', className='locked'),
                                 html.H6(id='btc-free', children='0.00', className='free')
                             ])
@@ -80,7 +82,7 @@ class DashLayout:
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
-                                html.H6("BNB", className="card-title"),
+                                html.H6("BNB", className="liquidity-card-title"),
                                 html.H6(id='bnb-locked', children='0.00', className='locked'),
                                 html.H6(id='bnb-free', children='0.00', className='free')
                             ])
