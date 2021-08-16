@@ -19,38 +19,39 @@ class DashLayout:
         layout = html.Div(className='app-overall', children=[
             html.Div(children=[
                 dbc.Row([
-                    html.H1(id='title', children='Scorpius Session V1.0'),
+                    html.H1(id='title', children='Scorpius Session V1.0', className='title'),
                 ]),
                 html.Br(),
                 # buttons
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Button('New PT', id='button-new-pt', block=True, className='sc-button'),
-                        dbc.Button('Start Session', id='button-start', block=True, className='sc-button'),
-                    ]),
-                    dbc.Col([
-                        dbc.Button("Stop at cmp", id='button-stop-cmp', block=True, className='sc-button'),
-                        dbc.Button("Stop at price", id='button-stop-price', block=True, className='sc-button'),
-                    ]),
-                    dbc.Col([
-                        dbc.Button('+ 10.0 €', id='increase-cmp', block=True, className='sc-button'),
-                        dbc.Button('- 10.0 €', id='decrease-cmp', block=True, className='sc-button'),
-                    ]),
-                    dbc.Col([
-                        dbc.Button("Stop-cancel", id='button-stop-cancel', block=True, className='sc-button'),
-                        dbc.Button('TBD', id='tbd-001', block=True, className='sc-button'),
-                    ]),
-                    dbc.Col([
-                        dbc.Button('TBD', id='tbd-002', block=True, className='sc-button'),
-                        dbc.Button('TBD', id='tbd-003', block=True, className='sc-button'),
-                    ]),
-                    dbc.Col([
-                        dbc.Button("TBD", id='tbd-004', block=True, className='sc-button'),
-                        dbc.Button('TBD', id='tbd-005', block=True, className='sc-button'),
-                    ]),
-                ]),
+                # dbc.Row([
+                #     dbc.Col([
+                #         dbc.Button('New PT', id='button-new-pt', block=True, className='sc-button'),
+                #         dbc.Button('Start Session', id='button-start', block=True, className='sc-button'),
+                #     ]),
+                #     dbc.Col([
+                #         dbc.Button("Stop at cmp", id='button-stop-cmp', block=True, className='sc-button'),
+                #         dbc.Button("Stop at price", id='button-stop-price', block=True, className='sc-button'),
+                #     ]),
+                #     dbc.Col([
+                #         dbc.Button('+ 10.0 €', id='increase-cmp', block=True, className='sc-button'),
+                #         dbc.Button('- 10.0 €', id='decrease-cmp', block=True, className='sc-button'),
+                #     ]),
+                #     dbc.Col([
+                #         dbc.Button("Stop-cancel", id='button-stop-cancel', block=True, className='sc-button'),
+                #         dbc.Button('TBD', id='tbd-001', block=True, className='sc-button'),
+                #     ]),
+                #     dbc.Col([
+                #         dbc.Button('TBD', id='tbd-002', block=True, className='sc-button'),
+                #         dbc.Button('TBD', id='tbd-003', block=True, className='sc-button'),
+                #     ]),
+                #     dbc.Col([
+                #         dbc.Button("TBD", id='tbd-004', block=True, className='sc-button'),
+                #         dbc.Button('TBD', id='tbd-005', block=True, className='sc-button'),
+                #     ]),
+                # ]),
                 html.Br(),
                 html.Br(),
+                # symbol & balance cards
                 dbc.Row([
                     dbc.Col([
                         dbc.Card([
@@ -94,10 +95,14 @@ class DashLayout:
                 ]),
                 html.Br(),
                 html.Br(),
+                # orders table
                 dbc.Row([
                     dbc.Col([
                         dbc.Table.from_dataframe(id='new-table', df=pd.DataFrame({'first': ['1', '2']})),
-                    ], xs=8, sm=8, md=8, lg=8, xl=8),
+                    ], xs=12, sm=12, md=12, lg=12, xl=12),
+                ]),
+                # session kpi
+                dbc.Row([
                     dbc.Col([
                         dbc.Card(
                             [
@@ -131,7 +136,7 @@ class DashLayout:
                                 ])
                             ]
                         ),
-                    ], xs=2, sm=2, md=2, lg=2, xl=2),
+                    ], xs=6, sm=6, md=6, lg=6, xl=6),
                     dbc.Col([
                         dbc.Card(
                             [
@@ -165,7 +170,7 @@ class DashLayout:
                                 ])
                             ]
                         ),
-                    ], xs=2, sm=2, md=2, lg=2, xl=2),
+                    ], xs=6, sm=6, md=6, lg=6, xl=6),
                 ]),
                 dbc.Row([
                     dbc.Col([

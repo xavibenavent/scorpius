@@ -3,6 +3,10 @@
     /* background: #001100; */
 }
 
+.title {
+    font-size: 100px;
+}
+
 /* ********** buttons ********** */
 
 .sc-button {
@@ -92,7 +96,7 @@ th {
 }
 
 tr {
-    font-size: 35px;
+    font-size: 50px;
     border-upper: none;
 }
 
