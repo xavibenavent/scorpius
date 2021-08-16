@@ -37,7 +37,7 @@ def get_pending_html_table(df: pd.DataFrame) -> dbc.Table:
         )
     table_body = [Tbody(row_values)]
 
-    return dbc.Table(table_header + table_body, bordered=False)
+    return dbc.Table(table_body, bordered=False)
 
 
 def get_balance_bar_card(asset: str, free: float, locked: float) -> dbc.Card:

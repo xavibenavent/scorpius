@@ -1,4 +1,6 @@
 .app-overall {
+    /* font-family: 'Courier New', monospace; */
+    /* background: #001100; */
 }
 
 /* ********** buttons ********** */
@@ -7,7 +9,7 @@
     font-size: 25px;
     margin: 10px;
     height: 90px;
-    opacity: 0.3;
+    opacity: 0.6;
     border-radius: 8px;
     transition-duration: 0.4s;
 }
@@ -46,14 +48,15 @@
 .liquidity-card {
     /*background-color: rgba(245, 245, 245, 0.4);*/
     /*opacity: 0.6;*/
+    border-radius: 4px;
 }
 
 .liquidity-card-title {
-    font-size: 50px;
+    font-size: 40px;
     color: DarkSeaGreen;
 }
 .symbol-card-title {
-    font-size: 50px;
+    font-size: 40px;
     color: orange;
 }
 
@@ -73,14 +76,24 @@
 }
 
 /* ********** orders table ********** */
+th, td, tr {
+  /* border: 2px solid yellow; */
+}
+
+table {
+    border-collapse: collapse;
+}
+
 th {
   /* background-color: #04AA6D; */
   color: grey;
   text-align: center;
+  border: none;
 }
 
 tr {
     font-size: 35px;
+    border-upper: none;
 }
 
 tr.buy-order {
@@ -95,7 +108,10 @@ tr.cmp-order {
     color: Wheat;
 }
 
-td { text-align: center;}
+td {
+    text-align: center;
+    border: none;
+}
 
 
 
