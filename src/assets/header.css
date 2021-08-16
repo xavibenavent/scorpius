@@ -38,9 +38,26 @@
     /*width: 15%;*/
 }
 
+.locked {
+    font-size: 30px;
+    color: coral;
+    text-align: right;
+}
+
+.free {
+    font-size: 40px;
+    color: DarkSeaGreen;
+    text-align: right;
+}
+
 .pt-info {
     font-size: 40px;
     text-align: right;
+}
+
+.liquidity-card {
+    /*background-color: rgba(245, 245, 245, 0.4);*/
+    opacity: 0.5;
 }
 
 .session-info {

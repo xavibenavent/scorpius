@@ -81,32 +81,48 @@ def on_button_click(n):
 
 
 @app.callback(
-    Output(component_id='btc-balance-chart', component_property='figure'),
-    Output(component_id='eur-balance-chart', component_property='figure'),
-    Output(component_id='bnb-balance-chart', component_property='figure'),
+    Output(component_id='eur-free', component_property='children'),
+    Output(component_id='eur-locked', component_property='children'),
+    Output(component_id='btc-free', component_property='children'),
+    Output(component_id='btc-locked', component_property='children'),
+    Output(component_id='bnb-free', component_property='children'),
+    Output(component_id='bnb-locked', component_property='children'),
     Input(component_id='update', component_property='n_intervals')
 )
 def update_figure(timer):
-    # ab = dfm.session.bm.get_account_balance()
     ab = dfm.sm.session.bm.current_ab
+    return f'{ab.s2.free:,.2f}', f'{ab.s2.locked:,.2f}',\
+           f'{ab.s1.free:,.6f}', f'{ab.s1.locked:,.6f}',\
+           f'{ab.bnb.free:,.6f}', f'{ab.bnb.locked:,.6f}'
 
-    df_btc = pd.DataFrame([
-        dict(asset='btc', amount=ab.s1.free, type='free'),
-        dict(asset='btc', amount=ab.s1.locked, type='locked'),
-    ])
-    df_eur = pd.DataFrame([
-        dict(asset='eur', amount=ab.s2.free, type='free'),
-        dict(asset='eur', amount=ab.s2.locked, type='locked'),
-    ])
-    df_bnb = pd.DataFrame([
-        dict(asset='bnb', amount=ab.bnb.free, type='free'),
-        dict(asset='bnb', amount=ab.bnb.locked, type='locked'),
-    ])
 
-    fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.3)
-    fig_eur = get_balance_bar_chart(df=df_eur, asset='eur', y_max=15000)
-    fig_bnb = get_balance_bar_chart(df=df_bnb, asset='bnb', y_max=50)
-    return fig_btc, fig_eur, fig_bnb
+# @app.callback(
+#     Output(component_id='btc-balance-chart', component_property='figure'),
+#     Output(component_id='eur-balance-chart', component_property='figure'),
+#     Output(component_id='bnb-balance-chart', component_property='figure'),
+#     Input(component_id='update', component_property='n_intervals')
+# )
+# def update_figure(timer):
+#     # ab = dfm.session.bm.get_account_balance()
+#     ab = dfm.sm.session.bm.current_ab
+#
+#     df_btc = pd.DataFrame([
+#         dict(asset='btc', amount=ab.s1.free, type='free'),
+#         dict(asset='btc', amount=ab.s1.locked, type='locked'),
+#     ])
+#     df_eur = pd.DataFrame([
+#         dict(asset='eur', amount=ab.s2.free, type='free'),
+#         dict(asset='eur', amount=ab.s2.locked, type='locked'),
+#     ])
+#     df_bnb = pd.DataFrame([
+#         dict(asset='bnb', amount=ab.bnb.free, type='free'),
+#         dict(asset='bnb', amount=ab.bnb.locked, type='locked'),
+#     ])
+#
+#     fig_btc = get_balance_bar_chart(df=df_btc, asset='btc', y_max=0.3)
+#     fig_eur = get_balance_bar_chart(df=df_eur, asset='eur', y_max=15000)
+#     fig_bnb = get_balance_bar_chart(df=df_bnb, asset='bnb', y_max=50)
+#     return fig_btc, fig_eur, fig_bnb
 
 
 # @app.callback(

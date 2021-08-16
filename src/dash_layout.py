@@ -21,78 +21,80 @@ class DashLayout:
                 dbc.Row([
                     html.H1(id='title', children='Scorpius Session V1.0'),
                 ]),
-                dbc.Row([
-                    dbc.ButtonGroup([
-                        dbc.Button('New PT', id='button-new-pt', block=True, className='sc-button'),
-                        dbc.Button('Start Session', id='button-start', block=True, className='sc-button'),
-                        dbc.Button("Stop at cmp", id='button-stop-cmp', block=True, className='sc-button'),
-                        dbc.Button("Stop at price", id='button-stop-price', block=True, className='sc-button'),
-                    ], className='button-group'),
-                    dbc.ButtonGroup([
-                        dbc.Button("Stop-cancel", id='button-stop-cancel', block=True,className='sc-button'),
-                        dbc.Button('+ 10.0 €', id='increase-cmp', block=True, className='sc-button'),
-                        dbc.Button('- 10.0 €', id='decrease-cmp', block=True, className='sc-button'),
-                        dbc.Button('TBD', id='tbd-001', block=True, className='sc-button'),
-                    ], className='button-group')
-                ]),
+                html.Br(),
                 dbc.Row([
                     dbc.Col([
-                        dbc.Row([
-                            dbc.Col([
-                                dbc.Card([
-                                    dbc.CardBody([
-                                        html.H6(id='symbol', children='BTCEUR', className='symbol-title'),
-                                        html.H6(id='cmp', children='', className="symbol-cmp"),
-                                    ])
-                                ]),
-                            ]),
-                            dbc.Col([
-                                dbc.Card([
-                                        dbc.CardBody([
-                                            html.H6("EUR", className="card-title"),
-                                            html.H6(id='eur-free', children='0', className='pt-info')
-                                        ])
-                                    ]),
-                            ]),
-                            dbc.Col([
-                                dbc.Card([
-                                        dbc.CardBody([
-                                            html.H6("BTC", className="card-title"),
-                                            html.H6(id='btc-free', children='0', className='pt-info')
-                                        ])
-                                    ]),
-                            ]),
-                            dbc.Col([
-                                dbc.Card([
-                                        dbc.CardBody([
-                                            html.H6("BNB", className="card-title"),
-                                            html.H6(id='bnb-free', children='0', className='pt-info')
-                                        ])
-                                    ]),
-                            ]),
-                            # dbc.Col([
-                            #     self.get_card()
-                            # ], xs=3, sm=3, md=3, lg=3, xl=3),
+                        dbc.Button('New PT', id='button-new-pt', block=True, className='sc-button'),
+                        dbc.Button('Start Session', id='button-start', block=True, className='sc-button'),
+                    ]),
+                    dbc.Col([
+                        dbc.Button("Stop at cmp", id='button-stop-cmp', block=True, className='sc-button'),
+                        dbc.Button("Stop at price", id='button-stop-price', block=True, className='sc-button'),
+                    ]),
+                    dbc.Col([
+                        dbc.Button('+ 10.0 €', id='increase-cmp', block=True, className='sc-button'),
+                        dbc.Button('- 10.0 €', id='decrease-cmp', block=True, className='sc-button'),
+                    ]),
+                    dbc.Col([
+                        dbc.Button("Stop-cancel", id='button-stop-cancel', block=True, className='sc-button'),
+                        dbc.Button('TBD', id='tbd-001', block=True, className='sc-button'),
+                    ]),
+                    dbc.Col([
+                        dbc.Button('TBD', id='tbd-002', block=True, className='sc-button'),
+                        dbc.Button('TBD', id='tbd-003', block=True, className='sc-button'),
+                    ]),
+                    dbc.Col([
+                        dbc.Button("TBD", id='tbd-004', block=True, className='sc-button'),
+                        dbc.Button('TBD', id='tbd-005', block=True, className='sc-button'),
+                    ]),
+                ]),
+                html.Br(),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.H6(id='symbol', children='BTCEUR', className='symbol-title'),
+                                html.H6(id='cmp-foo', children='-', className='locked'),
+                                html.H6(id='cmp', children='', className="symbol-cmp"),
+                            ])
                         ]),
-                        # dbc.Row([
-                        #     dbc.Col([
-                        #         daux.get_balance_bar_card(asset='EUR', free=100000.0, locked=30000.0),
-                        #         dcc.Graph(id='btc-balance-chart', className='balance-chart'),
-                        #     ]),  # xs=2, sm=2, md=2, lg=2, xl=2),
-                        #     dbc.Col([
-                        #         dcc.Graph(id='eur-balance-chart', className='balance-chart'),
-                        #     ]),  # , xs=2, sm=2, md=2, lg=2, xl=2),
-                        #     dbc.Col([
-                        #         dcc.Graph(id='bnb-balance-chart', className='balance-chart'),
-                        #     ]),  # , xs=2, sm=2, md=2, lg=2, xl=2),
-                        # ]),
-                        html.Br(),
-                        dbc.Row([
-                            dbc.Col([
-                                # daux.get_pending_datatable(data=[{}])
-                                dbc.Table.from_dataframe(id='new-table', df=pd.DataFrame({'first': ['1', '2']}))
-                            ])  #, xs=6, sm=6, md=6, lg=6, xl=6)
-                        ])
+                    ]),
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.H6("EUR", className="card-title"),
+                                html.H6(id='eur-locked', children='0.00', className='locked'),
+                                html.H6(id='eur-free', children='0.00', className='free')
+                            ])
+                        ], className='liquidity-card'),
+                    ]),
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.H6("BTC", className="card-title"),
+                                html.H6(id='btc-locked', children='0.00', className='locked'),
+                                html.H6(id='btc-free', children='0.00', className='free')
+                            ])
+                        ]),
+                    ]),
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.H6("BNB", className="card-title"),
+                                html.H6(id='bnb-locked', children='0.00', className='locked'),
+                                html.H6(id='bnb-free', children='0.00', className='free')
+                            ])
+                        ]),
+                    ]),
+                    # dbc.Col([
+                    #     self.get_card()
+                    # ], xs=3, sm=3, md=3, lg=3, xl=3),
+                ]),
+                html.Br(),
+                html.Br(),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Table.from_dataframe(id='new-table', df=pd.DataFrame({'first': ['1', '2']})),
                     ], xs=8, sm=8, md=8, lg=8, xl=8),
                     dbc.Col([
                         dbc.Card(
