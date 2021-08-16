@@ -2,7 +2,7 @@
 
 from dash.dependencies import Input, Output
 from dash_app import app
-from dash_aux import get_balance_bar_chart, get_profit_line_chart, get_cmp_line_chart
+from dash_aux import get_balance_bar_chart, get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
 from sc_session import QuitMode
 from sc_df_manager import DataframeManager
 
@@ -132,7 +132,12 @@ def update_table(timer):
     df1 = df.sort_values(by=['price'], ascending=False)
     # filter by status for each table (monitor-placed & traded)
     df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
-    return dbc.Table.from_dataframe(df_pending[['name', 'price', 'total', 'status']])
+    df_pending['price'] = df_pending['price'].map('{:,.2f}'.format)
+    df_pending['total'] = df_pending['total'].map('{:,.2f}'.format)
+
+    return get_pending_html_table(df=df_pending[['name', 'price', 'total', 'status']])
+
+    # return dbc.Table.from_dataframe(df_pending[['name', 'price', 'total', 'status']], bordered=True)
 
 
 # ********** time [h] **********
