@@ -44,7 +44,8 @@ class DashLayout:
                         ]),
                         dbc.Row([
                             dbc.Col([
-                                daux.get_pending_datatable(data=[{}])
+                                # daux.get_pending_datatable(data=[{}])
+                                dbc.Table.from_dataframe(id='new-table', df=pd.DataFrame({'first': ['1', '2']}))
                             ])  #, xs=6, sm=6, md=6, lg=6, xl=6)
                         ])
                     ], xs=6, sm=6, md=6, lg=6, xl=6),

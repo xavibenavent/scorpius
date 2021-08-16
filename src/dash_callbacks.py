@@ -6,6 +6,8 @@ from dash_aux import get_balance_bar_chart, get_profit_line_chart, get_cmp_line_
 from sc_session import QuitMode
 from sc_df_manager import DataframeManager
 
+import dash_bootstrap_components as dbc
+
 import pandas as pd
 
 print('dash_callbacks.py')
@@ -107,9 +109,21 @@ def update_figure(timer):
     return fig_btc, fig_eur, fig_bnb
 
 
+# @app.callback(
+#     Output('pending-table', 'data'),
+#     Input('update', 'n_intervals')
+# )
+# def update_table(timer):
+#     df = dfm.get_all_orders_df_with_cmp()
+#     # sort by price
+#     df1 = df.sort_values(by=['price'], ascending=False)
+#     # filter by status for each table (monitor-placed & traded)
+#     df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
+#     return df_pending.to_dict('records')
+
 
 @app.callback(
-    Output('pending-table', 'data'),
+    Output('new-table', 'children'),
     Input('update', 'n_intervals')
 )
 def update_table(timer):
@@ -118,7 +132,7 @@ def update_table(timer):
     df1 = df.sort_values(by=['price'], ascending=False)
     # filter by status for each table (monitor-placed & traded)
     df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
-    return df_pending.to_dict('records')
+    return dbc.Table.from_dataframe(df_pending[['name', 'price', 'total', 'status']])
 
 
 # ********** time [h] **********
