@@ -27,7 +27,7 @@
 }
 
 .locked {
-    font-size: 30px;
+    font-size: 35px;
     color: Tomato;
     text-align: right;
 }
@@ -72,7 +72,7 @@
     /* align: center; */
 }
 
-
+/* ********** orders table ********** */
 th {
   /* background-color: #04AA6D; */
   color: grey;
@@ -80,7 +80,7 @@ th {
 }
 
 tr {
-    font-size: 30px;
+    font-size: 35px;
 }
 
 tr.buy-order {
@@ -88,11 +88,11 @@ tr.buy-order {
 }
 
 tr.sell-order {
-    color: red;
+    color: FireBrick;
 }
 
 tr.cmp-order {
-    color: orange;
+    color: Wheat;
 }
 
 td { text-align: center;}
