@@ -1,13 +1,55 @@
 .app-overall {
     /* font-family: 'Courier New', monospace; */
     /* background: #001100; */
-    padding: 30px;
+    padding: 20px;
 }
 
 .app-title {
     padding: 20px;
-    font-size: 80px;
+    font-size: 25px;
+    text-align: right;
+    color: DarkGray;
 }
+
+.header-image {
+    width: 100%;
+    -webkit-filter: blur(2px);
+    -moz-filter: blur(2px);
+    -o-filter: blur(2px);
+    -ms-filter: blur(2px);
+    filter: blur(2px);
+}
+
+
+/* ********** session & global info ********** */
+
+.card-header {
+    font-size: 50px;
+    color: DarkSeaGreen;
+}
+
+/*
+.card-header-session {
+    color: DarkSeaGreen;
+}
+
+.card-header-global {
+    color: LightGreen;
+}
+*/
+
+.pt-info {
+    font-size: 40px;
+    text-align: right;
+    color: DarkSeaGreen;
+}
+
+.session-info {
+    font-size: 40px;
+    text-align:right;
+    color: DarkSeaGreen;
+}
+
 
 
 /* ********** symbol and balance cards********** */
@@ -15,7 +57,7 @@
 .liquidity-card {
     /*background-color: rgba(245, 245, 245, 0.4);*/
     /*opacity: 0.6;*/
-    border-radius: 4px;
+    border-radius: 8px;
 }
 
 .liquidity-card-title {
@@ -24,18 +66,18 @@
 }
 .symbol-card-title {
     font-size: 35px;
-    color: orange;
+    color: Orange;
 }
 
 .symbol-cmp {
     font-size: 35px;
     text-align: right;
-    color: orange;
+    color: Orange;
 }
 
 .locked {
     font-size: 30px;
-    color: Tomato;
+    color: DarkGray;
     text-align: right;
 }
 
@@ -47,18 +89,6 @@
 
 /* ********** session info ********** */
 
-.pt-info {
-    font-size: 50px;
-    text-align: right;
-    color: DarkSeaGreen;
-}
-
-
-.session-info {
-    font-size: 50px;
-    text-align:right;
-    color: Gold;
-}
 
 /* profit info */
 .card-main-title {
@@ -70,10 +100,6 @@
     color: DarkGray;
 }
 
-.card-header {
-    font-size: 50px;
-    color: DarkSeaGreen;
-}
 
 .balance-chart {
     /* align: center; */
@@ -96,20 +122,20 @@ th {
 }
 
 tr {
-    font-size: 50px;
-    border-upper: none;
+    font-size: 40px;
+    /* border-upper: none; */
 }
 
 tr.buy-order {
-    color: green;
+    color: YellowGreen;
 }
 
 tr.sell-order {
-    color: FireBrick;
+    color: OrangeRed;
 }
 
 tr.cmp-order {
-    color: Wheat;
+    color: DarkGray;
 }
 
 td {

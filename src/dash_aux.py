@@ -29,6 +29,7 @@ def get_pending_html_table(df: pd.DataFrame) -> dbc.Table:
 
         row_values.append(
             Tr([
+                Td(row['pt_id']),
                 Td(row['name']),
                 Td(row['price']),
                 Td(row['total']),

@@ -109,7 +109,7 @@ def update_table(timer):
     df_pending['price'] = df_pending['price'].map('{:,.2f}'.format)
     df_pending['total'] = df_pending['total'].map('{:,.2f}'.format)
 
-    return get_pending_html_table(df=df_pending[['name', 'price', 'total', 'status']])
+    return get_pending_html_table(df=df_pending[['pt_id', 'name', 'price', 'total', 'status']])
 
     # return dbc.Table.from_dataframe(df_pending[['name', 'price', 'total', 'status']], bordered=True)
 
@@ -117,34 +117,34 @@ def update_table(timer):
 # ********** time [h] **********
 @app.callback(Output('cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.session.cmp_count / 3600:,.2f}'
+    return f'{dfm.sm.session.cmp_count / 3600:,.2f} h'
 
 
 # ********** stop at cmp **********
 @app.callback(Output('actual-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
-    return f'{dfm.sm.session.ptm.get_stop_cmp_profit(cmp=dfm.sm.session.cmps[-1]):,.2f}'
+    return f'{dfm.sm.session.ptm.get_stop_cmp_profit(cmp=dfm.sm.session.cmps[-1]):,.2f} €'
 
 
 # ********** stop at price **********
 @app.callback(Output('stop-price-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
-    return f'{dfm.sm.session.ptm.get_stop_price_profit(cmp=dfm.sm.session.cmps[-1]):,.2f}'
+    return f'{dfm.sm.session.ptm.get_stop_price_profit(cmp=dfm.sm.session.cmps[-1]):,.2f} €'
 
 
 # ********** completed profit **********
 @app.callback(Output('pt-completed-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.session.ptm.get_pt_completed_profit():,.2f}'
+    return f'{dfm.sm.session.ptm.get_pt_completed_profit():,.2f} €'
 
 
 # ********** traded orders profit **********
 @app.callback(Output('global-partial-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # called the method in session to check buy_count == sell_count
-    return f'{dfm.sm.global_profit:,.2f}'
+    return f'{dfm.sm.global_profit:,.2f} €'
 
 
 # ********** PT count / traded orders count **********
@@ -166,7 +166,7 @@ def display_value(value):
 # ********** session cycle count **********
 @app.callback(Output('global-cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.global_cmp_count/3600.0:,.2f}'
+    return f'{dfm.sm.global_cmp_count/3600.0:,.2f} h'
 
 
 # ********** session cycle count **********
