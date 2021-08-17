@@ -73,7 +73,8 @@ class Market:
         elif self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
             self.client.stop_cmp_generator()
 
-        sys.exit()
+        # todo: it does not work
+        # sys.exit()
 
     # ********** callback functions **********
 

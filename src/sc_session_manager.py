@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Optional
 import logging
+import os
 
 from sc_session import Session
 from sc_market import Market
@@ -91,6 +92,14 @@ class SessionManager:
     def stop_global_session(self):
         # todo: improve force quit
         self.market.stop()
+        # self.session = None
+
+        # stop gunicorn
+        os.system('pkill -f gunicorn -e')
+
+        # exit
+        log.critical("********** SESSION TERMINATED ********")
+        raise Exception("********** SESSION TERMINATED ********")
 
     def fake_symbol_socket_callback(self, foo: float):
         pass

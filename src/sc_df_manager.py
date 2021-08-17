@@ -1,6 +1,7 @@
 # sc_df_manager.py
 
 import pandas as pd
+from typing import Optional
 
 from sc_session import Session
 from sc_order import OrderStatus
@@ -13,18 +14,24 @@ print('sc_df_manager.py')
 class DataframeManager:
     def __init__(self):
         # self.session = Session()
-        self.sm = SessionManager()
-        print('Session init')
+        # self.sm = SessionManager()
+        # print('Session init')
+
+        self.sm = self.start_session_manager()
+        # self.sm: Optional[SessionManager] = None
 
     def get_all_orders_df(self) -> pd.DataFrame:
         # get list with all orders:
-        all_orders = self.sm.session.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
-            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
-                       PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
-        # create dataframe
-        df = pd.DataFrame([order.to_dict_for_df() for order in all_orders])
-        return df
+        if self.sm.session:
+            all_orders = self.sm.session.ptm.get_orders_by_request(
+                orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+                pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
+                           PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
+            # create dataframe
+            df = pd.DataFrame([order.to_dict_for_df() for order in all_orders])
+            return df
+        else:
+            return pd.DataFrame(columns=['foo'])
 
     def get_all_orders_df_with_cmp(self) -> pd.DataFrame:
         df = self.get_all_orders_df()
@@ -32,3 +39,7 @@ class DataframeManager:
         cmp_order = dict(pt_id='', status='cmp', price=self.sm.session.get_last_cmp(), total=0.0, name='')
         df1 = df.append(other=cmp_order, ignore_index=True)
         return df1
+
+    def start_session_manager(self) -> SessionManager:
+        print('session manager started')
+        return SessionManager()
