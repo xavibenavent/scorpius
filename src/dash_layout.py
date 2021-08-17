@@ -27,7 +27,7 @@ class DashLayout:
                         dbc.CardDeck([
                             dbc.Card(
                                 [
-                                    dbc.CardHeader('Session information'),
+                                    dbc.CardHeader('Session:'),
                                     dbc.CardBody([
                                         html.H6("Elapsed time [hours]", className="card-title"),
                                         html.H6(id='cycle-count', children='0', className='pt-info'),
@@ -38,12 +38,12 @@ class DashLayout:
                                         html.H6("Perfect Trades / Orders", className="card-title"),
                                         html.H6(id='trade-info', children='0', className='pt-info'),
                                     ]),
-                                    dbc.CardFooter('Footer')
+                                    # dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True
                             ),
                             dbc.Card(
                                 [
-                                    dbc.CardHeader('Global information'),
+                                    dbc.CardHeader('Global:'),
                                     dbc.CardBody([
                                         html.H6("global [h]", className="card-title"),
                                         html.H6(id='global-cycle-count', children='0', className='session-info'),
@@ -54,7 +54,7 @@ class DashLayout:
                                         html.H6("global profit", className="card-title"),
                                         html.H6(id='global-partial-profit', children='0', className='session-info')
                                     ]),
-                                    dbc.CardFooter('Footer')
+                                    # dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True
                             ),
                         ])
