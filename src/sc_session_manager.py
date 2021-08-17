@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional
 import logging
 import os
+import signal
 
 from sc_session import Session
 from sc_market import Market
@@ -94,11 +95,14 @@ class SessionManager:
         self.market.stop()
         # self.session = None
 
+        log.critical("********** SESSION TERMINATED ********")
+
         # stop gunicorn
-        os.system('pkill -f gunicorn -e')
+        # os.system('pkill -f gunicorn -e')
+        pid = os.getpid()
+        os.kill(pid, signal.SIGINT)
 
         # exit
-        log.critical("********** SESSION TERMINATED ********")
         raise Exception("********** SESSION TERMINATED ********")
 
     def fake_symbol_socket_callback(self, foo: float):
