@@ -101,6 +101,8 @@ class SessionManager:
         # os.system('pkill -f gunicorn -e')
         pid = os.getpid()
         os.kill(pid, signal.SIGINT)
+        os.kill(pid, signal.SIGINT)
+
 
         # exit
         raise Exception("********** SESSION TERMINATED ********")
