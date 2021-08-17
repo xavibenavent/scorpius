@@ -61,9 +61,7 @@ class DashLayout:
                         ])
                     ]),
                 ]),
-                html.Br(),
-                html.Br(),
-                html.Br(),
+                html.Br(), html.Br(), html.Br(),
                 # symbol & balance cards
                 dbc.Row([
                     dbc.Col([
@@ -106,25 +104,25 @@ class DashLayout:
                     #     self.get_card()
                     # ], xs=3, sm=3, md=3, lg=3, xl=3),
                 ]),
-                html.Br(),
-                html.Br(),
+                html.Br(), html.Br(),
                 # orders table
                 dbc.Row([
                     dbc.Col([
                         dbc.Table.from_dataframe(id='new-table', df=pd.DataFrame({'first': ['1', '2']})),
                     ], xs=12, sm=12, md=12, lg=12, xl=12),
                 ]),
+                html.Br(), html.Br(),
                 # graphics
-                dbc.Row([
-                    dbc.Col([
-                        dcc.Graph(id='profit-line', figure={}, config={'displayModeBar': False})
-                    ], xs=12, sm=12, md=12, lg=12, xl=12)
-                ]),
-                dbc.Row([
-                    dbc.Col([
-                        dcc.Graph(id='cmp-line', figure={}, config={'displayModeBar': False})
-                    ], xs=12, sm=12, md=12, lg=12, xl=12)
-                ]),
+                # dbc.Row([
+                #     dbc.Col([
+                #         dcc.Graph(id='profit-line', figure={}, config={'displayModeBar': False})
+                #     ], xs=12, sm=12, md=12, lg=12, xl=12)
+                # ]),
+                # dbc.Row([
+                #     dbc.Col([
+                #         dcc.Graph(id='cmp-line', figure={}, config={'displayModeBar': False})
+                #     ], xs=12, sm=12, md=12, lg=12, xl=12)
+                # ]),
                 # buttons
                 dbc.Row([
                     dbc.Col([
@@ -152,7 +150,8 @@ class DashLayout:
                         dbc.Button('TBD', id='tbd-005', block=True, className='sc-button'),
                     ]),
                 ]),
-
+                # todo: needed to allow buttons functionality
+                self.get_card(),
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)
             ],)
         ])
@@ -161,11 +160,11 @@ class DashLayout:
     def get_card(self) -> dbc.Card:
         card = dbc.Card(
             [
-                # dbc.CardImg(src="assets/bitcoin.png", top=True, bottom=False),
+                dbc.CardImg(src="assets/bitcoin.png", top=True, bottom=False),
                 dbc.CardBody(
                     [
-                        html.H6(id='symbol', children='BTCEUR', className='symbol'),
-                        html.H6(id='cmp', children='', className="card-title-symbol-cmp"),
+                        # html.H6(id='symbol', children='BTCEUR', className='symbol'),
+                        # html.H6(id='cmp', children='', className="card-title-symbol-cmp"),
                         html.H6(id='msg', children=''),
                         html.H6(id='stop-price', children=''),
                         html.H6(id='stop-cancel', children=''),
