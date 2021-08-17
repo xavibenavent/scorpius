@@ -64,7 +64,7 @@ def on_button_click(n):
     if n is None:
         return ''
     else:
-        dfm.sm.session = dfm.sm.start_new_session()
+        # dfm.sm.session = dfm.sm.start_new_session()
         return 'cmp start'
 
 

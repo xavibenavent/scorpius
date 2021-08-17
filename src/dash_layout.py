@@ -113,21 +113,9 @@ class DashLayout:
                     ], xs=12, sm=12, md=12, lg=12, xl=12),
                 ]),
                 html.Br(), html.Br(), html.Br(),
-                # graphics
-                # dbc.Row([
-                #     dbc.Col([
-                #         dcc.Graph(id='profit-line', figure={}, config={'displayModeBar': False})
-                #     ], xs=12, sm=12, md=12, lg=12, xl=12)
-                # ]),
-                # dbc.Row([
-                #     dbc.Col([
-                #         dcc.Graph(id='cmp-line', figure={}, config={'displayModeBar': False})
-                #     ], xs=12, sm=12, md=12, lg=12, xl=12)
-                # ]),
-                # buttons
                 dbc.Row([
                     dbc.Col([
-                        dbc.Button('Start Session', id='button-start', disabled=False, color='success', block=True, className='sc-button'),
+                        dbc.Button('Start Session', id='button-start', disabled=True, color='success', block=True, className='sc-button'),
                         html.Br(),
                         dbc.Button("Stop at cmp", id='button-stop-cmp', color='danger', block=True,
                                    className='sc-button'),

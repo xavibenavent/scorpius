@@ -95,17 +95,14 @@ class SessionManager:
         self.market.stop()
         # self.session = None
 
-        log.critical("********** SESSION TERMINATED ********")
+        log.critical("********** SESSION TERMINATED FROM BUTTON ********")
 
-        # stop gunicorn
-        # os.system('pkill -f gunicorn -e')
+        # send SIGINT to own app (identical to CTRL-C)
         pid = os.getpid()
         os.kill(pid, signal.SIGINT)
-        os.kill(pid, signal.SIGINT)
-
 
         # exit
-        raise Exception("********** SESSION TERMINATED ********")
+        raise Exception("********** SESSION TERMINATED, PRESS CTRL-C ********")
 
     def fake_symbol_socket_callback(self, foo: float):
         pass
