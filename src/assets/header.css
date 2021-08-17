@@ -3,28 +3,28 @@
     /* background: #001100; */
 }
 
-.title {
+.app-title {
+    padding: 20px;
     font-size: 80px;
 }
 
-/* ********** buttons ********** */
 
-.sc-button {
-    font-size: 25px;
-    margin: 10px;
-    height: 90px;
-    opacity: 0.6;
-    border-radius: 8px;
-    transition-duration: 0.4s;
+/* ********** symbol and balance cards********** */
+
+.liquidity-card {
+    /*background-color: rgba(245, 245, 245, 0.4);*/
+    /*opacity: 0.6;*/
+    border-radius: 4px;
 }
 
-/* it does not work */
-.sc-button:hover {
-  background-color: #4CAF50; /* Green */
-  color: white;
+.liquidity-card-title {
+    font-size: 40px;
+    color: DarkSeaGreen;
 }
-
-/* ********** symbol and balance ********** */
+.symbol-card-title {
+    font-size: 40px;
+    color: orange;
+}
 
 .symbol-cmp {
     font-size: 40px;
@@ -44,25 +44,13 @@
     text-align: right;
 }
 
+/* ********** session info ********** */
+
 .pt-info {
     font-size: 40px;
     text-align: right;
 }
 
-.liquidity-card {
-    /*background-color: rgba(245, 245, 245, 0.4);*/
-    /*opacity: 0.6;*/
-    border-radius: 4px;
-}
-
-.liquidity-card-title {
-    font-size: 40px;
-    color: DarkSeaGreen;
-}
-.symbol-card-title {
-    font-size: 40px;
-    color: orange;
-}
 
 .session-info {
     font-size: 40px;
@@ -71,6 +59,10 @@
 }
 
 /* profit info */
+.card-main-title {
+    font-size: 35px;
+}
+
 .card-title {
     font-size: 25px;
 }
@@ -116,6 +108,24 @@ td {
     text-align: center;
     border: none;
 }
+
+
+/* ********** buttons ********** */
+.sc-button {
+    font-size: 25px;
+    margin: 10px;
+    height: 90px;
+    opacity: 0.6;
+    border-radius: 8px;
+    transition-duration: 0.4s;
+}
+
+/* it does not work */
+.sc-button:hover {
+  background-color: #4CAF50; /* Green */
+  color: white;
+}
+
 
 
 

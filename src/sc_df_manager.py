@@ -29,6 +29,6 @@ class DataframeManager:
     def get_all_orders_df_with_cmp(self) -> pd.DataFrame:
         df = self.get_all_orders_df()
         # create cmp order-like and add to dataframe
-        cmp_order = dict(pt_id='CMP', status='cmp', price=self.sm.session.get_last_cmp(), total=0.0)
+        cmp_order = dict(pt_id='CMP', status='cmp', price=self.sm.session.get_last_cmp(), total=0.0, name='')
         df1 = df.append(other=cmp_order, ignore_index=True)
         return df1
