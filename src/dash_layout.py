@@ -156,7 +156,11 @@ class DashLayout:
                 ]),
                 # todo: needed to allow buttons functionality
                 html.Br(), html.Br(),
-                self.get_card(),
+                dbc.Row([
+                    dbc.Col([
+                        self.get_card()
+                    ], xs=12, sm=12, md=12, lg=12, xl=12),
+                ]),
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)
             ],)
         ])
@@ -184,6 +188,7 @@ class DashLayout:
             # color="dark",  # https://bootswatch.com/default/ for more card colors
             # inverse=True,  # change color of text (black or white)
             outline=False,  # True = remove the block colors from the background and header
+            style={'opacity': 0}
         )
 
         return card
