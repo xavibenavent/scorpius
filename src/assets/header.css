@@ -48,15 +48,16 @@
 /* ********** session info ********** */
 
 .pt-info {
-    font-size: 40px;
+    font-size: 50px;
     text-align: right;
+    color: DarkSeaGreen;
 }
 
 
 .session-info {
-    font-size: 40px;
+    font-size: 50px;
     text-align:right;
-    color: yellow;
+    color: Gold;
 }
 
 /* profit info */
@@ -65,7 +66,13 @@
 }
 
 .card-title {
-    font-size: 25px;
+    font-size: 35px;
+    color: DarkGray;
+}
+
+.card-header {
+    font-size: 50px;
+    color: DarkSeaGreen;
 }
 
 .balance-chart {

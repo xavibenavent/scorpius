@@ -29,15 +29,14 @@ class DashLayout:
                                 [
                                     dbc.CardHeader('Session information'),
                                     dbc.CardBody([
-                                        # html.H4("Session information", className="card-main-title"),
-                                        html.H6("time [h]", className="card-title"),
+                                        html.H6("Elapsed time [hours]", className="card-title"),
                                         html.H6(id='cycle-count', children='0', className='pt-info'),
-                                        html.H1("stop at price", className="card-title"),
+                                        html.H1("Stop at price profit", className="card-title"),
                                         html.H6(id='stop-price-profit', children='0', className='pt-info'),
-                                        html.H6("global [h]", className="card-title"),
-                                        html.H6(id='global-cycle-count', children='0', className='session-info'),
-                                        html.H1("placed orders", className="card-title"),
-                                        html.H6(id='global-placed-orders', children='0', className='session-info'),
+                                        html.H6("Stop at cmp profit", className="card-title"),
+                                        html.H6(id='actual-profit', children='0', className='pt-info'),
+                                        html.H6("Perfect Trades / Orders", className="card-title"),
+                                        html.H6(id='trade-info', children='0', className='pt-info'),
                                     ]),
                                     dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True
@@ -46,10 +45,10 @@ class DashLayout:
                                 [
                                     dbc.CardHeader('Global information'),
                                     dbc.CardBody([
-                                        html.H6("stop at cmp", className="card-title"),
-                                        html.H6(id='actual-profit', children='0', className='pt-info'),
-                                        html.H6("PT / orders", className="card-title"),
-                                        html.H6(id='trade-info', children='0', className='pt-info'),
+                                        html.H6("global [h]", className="card-title"),
+                                        html.H6(id='global-cycle-count', children='0', className='session-info'),
+                                        html.H1("placed orders", className="card-title"),
+                                        html.H6(id='global-placed-orders', children='0', className='session-info'),
                                         html.H6("global count", className="card-title"),
                                         html.H6(id='session-count', children='0', className='session-info'),
                                         html.H6("global profit", className="card-title"),
@@ -59,7 +58,7 @@ class DashLayout:
                                 ], color='dark', inverse=True
                             ),
                         ])
-                    ]),
+                    ], xs=12, sm=12, md=12, lg=12, xl=12),
                 ]),
                 html.Br(), html.Br(), html.Br(),
                 # symbol & balance cards
@@ -72,7 +71,7 @@ class DashLayout:
                                 html.H6(id='cmp', children='', className="symbol-cmp"),
                             ])
                         ]),
-                    ]),
+                    ], xs=3, sm=3, md=3, lg=3, xl=3),
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
@@ -81,7 +80,7 @@ class DashLayout:
                                 html.H6(id='eur-free', children='0.00', className='free')
                             ])
                         ], className='liquidity-card'),
-                    ]),
+                    ],  xs=3, sm=3, md=3, lg=3, xl=3),
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
@@ -90,7 +89,7 @@ class DashLayout:
                                 html.H6(id='btc-free', children='0.00', className='free')
                             ])
                         ]),
-                    ]),
+                    ],  xs=3, sm=3, md=3, lg=3, xl=3),
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
@@ -99,10 +98,7 @@ class DashLayout:
                                 html.H6(id='bnb-free', children='0.00', className='free')
                             ])
                         ]),
-                    ]),
-                    # dbc.Col([
-                    #     self.get_card()
-                    # ], xs=3, sm=3, md=3, lg=3, xl=3),
+                    ], xs=3, sm=3, md=3, lg=3, xl=3),
                 ]),
                 html.Br(), html.Br(),
                 # orders table
