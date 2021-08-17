@@ -30,8 +30,9 @@ class DashLayout:
                         dbc.CardDeck([
                             dbc.Card(
                                 [
-                                    dbc.CardHeader('Session', className='card-header-session'),
+                                    # dbc.CardHeader('Session', className='card-header-session'),
                                     dbc.CardBody([
+                                        html.H6("Session", className="card-header-session"),
                                         html.H6("Elapsed time", className="card-title"),
                                         html.H6(id='cycle-count', children='0', className='pt-info'),
                                         html.H1("Stop at price profit", className="card-title"),
@@ -42,23 +43,24 @@ class DashLayout:
                                         html.H6(id='trade-info', children='0', className='pt-info'),
                                     ]),
                                     # dbc.CardFooter('Footer')
-                                ], color='dark', inverse=True
+                                ], color='dark', inverse=True, className='scorpius-card'
                             ),
                             dbc.Card(
                                 [
-                                    dbc.CardHeader('Global', className='card-header-global'),
+                                    # dbc.CardHeader('Global', className='card-header-global'),
                                     dbc.CardBody([
+                                        html.H6("Global", className="card-header-global"),
                                         html.H6("Elapsed time", className="card-title"),
                                         html.H6(id='global-cycle-count', children='0', className='session-info'),
                                         html.H1("Total placed orders", className="card-title"),
                                         html.H6(id='global-placed-orders', children='0', className='session-info'),
                                         html.H6("Session number", className="card-title"),
                                         html.H6(id='session-count', children='0', className='session-info'),
-                                        html.H6("Total profit (min)", className="card-title"),
+                                        html.H6("Total profit (minimum)", className="card-title"),
                                         html.H6(id='global-partial-profit', children='0', className='session-info')
                                     ]),
                                     # dbc.CardFooter('Footer')
-                                ], color='dark', inverse=True
+                                ], color='dark', inverse=True, className='scorpius-card'
                             ),
                         ])
                     ], xs=12, sm=12, md=12, lg=12, xl=12),
@@ -73,7 +75,7 @@ class DashLayout:
                                 html.H6(id='cmp-foo', children='***', className='locked'),
                                 html.H6(id='cmp', children='', className="symbol-cmp"),
                             ])
-                        ]),
+                        ], className='symbol-card'),
                     ], xs=3, sm=3, md=3, lg=3, xl=3),
                     dbc.Col([
                         dbc.Card([
@@ -91,7 +93,7 @@ class DashLayout:
                                 html.H6(id='btc-locked', children='0.00', className='locked'),
                                 html.H6(id='btc-free', children='0.00', className='free')
                             ])
-                        ]),
+                        ], className='liquidity-card'),
                     ],  xs=3, sm=3, md=3, lg=3, xl=3),
                     dbc.Col([
                         dbc.Card([
@@ -100,7 +102,7 @@ class DashLayout:
                                 html.H6(id='bnb-locked', children='0.00', className='locked'),
                                 html.H6(id='bnb-free', children='0.00', className='free')
                             ])
-                        ]),
+                        ], className='liquidity-card'),
                     ], xs=3, sm=3, md=3, lg=3, xl=3),
                 ]),
                 html.Br(), html.Br(), html.Br(),
@@ -125,31 +127,35 @@ class DashLayout:
                 # buttons
                 dbc.Row([
                     dbc.Col([
-                        dbc.Button('New PT', id='button-new-pt', block=True, className='sc-button'),
-                        dbc.Button('Start Session', id='button-start', block=True, className='sc-button'),
+                        dbc.Button('Start Session', id='button-start', disabled=True, color='success', block=True, className='sc-button'),
+                        html.Br(),
+                        dbc.Button("Stop at cmp", id='button-stop-cmp', color='danger', block=True,
+                                   className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button("Stop at cmp", id='button-stop-cmp', block=True, className='sc-button'),
-                        dbc.Button("Stop at price", id='button-stop-price', block=True, className='sc-button'),
+                        dbc.Button('New Perfect Trade', id='button-new-pt', color='warning', block=True,
+                                   className='sc-button'),
+                        html.Br(),
+                        dbc.Button("Stop-cancel", id='button-stop-cancel', color='danger', block=True,
+                                   className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('+ 10.0 €', id='increase-cmp', block=True, className='sc-button'),
-                        dbc.Button('- 10.0 €', id='decrease-cmp', block=True, className='sc-button'),
+                        dbc.Button('+ 10.0 €', id='increase-cmp', disabled=True, color='warning', block=True,
+                                   className='sc-button'),
+                        html.Br(),
+                        dbc.Button("Stop at price", id='button-stop-price', color='danger', block=True,
+                                   className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button("Stop-cancel", id='button-stop-cancel', block=True, className='sc-button'),
-                        dbc.Button('TBD', id='tbd-001', block=True, className='sc-button'),
-                    ]),
-                    dbc.Col([
-                        dbc.Button('TBD', id='tbd-002', block=True, className='sc-button'),
-                        dbc.Button('TBD', id='tbd-003', block=True, className='sc-button'),
-                    ]),
-                    dbc.Col([
-                        dbc.Button("TBD", id='tbd-004', block=True, className='sc-button'),
-                        dbc.Button('TBD', id='tbd-005', block=True, className='sc-button'),
+                        dbc.Button('- 10.0 €', id='decrease-cmp', disabled=True, color='warning', block=True,
+                                   className='sc-button'),
+                        html.Br(),
+                        dbc.Button('Stop session', id='button-stop-global-session', color='success', block=True,
+                                   className='sc-button'),
                     ]),
                 ]),
                 # todo: needed to allow buttons functionality
+                html.Br(), html.Br(),
                 self.get_card(),
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)
             ],)
@@ -167,6 +173,7 @@ class DashLayout:
                         html.H6(id='msg', children=''),
                         html.H6(id='stop-price', children=''),
                         html.H6(id='stop-cancel', children=''),
+                        html.H6(id='stop-global-session', children=''),
                         html.H6(id='msg-2', children=''),
                         html.H6(id='msg-start', children=''),
                         html.H6(id='msg-increase-cmp', children=''),

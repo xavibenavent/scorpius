@@ -23,20 +23,30 @@
 
 /* ********** session & global info ********** */
 
+.scorpius-card {
+    border-radius: 30px;
+}
+
 .card-header {
     font-size: 50px;
     color: DarkSeaGreen;
+    border-radius: 30px;
+
 }
 
-/*
+
 .card-header-session {
     color: DarkSeaGreen;
+    font-size: 70px;
+    text-align: right;
 }
 
 .card-header-global {
-    color: LightGreen;
+    color: DarkSeaGreen;
+    font-size: 70px;
+    text-align: right;
 }
-*/
+
 
 .pt-info {
     font-size: 40px;
@@ -55,9 +65,11 @@
 /* ********** symbol and balance cards********** */
 
 .liquidity-card {
-    /*background-color: rgba(245, 245, 245, 0.4);*/
-    /*opacity: 0.6;*/
-    border-radius: 8px;
+    border-radius: 20px;
+}
+
+.symbol-card {
+    border-radius: 20px;
 }
 
 .liquidity-card-title {
@@ -122,7 +134,7 @@ th {
 }
 
 tr {
-    font-size: 40px;
+    font-size: 35px;
     /* border-upper: none; */
 }
 
@@ -148,17 +160,18 @@ td {
 .sc-button {
     font-size: 25px;
     margin: 10px;
-    height: 90px;
+    height: 100px;
     opacity: 0.6;
     border-radius: 8px;
-    transition-duration: 0.4s;
+    /* transition-duration: 0.4s; */
 }
 
-/* it does not work */
+/*
 .sc-button:hover {
-  background-color: #4CAF50; /* Green */
+  background-color: Green;
   color: white;
 }
+*/
 
 
 

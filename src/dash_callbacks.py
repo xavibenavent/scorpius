@@ -49,6 +49,15 @@ def on_button_click(n):
         return 'cmp stop'
 
 
+@app.callback(Output('stop-global-session', 'children'), Input('button-stop-global-session', 'n_clicks'))
+def on_button_click(n):
+    if n is None:
+        return ''
+    else:
+        dfm.sm.stop_global_session()
+        return 'cmp stop'
+
+
 @app.callback(Output('msg-start', 'children'), Input('button-start', 'n_clicks'))
 def on_button_click(n):
     print('click')

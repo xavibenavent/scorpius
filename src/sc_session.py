@@ -31,7 +31,7 @@ class QuitMode(Enum):
 class Session:
     def __init__(self,
                  session_id: str,
-                 session_stopped_callback: Callable[[str, float, float], None],
+                 session_stopped_callback: Callable[[str, float, int], None],
                  market: Market,
                  balance_manager: BalanceManager
                  ):

@@ -88,6 +88,10 @@ class SessionManager:
         print(f'******** NEW SESSION ********')
         print(f'{session_id}')
 
+    def stop_global_session(self):
+        # todo: improve force quit
+        self.market.stop()
+
     def fake_symbol_socket_callback(self, foo: float):
         pass
 
