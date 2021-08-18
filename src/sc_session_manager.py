@@ -18,9 +18,9 @@ class SessionManager:
     def __init__(self):
         print('session manager')
         self.market = Market(
-            symbol_ticker_callback=self.fake_symbol_socket_callback,
-            order_traded_callback=self.fake_order_socket_callback,
-            account_balance_callback=self.fake_account_socket_callback)
+            symbol_ticker_callback=self._fake_symbol_socket_callback,
+            order_traded_callback=self._fake_order_socket_callback,
+            account_balance_callback=self._fake_account_socket_callback)
 
         self.session: Optional[Session] = None
 
@@ -39,7 +39,12 @@ class SessionManager:
         # start first session
         self.start_new_session()
 
-    def session_stopped(self, session_id: str, net_profit: float, cmp_count: int, placed_orders_count: int) -> None:
+    def _session_stopped_callback(self,
+                                  session_id: str,
+                                  net_profit: float,
+                                  cmp_count: int,
+                                  placed_orders_count: int,
+                                  ) -> None:
         print(f'session stopped with id: {session_id} net profit: {net_profit}')
         log.info(f'session stopped with id: {session_id} net profit: {net_profit}')
 
@@ -55,20 +60,21 @@ class SessionManager:
         if self.session_count < 100:
             self.start_new_session()
         else:
-            self.market.stop()
-            raise Exception('********** GLOBAL SESSION MANAGER FINISHED **********')
+            self.stop_global_session()
+            # self.market.stop()
+            # raise Exception('********** GLOBAL SESSION MANAGER FINISHED **********')
 
     def start_new_session(self):
         # to avoid errors of socket calling None during Session init
-        self.market.symbol_ticker_callback = self.fake_symbol_socket_callback
-        self.market.order_traded_callback = self.fake_order_socket_callback
-        self.market.account_balance_callback = self.fake_account_socket_callback
+        self.market.symbol_ticker_callback = self._fake_symbol_socket_callback
+        self.market.order_traded_callback = self._fake_order_socket_callback
+        self.market.account_balance_callback = self._fake_account_socket_callback
 
         session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
 
         self.session = Session(
             session_id=session_id,
-            session_stopped_callback=self.session_stopped,
+            session_stopped_callback=self._session_stopped_callback,
             market=self.market,
             balance_manager=self.bm
         )
@@ -79,21 +85,18 @@ class SessionManager:
         self.market.account_balance_callback = self.session.account_balance_callback
 
         # set callback function in session to be called when it is finished
-        self.session.session_stop_callback = self.session_stopped
+        self.session.session_stop_callback = self._session_stopped_callback
 
         self.session_count += 1
 
         # info
-        log.info(f'******** NEW SESSION ********')
-        log.info(f'{session_id}')
-        print()
-        print(f'******** NEW SESSION ********')
-        print(f'{session_id}')
+        print(f'\n\n******** NEW SESSION STARTED: {session_id}********\n')
+        log.info(f'\n\n******** NEW SESSION STARTED: {session_id}********\n')
+
 
     def stop_global_session(self):
-        # todo: improve force quit
+        # stop market (binance sockets)
         self.market.stop()
-        # self.session = None
 
         log.critical("********** SESSION TERMINATED FROM BUTTON ********")
 
@@ -104,11 +107,11 @@ class SessionManager:
         # exit
         raise Exception("********** SESSION TERMINATED, PRESS CTRL-C ********")
 
-    def fake_symbol_socket_callback(self, foo: float):
+    def _fake_symbol_socket_callback(self, foo: float):
         pass
 
-    def fake_order_socket_callback(self, foo_1: str, foo_2: float, foo_3: float):
+    def _fake_order_socket_callback(self, foo_1: str, foo_2: float, foo_3: float):
         pass
 
-    def fake_account_socket_callback(self, foo: AccountBalance):
+    def _fake_account_socket_callback(self, foo: AccountBalance):
         pass

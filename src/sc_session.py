@@ -31,7 +31,7 @@ class QuitMode(Enum):
 class Session:
     def __init__(self,
                  session_id: str,
-                 session_stopped_callback: Callable[[str, float, int], None],
+                 session_stopped_callback: Callable[[str, float, int, int], None],
                  market: Market,
                  balance_manager: BalanceManager
                  ):
@@ -64,17 +64,14 @@ class Session:
         # get filters that will be checked before placing an order
         self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol)
 
-        # ********** managers **********
-        # self.bm = BalanceManager(market=self.market)
-
         self.ptm = PTManager(
             symbol_filters=self.symbol_filters,
             session_id=self.session_id)
 
         # used in dashboard in the cmp line chart. initiated with current cmp
         self.cmps = [self.market.get_cmp(self.symbol)]
-        self.orders_book_depth = []
-        self.orders_book_span = []
+        # self.orders_book_depth = []
+        # self.orders_book_span = []
 
         self.total_profit_series = [0.0]
 
@@ -107,11 +104,11 @@ class Session:
             try:
                 # 0.1: create first pt
                 if self.cmp_count == 1:
-                    if self.allow_new_pt_creation(cmp=cmp):
+                    if self._allow_new_pt_creation(cmp=cmp):
                         self.ptm.create_new_pt(cmp=cmp)
                     else:
-                        log.critical("initial pt not allowed")
-                        raise Exception("initial pt not allowed")
+                        log.critical("initial pt not allowed, it will be tried again after inactivity period")
+                        # raise Exception("initial pt not allowed")
 
                 # 0.2: update cmp count to control timely pt creation
                 self.cmp_count += 1
@@ -130,13 +127,13 @@ class Session:
 
                 # it is important to check first the active list and then the monitor one
                 # with this order we guarantee there is only one status change per cycle
-                self.check_active_list_for_trading(cmp=cmp)
+                self._check_active_orders_for_trading(cmp=cmp)
 
                 # 4. loop through monitoring orders for activating
-                self.check_monitor_list_for_activating(cmp=cmp)
+                self._check_monitor_orders_for_activating(cmp=cmp)
 
                 # 5. check inactivity & liquidity
-                self.check_inactivity(cmp=cmp)
+                self._check_inactivity(cmp=cmp)
 
                 # ********** SESSION EXIT POINT ********
                 # 8. check global net profit
@@ -159,32 +156,39 @@ class Session:
             except AttributeError as e:
                 print(e)
 
-    def check_monitor_list_for_activating(self, cmp: float) -> None:
-        for pt in self.ptm.perfect_trades:
-            if pt.status != PerfectTradeStatus.COMPLETED:
-                for order in pt.orders:
-                    if order.status == OrderStatus.MONITOR and order.is_ready_for_activation(cmp=cmp):
-                        order.set_status(OrderStatus.ACTIVE)
+    def _check_monitor_orders_for_activating(self, cmp: float) -> None:
+        # get orders
+        monitor_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        # change status MONITOR -> ACTIVE
+        [order.set_status(OrderStatus.ACTIVE) for order in monitor_orders if order.is_ready_for_activation(cmp=cmp)]
 
-    def check_active_list_for_trading(self, cmp: float) -> None:
-        for pt in self.ptm.perfect_trades:
-            if pt.status != PerfectTradeStatus.COMPLETED:
-                for order in pt.orders:
-                    if order.status == OrderStatus.ACTIVE and order.is_ready_for_trading(cmp=cmp):
-                        # MARKET trade
-                        self._place_market_order(order=order)
+    def _check_active_orders_for_trading(self, cmp: float) -> None:
+        # get orders
+        active_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        # trade at market price active orders ready for trading
+        [self._place_market_order(order=order) for order in active_orders if order.is_ready_for_trading(cmp=cmp)]
 
-    def check_inactivity(self, cmp):
+    def _check_inactivity(self, cmp):
         # a new pt is created if no order has been traded for a while
         # check elapsed time since last trade
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
             # check liquidity
-            if self.allow_new_pt_creation(cmp=cmp):
+            if self._allow_new_pt_creation(cmp=cmp):
                 self.ptm.create_new_pt(cmp=cmp, pt_type='FROM_INACTIVITY')
                 self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
+            else:
+                log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
+                # update inactivity counter to try again after 60 cycles if inactivity continues
+                self.cycles_from_last_trade -= 60  # todo: move to parameter
 
     # ********** compensation (not used) **********
-    def check_monitor_orders_for_compensation(self, cmp: float) -> None:
+    def _check_monitor_orders_for_compensation(self, cmp: float) -> None:
         # get monitor orders of pt with one order traded
         orders = self.ptm.get_orders_by_request(
             orders_status=[OrderStatus.MONITOR],
@@ -193,7 +197,7 @@ class Session:
         for order in orders:
             if order.order_id != 'CONCENTRATED' and order.get_abs_distance(cmp=cmp) > self.compensation_distance:
                 # compensate
-                b1, s1 = self.compensate_order(order=order, ref_mp=cmp, ref_gap=self.compensation_gap)
+                b1, s1 = self._compensate_order(order=order, ref_mp=cmp, ref_gap=self.compensation_gap)
                 # set values
                 b1.sibling_order = None
                 b1.pt = order.pt
@@ -207,7 +211,7 @@ class Session:
                 # change pt type to avoid generating a new pt after trading the new orders
                 order.pt.pt_type = 'FROM_COMPENSATION'
 
-    def compensate_order(self, order: Order, ref_mp: float, ref_gap: float) -> (Order, Order):
+    def _compensate_order(self, order: Order, ref_mp: float, ref_gap: float) -> (Order, Order):
         amount, total, _ = BalanceManager.get_balance_for_list([order])
         # get equivalent pair b1-s1
         s1_p, b1_p, s1_qty, b1_qty = get_compensation(
@@ -243,66 +247,74 @@ class Session:
             return b1, s1
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
-        # print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
+        print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
         log.info(f'order traded with uid: {uid}')
-        # get the order by uid
-        for pt in self.ptm.perfect_trades:
-            if pt.status != PerfectTradeStatus.COMPLETED:
-                for order in pt.orders:
-                    if order.uid == uid:
-                        # print(f'********** order traded: {order}')
-                        log.info(f'confirmation of order traded {order}')
+        # get orders
+        orders_to_be_traded = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.TO_BE_TRADED],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        # for pt in self.ptm.perfect_trades:
+        #     if pt.status != PerfectTradeStatus.COMPLETED:
+        #         for order in pt.orders:
+        for order in orders_to_be_traded:
+            # check uid
+            if order.uid == uid:
+                log.info(f'confirmation of order traded {order}')
 
-                        # set the cycle in which the order has been traded
-                        order.traded_cycle = self.cmp_count
+                # set the cycle in which the order has been traded
+                order.traded_cycle = self.cmp_count
 
-                        # reset counter
-                        self.cycles_from_last_trade = 0
+                # reset counter
+                self.cycles_from_last_trade = 0
 
-                        # update buy & sell count
+                # update buy & sell count
+                if order.k_side == k_binance.SIDE_BUY:
+                    self.buy_count += 1
+                else:
+                    self.sell_count += 1
+
+                # set commission and price
+                order.set_bnb_commission(
+                    commission=bnb_commission,
+                    bnbeur_rate=self.market.get_cmp(symbol='BNBEUR'))
+
+                # set traded order price
+                order.price = order_price
+
+                # change status
+                order.set_status(status=OrderStatus.TRADED)
+
+                # update perfect trades list & pt status
+                self.ptm.order_traded(order=order)
+
+                # check condition for new pt:
+                # Once activated, if it is the last order to trade in the pt, then create a new pt
+                # only if it was created as NORMAL
+                # it is enough checking the sibling order because a compensated/split pt will have another type
+                if order.pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
+                    # check liquidity:
+                    if self._allow_new_pt_creation(cmp=self.cmps[-1]):
+                        # calculate shift depending on last traded order side
+
+                        # todo: assess whether the following criteria is good or not
+                        shift: float
                         if order.k_side == k_binance.SIDE_BUY:
-                            self.buy_count += 1
+                            shift = self.new_pt_shift
                         else:
-                            self.sell_count += 1
+                            shift = self.new_pt_shift * (-1)
 
-                        # set commission and price
-                        order.set_bnb_commission(
-                            commission=bnb_commission,
-                            bnbeur_rate=self.market.get_cmp(symbol='BNBEUR'))
+                        # create pt with shift
+                        self.ptm.create_new_pt(cmp=order_price + shift)
+                        self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
+                    else:
+                        # nothing to do, it will be assessed again after another order is traded an PT completed
+                        pass
 
-                        # set traded order price
-                        order.price = order_price
+                # since the traded orders has been identified, do not check more orders
+                break
 
-                        # change status
-                        order.set_status(status=OrderStatus.TRADED)
-
-                        # update perfect trades list
-                        self.ptm.order_traded(order=order)
-
-                        # check condition for new pt:
-                        # Once activated, if it is the last order to trade in the pt, then create a new pt
-                        # only if it was created as NORMAL
-                        # it is enough checking the sibling order because a compensated/split pt will have another type
-                        if pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
-                            # check liquidity:
-                            if self.allow_new_pt_creation(cmp=self.cmps[-1]):
-                                # calculate shift depending on last traded order side
-
-                                # todo: assess whether the following criteria is good or not
-                                shift: float
-                                if order.k_side == k_binance.SIDE_BUY:
-                                    shift = self.new_pt_shift
-                                else:
-                                    shift = self.new_pt_shift * (-1)
-
-                                # create pt with shift
-                                self.ptm.create_new_pt(cmp=order_price + shift)
-                                self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
-
-                        # since the traded orders has been identified, do not check more orders
-                        break
-
-    def allow_new_pt_creation(self, cmp: float) -> bool:
+    def _allow_new_pt_creation(self, cmp: float) -> bool:
         # get total eur & btc needed to trade all alive orders at their own price
         eur_needed, btc_needed = self.ptm.get_total_eur_btc_needed()
 
