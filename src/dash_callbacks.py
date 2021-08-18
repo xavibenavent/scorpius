@@ -18,7 +18,7 @@ dfm = DataframeManager()
 # ********** cmp **********
 @app.callback(Output('cmp', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.session.get_last_cmp():,.2f}'
+    return f'{dfm.sm.session.get_info()["last_cmp"]:,.2f}'
 
 
 # ********** buttons *********
@@ -71,7 +71,7 @@ def on_button_click(n):
 @app.callback(Output('msg-2', 'children'), Input('button-new-pt', 'n_clicks'))
 def on_button_click(n):
     if n:
-        dfm.sm.session.ptm.create_new_pt(dfm.sm.session.get_last_cmp())
+        dfm.sm.session.ptm.create_new_pt(dfm.sm.session.get_info()['last_cmp'])
     return ''
 
 
@@ -118,15 +118,17 @@ def update_table(timer):
     df_pending['price'] = df_pending['price'].map('{:,.2f}'.format)
     df_pending['total'] = df_pending['total'].map('{:,.2f}'.format)
 
-    return get_pending_html_table(df=df_pending[['pt_id', 'name', 'price', 'total', 'status']])
-
-    # return dbc.Table.from_dataframe(df_pending[['name', 'price', 'total', 'status']], bordered=True)
+    return get_pending_html_table(df=df_pending[['pt_id', 'name', 'price', 'amount', 'total', 'status']])
 
 
 # ********** time [h] **********
 @app.callback(Output('cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.session.cmp_count / 3600:,.2f} h'
+
+    # todo: use momentum
+    # print(dfm.sm.session.get_info()['momentum'])
+
+    return f'{dfm.sm.session.get_info()["cmp_count"] / 3600:,.2f} h'
 
 
 # ********** stop at cmp **********
@@ -160,9 +162,7 @@ def display_value(value):
 @app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     pt_count = len(dfm.sm.session.ptm.perfect_trades)
-    trades_count = dfm.sm.session.buy_count + dfm.sm.session.sell_count
-    # print(pt_count, trades_count)
-    return f'{pt_count} / {trades_count}'
+    return f'pt: {pt_count} / b: {dfm.sm.session.buy_count} / s: {dfm.sm.session.sell_count}'
 
 
 # # ********** eur needed **********

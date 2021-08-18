@@ -33,6 +33,7 @@ def get_pending_html_table(df: pd.DataFrame) -> dbc.Table:
                 # Td(row['name']),
                 Td(row['price']),
                 Td(row['total']),
+                Td(row['amount']),
                 Td(row['status'])
             ], className=class_name)
         )

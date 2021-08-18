@@ -82,14 +82,35 @@ class Session:
         self.cycles_from_last_trade = 0
 
     # ********** dashboard callback functions **********
-    def get_last_cmp(self) -> float:
-        if self.cmps:
-            return self.cmps[-1]
-        else:
-            return 0
+    def get_info(self):
+        # return a dictionary with data convenient for the dashboard
+        session_data = dict(
+            session_id=self.session_id,
+            last_cmp=self.cmps[-1] if self.cmps else 0,
+            elapsed_hours=round(self.cmp_count / 3600, 2),
+            pt_created_count=self.pt_created_count,
+            buy_count= self.buy_count,
+            sell_count=self.sell_count,
+            cmp_count=self.cmp_count,
+            cycles_from_last_trade=self.cycles_from_last_trade,
+            momentum=self._get_momentum()
+        )
+        return session_data
 
-    def get_session_hours(self) -> float:
-        return round(self.cmp_count / 3600, 2)
+    def _get_momentum(self) -> (float, float, float):
+        # get orders
+        buy_momentum_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.SELL_TRADED]
+        )
+        sell_momentum_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.BUY_TRADED]
+        )
+        # calculate momentum
+        buy_momentum = sum([order.get_momentum(cmp=self.cmps[-1]) for order in buy_momentum_orders])
+        sell_momentum = sum([order.get_momentum(cmp=self.cmps[-1]) for order in sell_momentum_orders])
+        return sell_momentum - buy_momentum, buy_momentum, sell_momentum
 
     def get_traded_orders_profit(self) -> str:
         # get profit only if buy_orders_count == sell_orders_count
@@ -317,6 +338,15 @@ class Session:
     def _allow_new_pt_creation(self, cmp: float) -> bool:
         # get total eur & btc needed to trade all alive orders at their own price
         eur_needed, btc_needed = self.ptm.get_total_eur_btc_needed()
+
+        # 1. liquidity
+        # 2. monitor + active count
+        # 3. span / depth
+        # 2. momentum
+
+        # dynamic parameters:
+        #   - inactivity time
+        #   - neb/amount
 
         # check available liquidity (eur & btc) vs needed when trading both orders
         if self.market.get_asset_liquidity(asset='EUR') < eur_needed + (self.quantity * cmp):
