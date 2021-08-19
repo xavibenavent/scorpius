@@ -26,7 +26,7 @@ class DashLayout:
                             html.H1(id='neb', children='', className='neb'),
                             html.H1(id='qty', children='', className='qty'),
                             html.H1(id='target', children='', className='target'),
-                            html.H1(id='title', children='Scorpius Session V1.0', className='app-title'),
+                            html.H1(id='title', children='Scorpius V1.0', className='app-title'),
                         ]),
                     ]),
                 ]),
