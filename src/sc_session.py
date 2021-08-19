@@ -156,26 +156,38 @@ class Session:
                 # 5. check inactivity & liquidity
                 self._check_inactivity(cmp=cmp)
 
+                # 6. check dynamic parameters
+                self._check_dynamic_parameters()
+
                 # ********** SESSION EXIT POINT ********
-                # 8. check global net profit
-                # return the total profit considering that all remaining orders are traded at current cmp
-                total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
-                self.total_profit_series.append(total_profit)
-                if total_profit > self.target_total_net_profit:
-                    self.session_active = False
-                    self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-                    # todo: start new session when target achieved
-                    # raise Exception("Target achieved!!!")
-                elif total_profit < self.max_negative_profit_allowed:  # todo: move to parameter at config.ini
-                    self.session_active = False
-                    self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
-                    # raise Exception("terminated to minimize loss")
-                # elif self.get_session_hours() > 2.0 and total_profit > -5.0:
-                #     self.quit_particular_session()
-                #     raise Exception("terminated to minimize loss")
+                self._check_exit_conditions(cmp)
 
             except AttributeError as e:
                 print(e)
+
+    def _check_dynamic_parameters(self):
+        # neb (increase)
+        neb_target_rate = int(self.target_total_net_profit / self.net_eur_balance)
+        if self.pt_created_count > neb_target_rate + 2:  # todo: move to parameter
+            self.target_total_net_profit += self.net_eur_balance
+
+    def _check_exit_conditions(self, cmp):
+        # 8. check global net profit
+        # return the total profit considering that all remaining orders are traded at current cmp
+        total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
+        self.total_profit_series.append(total_profit)
+        if total_profit > self.target_total_net_profit:
+            self.session_active = False
+            self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+            # todo: start new session when target achieved
+            # raise Exception("Target achieved!!!")
+        elif total_profit < self.max_negative_profit_allowed:  # todo: move to parameter at config.ini
+            self.session_active = False
+            self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+            # raise Exception("terminated to minimize loss")
+        # elif self.get_session_hours() > 2.0 and total_profit > -5.0:
+        #     self.quit_particular_session()
+        #     raise Exception("terminated to minimize loss")
 
     def _check_monitor_orders_for_activating(self, cmp: float) -> None:
         # get orders
