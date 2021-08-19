@@ -11,6 +11,9 @@ from binance import enums as k_binance
 from enum import Enum
 from binance.exceptions import *
 
+from urllib3.exceptions import ProtocolError
+import socket
+
 from requests.exceptions import ConnectionError, ReadTimeout
 
 from sc_order import Order
@@ -50,6 +53,16 @@ class Market:
 
         # create client depending on client_mode parameter
         self.client: Union[Client, FakeClient] = self._set_client(client_mode=self.client_mode)
+
+    def hot_reconnect(self):
+        log.critical("hot re-connection to Binance")
+        print("hot re-connection to Binance")
+
+        self.client = self._set_client(client_mode=self.client_mode)
+        self.start_sockets()
+
+        log.critical('sockets re-connected')
+        print('sockets re-connected')
 
     def start_sockets(self):
         time.sleep(1)
@@ -155,11 +168,10 @@ class Market:
                 BinanceOrderUnknownSymbolException,
                 BinanceOrderInactiveSymbolException) as e:
             log.critical(e)
-        except (ConnectionError, ReadTimeout) as e:
+        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
             log.critical(e)
+            self.hot_reconnect()
         return None  # msg['orderId'], msg['status'] == 'FILLED' or 'NEW'
-
-
 
     def place_market_order(self, order: Order) -> Optional[dict]:
         try:
@@ -186,8 +198,9 @@ class Market:
                 BinanceOrderUnknownSymbolException,
                 BinanceOrderInactiveSymbolException) as e:
             log.critical(e)
-        except (ConnectionError, ReadTimeout) as e:
+        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
             log.critical(e)
+            self.hot_reconnect()
         return None  # msg['orderId'], msg['status'] == 'FILLED' or 'NEW'
 
     def get_symbol_info(self, symbol: str) -> Optional[dict]:
@@ -213,6 +226,9 @@ class Market:
                 log.critical(f'no symbol info from Binance for {symbol}')
         except (BinanceAPIException, BinanceRequestException) as e:
             log.critical(e)
+        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
+            log.critical(e)
+            self.hot_reconnect()
         return None
 
     def get_asset_balance(self, asset: str, tag: str, p=8) -> AssetBalance:
@@ -223,6 +239,11 @@ class Market:
             return AssetBalance(name=asset, free=free, locked=locked, tag=tag, precision=p)
         except (BinanceAPIException, BinanceRequestException) as e:
             log.critical(e)
+        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
+            log.critical(e)
+            self.hot_reconnect()
+        # return 0.0 if there is a connection error
+        return AssetBalance(name=asset, free=0.0, locked=0.0, tag=tag, precision=p)
 
     def get_asset_liquidity(self, asset: str) -> float:
         asset_balance = self.get_asset_balance(asset=asset, tag='')
@@ -230,11 +251,17 @@ class Market:
         return asset_liquidity
 
     def get_cmp(self, symbol: str) -> float:
-        cmp = self.client.get_avg_price(symbol=symbol)
-        if cmp:
-            return float(cmp['price'])
-        else:
-            return 0.0
+        try:
+            cmp = self.client.get_avg_price(symbol=symbol)
+            if cmp:
+                return float(cmp['price'])
+            else:
+                return 0.0
+        except (BinanceAPIException, BinanceRequestException) as e:
+            log.critical(e)
+        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
+            log.critical(e)
+            self.hot_reconnect()
 
     def cancel_orders(self, orders: List[Order]):
         log.info('********** CANCELLING PLACED ORDER(S) **********')
@@ -244,6 +271,9 @@ class Market:
                 log.info(f'** ORDER CANCELLED IN BINANCE {order}')
             except (BinanceAPIException, BinanceRequestException) as e:
                 log.critical(e)
+            except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
+                log.critical(e)
+                self.hot_reconnect()
 
     def update_fake_client_cmp(self, step: float):
         # only in SIMULATOR mode

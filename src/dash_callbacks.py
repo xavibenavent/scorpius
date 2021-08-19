@@ -65,6 +65,11 @@ def on_button_click(n):
         return ''
     else:
         # dfm.sm.session = dfm.sm.start_new_session()
+        print("trying to restart connection")
+        # todo: reconnect when Exception connection error
+        # raise Exception("fix it")
+        # dfm.sm = dfm.start_session_manager()
+        dfm.sm.market.hot_reconnect()
         return 'cmp start'
 
 

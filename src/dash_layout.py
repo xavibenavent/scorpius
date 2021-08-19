@@ -115,7 +115,7 @@ class DashLayout:
                 html.Br(), html.Br(), html.Br(),
                 dbc.Row([
                     dbc.Col([
-                        dbc.Button('Start Session', id='button-start', disabled=True, color='success', block=True, className='sc-button'),
+                        dbc.Button('Hot Re-connect', id='button-start', disabled=False, color='primary', block=True, className='sc-button'),
                         html.Br(),
                         dbc.Button("Stop at cmp", id='button-stop-cmp', color='danger', block=True,
                                    className='sc-button'),
