@@ -9,6 +9,7 @@ from sc_df_manager import DataframeManager
 import dash_bootstrap_components as dbc
 
 import pandas as pd
+from datetime import datetime, timedelta
 
 print('dash_callbacks.py')
 
@@ -19,6 +20,12 @@ dfm = DataframeManager()
 @app.callback(Output('cmp', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     return f'{dfm.sm.session.get_info()["last_cmp"]:,.2f}'
+
+
+@app.callback(Output('current-time', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'{datetime.now().strftime("%H:%M:%S")}'
+
 
 
 # ********** buttons *********
@@ -133,7 +140,9 @@ def display_value(value):
     # todo: use momentum
     # print(dfm.sm.session.get_info()['momentum'])
 
-    return f'{dfm.sm.session.get_info()["cmp_count"] / 3600:,.2f} h'
+    # return f'{dfm.sm.session.get_info()["cmp_count"] / 3600:,.2f} h'
+
+    return f'{timedelta(seconds=dfm.sm.session.get_info()["cmp_count"])}'
 
 
 # ********** stop at cmp **********
@@ -180,7 +189,7 @@ def display_value(value):
 # ********** session cycle count **********
 @app.callback(Output('global-cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.global_cmp_count/3600.0:,.2f} h'
+    return f'{timedelta(seconds=dfm.sm.global_cmp_count + dfm.sm.session.cmp_count)}'
 
 
 # ********** session cycle count **********

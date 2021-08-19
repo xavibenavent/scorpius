@@ -4,10 +4,15 @@
     padding: 20px;
 }
 
+.app-current-time {
+    padding: 20px;
+    font-size: 25px;
+    color: Yellow;
+}
+
 .app-title {
     padding: 20px;
     font-size: 25px;
-    text-align: right;
     color: DarkGray;
 }
 
@@ -47,15 +52,19 @@
     text-align: right;
 }
 
+.card-title {
+    font-size: 25px;
+    color: DarkGray;
+}
 
 .pt-info {
-    font-size: 40px;
+    font-size: 30px;
     text-align: right;
     color: DarkSeaGreen;
 }
 
 .session-info {
-    font-size: 40px;
+    font-size: 30px;
     text-align:right;
     color: DarkSeaGreen;
 }
@@ -106,12 +115,6 @@
 .card-main-title {
     font-size: 35px;
 }
-
-.card-title {
-    font-size: 30px;
-    color: DarkGray;
-}
-
 
 .balance-chart {
     /* align: center; */

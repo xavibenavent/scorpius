@@ -21,7 +21,10 @@ class DashLayout:
                 dbc.Row([
                     dbc.Col([
                         html.Img(src='assets/btc_001.jpg', className='header-image'),
-                        html.H1(id='title', children='Scorpius Session V1.0', className='app-title')
+                        dbc.Row([
+                            html.H1(id='current-time', children='', className='app-current-time'),
+                            html.H1(id='title', children='Scorpius Session V1.0', className='app-title'),
+                        ]),
                     ]),
                 ]),
                 # session KPI
@@ -39,7 +42,7 @@ class DashLayout:
                                         html.H6(id='stop-price-profit', children='0', className='pt-info'),
                                         html.H6("Stop at cmp profit", className="card-title"),
                                         html.H6(id='actual-profit', children='0', className='pt-info'),
-                                        html.H6("Perfect Trades / Orders", className="card-title"),
+                                        html.H6("Perfect Trades / Buy / Sell", className="card-title"),
                                         html.H6(id='trade-info', children='0', className='pt-info'),
                                     ]),
                                     # dbc.CardFooter('Footer')
