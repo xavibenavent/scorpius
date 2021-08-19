@@ -23,6 +23,9 @@ class DashLayout:
                         html.Img(src='assets/btc_001.jpg', className='header-image'),
                         dbc.Row([
                             html.H1(id='current-time', children='', className='app-current-time'),
+                            html.H1(id='neb', children='', className='neb'),
+                            html.H1(id='qty', children='', className='qty'),
+                            html.H1(id='target', children='', className='target'),
                             html.H1(id='title', children='Scorpius Session V1.0', className='app-title'),
                         ]),
                     ]),

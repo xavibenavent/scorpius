@@ -16,6 +16,22 @@
     color: DarkGray;
 }
 
+.neb {
+    padding: 20px;
+    font-size: 25px;
+    color: DarkGray;
+}
+.qty {
+    padding: 20px;
+    font-size: 25px;
+    color: DarkGray;
+}
+.target {
+    padding: 20px;
+    font-size: 25px;
+    color: DarkGray;
+}
+
 .header-image {
     width: 100%;
     -webkit-filter: blur(2px);
@@ -42,13 +58,13 @@
 
 .card-header-session {
     color: DarkSeaGreen;
-    font-size: 60px;
+    font-size: 50px;
     text-align: right;
 }
 
 .card-header-global {
     color: DarkSeaGreen;
-    font-size: 60px;
+    font-size: 50px;
     text-align: right;
 }
 

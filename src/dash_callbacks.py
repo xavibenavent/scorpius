@@ -27,6 +27,20 @@ def display_value(value):
     return f'{datetime.now().strftime("%H:%M:%S")}'
 
 
+@app.callback(Output('neb', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'  neb: {dfm.sm.session.net_eur_balance:,.2f} EUR'
+
+
+@app.callback(Output('qty', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'  qty: {dfm.sm.session.quantity:,.4f} BTC'
+
+
+@app.callback(Output('target', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f'  target: {dfm.sm.session.target_total_net_profit:,.2f} EUR'
+
 
 # ********** buttons *********
 @app.callback(Output('msg', 'children'), Input('button-stop-cmp', 'n_clicks'))
