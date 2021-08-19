@@ -6,35 +6,35 @@
 
 .app-current-time {
     padding: 20px;
-    font-size: 25px;
+    font-size: 23px;
     color: Yellow;
 }
 
 .app-title {
     padding: 20px;
-    font-size: 25px;
+    font-size: 23px;
     color: DarkGray;
 }
 
 .neb {
     padding: 20px;
-    font-size: 22px;
+    font-size: 23px;
     color: DarkGray;
 }
 .qty {
     padding: 20px;
-    font-size: 22px;
+    font-size: 23px;
     color: DarkGray;
 }
 .target {
     padding: 20px;
-    font-size: 22px;
+    font-size: 23px;
     color: DarkGray;
 }
 
 .max-negative-profit-allowed {
     padding: 20px;
-    font-size: 22px;
+    font-size: 23px;
     color: DarkGray;
 }
 
