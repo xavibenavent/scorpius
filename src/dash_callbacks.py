@@ -42,6 +42,11 @@ def display_value(value):
     return f' t: {dfm.sm.session.target_total_net_profit:,.2f} EUR'
 
 
+@app.callback(Output('max-negative-profit-allowed', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return f' ({dfm.sm.session.max_negative_profit_allowed:,.2f})'
+
+
 # ********** buttons *********
 @app.callback(Output('msg', 'children'), Input('button-stop-cmp', 'n_clicks'))
 def on_button_click(n):
@@ -190,7 +195,7 @@ def display_value(value):
 @app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     pt_count = len(dfm.sm.session.ptm.perfect_trades)
-    return f'pt: {pt_count} / b: {dfm.sm.session.buy_count} / s: {dfm.sm.session.sell_count}'
+    return f'pt: {pt_count}   b: {dfm.sm.session.buy_count}   s: {dfm.sm.session.sell_count}'
 
 
 # # ********** eur needed **********

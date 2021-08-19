@@ -32,6 +32,12 @@
     color: DarkGray;
 }
 
+.max-negative-profit-allowed {
+    padding: 20px;
+    font-size: 25px;
+    color: DarkGray;
+}
+
 .header-image {
     width: 100%;
     -webkit-filter: blur(2px);
