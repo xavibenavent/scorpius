@@ -120,6 +120,15 @@ class DashLayout:
                     ], xs=12, sm=12, md=12, lg=12, xl=12),
                 ]),
                 html.Br(), html.Br(), html.Br(),
+                # # modal alert
+                # dbc.Modal([
+                #     dbc.ModalHeader('Order traded'),
+                #     dbc.ModalBody(id='modal-body', children=''),
+                #     dbc.ModalFooter(
+                #         dbc.Button('Close', id='close', className='ml-auto', n_clicks=0)
+                #     )
+                # ], id='modal', is_open=False),
+                # buttons
                 dbc.Row([
                     dbc.Col([
                         dbc.Button('Hot Re-connect', id='button-start', disabled=False, color='primary', block=True, className='sc-button'),

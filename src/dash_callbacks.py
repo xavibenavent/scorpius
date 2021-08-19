@@ -1,6 +1,6 @@
 # dash_callbacks.py
 
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from dash_app import app
 from dash_aux import get_balance_bar_chart, get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
 from sc_session import QuitMode
@@ -102,7 +102,8 @@ def on_button_click(n):
 @app.callback(Output('msg-2', 'children'), Input('button-new-pt', 'n_clicks'))
 def on_button_click(n):
     if n:
-        dfm.sm.session.ptm.create_new_pt(dfm.sm.session.get_info()['last_cmp'])
+        if dfm.sm.session.allow_new_pt_creation():
+            dfm.sm.session.ptm.create_new_pt(dfm.sm.session.get_info()['last_cmp'])
     return ''
 
 
@@ -258,3 +259,22 @@ def update_profit_line(timer):
     df['rate'] = df.index
     fig = get_cmp_line_chart(df=df, cmps=cmps)
     return fig
+
+
+# @app.callback([Output('modal', 'is_open'), Output('modal-body', 'children')],
+#               [Input('update', 'n_intervals')],
+#               [State('modal', 'is_open')])
+# def toggle_modal(timer, is_open: bool):
+#     if not is_open:
+#         if len(dfm.sm.session.modal_alert_messages) > 0:
+#             return  True, dfm.sm.session.modal_alert_messages
+#         else:
+#             return False, ''
+#     else:
+#         if close_tapped_count == dfm.sm.session.buy_count + dfm.sm.session.sell_count:
+#             button_click = close_tapped_count
+#             if len(dfm.sm.session.modal_alert_messages) > 0:
+#                 dfm.sm.session.modal_alert_messages.pop(0)
+#             return False, ''
+#         else:
+#             return  True, dfm.sm.session.modal_alert_messages

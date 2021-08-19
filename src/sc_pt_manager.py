@@ -29,7 +29,6 @@ class PTManager:
         self.fee = float(config['PT_CREATION']['fee'])
         self.net_eur_balance = float(config['PT_CREATION']['net_eur_balance'])
 
-
     def create_new_pt(self, cmp: float, pt_type='NORMAL') -> None:
         # create and get new orders
         b1, s1 = self._get_b1s1(mp=cmp)

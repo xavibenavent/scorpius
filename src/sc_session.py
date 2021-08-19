@@ -81,6 +81,8 @@ class Session:
         self.cmp_count = 0
         self.cycles_from_last_trade = 0
 
+        self.modal_alert_messages = []
+
     # ********** dashboard callback functions **********
     def get_info(self):
         # return a dictionary with data convenient for the dashboard
@@ -125,7 +127,7 @@ class Session:
             try:
                 # 0.1: create first pt
                 if self.cmp_count == 1:
-                    if self._allow_new_pt_creation(cmp=cmp):
+                    if self.allow_new_pt_creation(cmp=cmp):
                         self.ptm.create_new_pt(cmp=cmp)
                     else:
                         log.critical("initial pt not allowed, it will be tried again after inactivity period")
@@ -212,7 +214,7 @@ class Session:
         # check elapsed time since last trade
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
             # check liquidity
-            if self._allow_new_pt_creation(cmp=cmp):
+            if self.allow_new_pt_creation(cmp=cmp):
                 self.ptm.create_new_pt(cmp=cmp, pt_type='FROM_INACTIVITY')
                 self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
             else:
@@ -321,13 +323,16 @@ class Session:
                 # update perfect trades list & pt status
                 self.ptm.order_traded(order=order)
 
+                # # prepare modal alert in the dashboard
+                # self.modal_alert_messages.append(f'{order.pt_id} {order.k_side}')
+
                 # check condition for new pt:
                 # Once activated, if it is the last order to trade in the pt, then create a new pt
                 # only if it was created as NORMAL
                 # it is enough checking the sibling order because a compensated/split pt will have another type
                 if order.pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
                     # check liquidity:
-                    if self._allow_new_pt_creation(cmp=self.cmps[-1]):
+                    if self.allow_new_pt_creation(cmp=self.cmps[-1]):
                         # calculate shift depending on last traded order side
 
                         # todo: assess whether the following criteria is good or not
@@ -347,7 +352,7 @@ class Session:
                 # since the traded orders has been identified, do not check more orders
                 break
 
-    def _allow_new_pt_creation(self, cmp: float) -> bool:
+    def allow_new_pt_creation(self, cmp: float) -> bool:
         # get total eur & btc needed to trade all alive orders at their own price
         eur_needed, btc_needed = self.ptm.get_total_eur_btc_needed()
 
