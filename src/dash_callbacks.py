@@ -29,22 +29,22 @@ def display_value(value):
 
 @app.callback(Output('neb', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f' n: {dfm.sm.session.net_eur_balance:,.2f} EUR'
+    return f'n: {dfm.sm.session.net_eur_balance:,.2f} EUR'
 
 
 @app.callback(Output('qty', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f' q: {dfm.sm.session.quantity:,.4f} BTC'
+    return f'q: {dfm.sm.session.quantity:,.4f} BTC'
 
 
 @app.callback(Output('target', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f' t: {dfm.sm.session.target_total_net_profit:,.2f} EUR'
+    return f't: {dfm.sm.session.target_total_net_profit:,.2f} EUR'
 
 
 @app.callback(Output('max-negative-profit-allowed', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f' ({dfm.sm.session.max_negative_profit_allowed:,.2f})'
+    return f'({dfm.sm.session.max_negative_profit_allowed:,.2f})'
 
 
 # ********** buttons *********
