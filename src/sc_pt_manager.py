@@ -113,7 +113,7 @@ class PTManager:
         return total
 
     def get_stop_price_profit(self, cmp: float) -> float:
-        # return the total profit considering that all remaining orders are traded at current cmp
+        # return the total profit considering that all remaining orders are traded at its own price
         # perfect trades with status NEW are not considered
         # MONITOR orders are considered to be traded at their price
         total = 0

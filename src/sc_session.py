@@ -74,7 +74,7 @@ class Session:
 
         self.total_profit_series = [0.0]
 
-        # self.pt_created_count = 0
+        self.pt_created_count = 0
         self.buy_count = 0
         self.sell_count = 0
         self.cmp_count = 0
@@ -172,7 +172,7 @@ class Session:
         # if self.ptm.pt_created_count > neb_target_rate + 1:  # todo: move to parameter
         #     self.target_total_net_profit += self.net_eur_balance
 
-        self.target_total_net_profit = self.net_eur_balance * self.ptm.pt_created_count
+        self.target_total_net_profit = self.net_eur_balance * (2 + self.ptm.pt_created_count)
 
     def _check_exit_conditions(self, cmp):
         # 8. check global net profit
@@ -182,9 +182,7 @@ class Session:
         if total_profit > self.target_total_net_profit:
             self.session_active = False
             self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-            # todo: start new session when target achieved
-            # raise Exception("Target achieved!!!")
-        elif total_profit < self.max_negative_profit_allowed:  # todo: move to parameter at config.ini
+        elif total_profit < self.max_negative_profit_allowed:
             self.session_active = False
             self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
             # raise Exception("terminated to minimize loss")
