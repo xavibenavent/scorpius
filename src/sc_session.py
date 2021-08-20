@@ -30,7 +30,7 @@ class QuitMode(Enum):
 class Session:
     def __init__(self,
                  session_id: str,
-                 session_stopped_callback: Callable[[str, float, int, int], None],
+                 session_stopped_callback: Callable[[str, float, float, int, int], None],
                  market: Market,
                  balance_manager: BalanceManager
                  ):
@@ -171,24 +171,28 @@ class Session:
         # neb_target_rate = int(self.target_total_net_profit / self.net_eur_balance)
         # if self.ptm.pt_created_count > neb_target_rate + 1:  # todo: move to parameter
         #     self.target_total_net_profit += self.net_eur_balance
-
-        self.target_total_net_profit = self.net_eur_balance * (2 + self.ptm.pt_created_count)
+        # todo: check it
+        # self.target_total_net_profit = self.net_eur_balance * (2 + self.ptm.pt_created_count)
+        pass
 
     def _check_exit_conditions(self, cmp):
-        # 8. check global net profit
-        # return the total profit considering that all remaining orders are traded at current cmp
-        total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
-        self.total_profit_series.append(total_profit)
-        if total_profit > self.target_total_net_profit:
-            self.session_active = False
-            self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-        elif total_profit < self.max_negative_profit_allowed:
-            self.session_active = False
-            self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
-            # raise Exception("terminated to minimize loss")
-        # elif self.get_session_hours() > 2.0 and total_profit > -5.0:
-        #     self.quit_particular_session()
-        #     raise Exception("terminated to minimize loss")
+        # check profit only if orders are stable (no ACTIVE nor TO_BE_TRADE)
+        orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        if len(orders) == 0:
+            # 8. check global net profit
+            # return the total profit considering that all remaining orders are traded at current cmp
+            total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
+            # self.total_profit_series.append(total_profit)
+            if total_profit > self.target_total_net_profit:
+                self.session_active = False
+                self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+
+            elif total_profit < self.max_negative_profit_allowed:
+                self.session_active = False
+                self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
 
     def _check_monitor_orders_for_activating(self, cmp: float) -> None:
         # get orders
@@ -402,38 +406,59 @@ class Session:
             raise Exception("LIMIT order not placed")
 
     def quit_particular_session(self, quit_mode: QuitMode):
-        # trade all remaining orders
         log.info(f'********** STOP {quit_mode.name} **********')
-        log.info('session terminated')
-
-        # ACTIVE orders (trade all at market price no matter the quit mode)
-        active_orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.ACTIVE],
-            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-        )
-        log.info('ACTIVE orders:')
-        for order in active_orders:
-            if quit_mode in [QuitMode.PLACE_ALL_PENDING, QuitMode.TRADE_ALL_PENDING]:
-                self._place_market_order(order=order)
-                log.info(f'trading market order {order.k_side} {order.status} {order.price}')
-                time.sleep(0.1)
-            elif quit_mode == QuitMode.CANCEL_ALL:
-                pass
+        log.info(f'session {self.session_id} terminated')
 
         # MONITOR orders (depending on the quit mode will be traded at market price or placed at order price)
+        diff = 0
+
+        # completed pt
+        consolidated_profit = 0.0
+
+        # non completed pt
+        expected_profit = 0.0
+
+        # update consolidated profit for completed pt (it does not depend on quit mode)
+        # consolidated_profit += self.ptm.get_pt_completed_profit()
+
         monitor_orders = self.ptm.get_orders_by_request(
             orders_status=[OrderStatus.MONITOR],
             pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
         )
-        log.info('MONITOR orders:')
-        diff = 0
+
+        # get orders of non completed pt (NEW pt do not count)
+        # the profit of these orders will depend on the quit mode:
+        #   - PLACE_ALL_PENDING => expected profit at price
+        #   - TRADE_ALL_PENDING => consolidated profit at cmp
+        non_completed_pt_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.TRADED],
+            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+
+        traded_non_completed_pt_orders = \
+            [order for order in non_completed_pt_orders if order.status == OrderStatus.TRADED]
+
+        # update consolidated profit not depending on quit mode
+        consolidated_profit = self.ptm.get_pt_completed_profit()
+
         if quit_mode == QuitMode.PLACE_ALL_PENDING:  # place all monitor orders
-            for order in monitor_orders:
-                self._place_limit_order(order=order)
+            for order in non_completed_pt_orders:
+                # update expected profit at order price
+                expected_profit += order.get_virtual_profit_with_cost()
+
+                # place only MONITOR orders
+                if order.status == OrderStatus.MONITOR:
+                    self._place_limit_order(order=order)
+
                 log.info(f'trading limit order {order.k_side} {order.status} {order.price}')
                 time.sleep(0.1)
 
         elif quit_mode == QuitMode.TRADE_ALL_PENDING:  # trade diff orders at reference side (BUY or SELL)
+            # get consolidated profit
+            # consolidated_profit += self.ptm.get_stop_cmp_profit(cmp=self.cmps[-1])
+            consolidated_profit += \
+                sum([order.get_virtual_profit_with_cost() for order in traded_non_completed_pt_orders])
+
             # get diff to know at which side to trade & set reference orders
             buy_orders = []
             sell_orders = []
@@ -454,6 +479,10 @@ class Session:
                 for i in range(diff):
                     order = buy_orders[i]
                     self._place_market_order(order=order)
+
+                    # update consolidated profit
+                    consolidated_profit += order.get_virtual_profit_with_cost(cmp=self.cmps[-1])
+
                     log.info(f'trading reference market order {order.k_side} {order.status}')
                     time.sleep(0.1)
             elif diff < 0:  # SELL SIDE
@@ -461,19 +490,26 @@ class Session:
                 for i in range(-diff):
                     order = sell_orders[i]
                     self._place_market_order(order=order)
+
+                    # update consolidated profit
+                    consolidated_profit += order.get_virtual_profit_with_cost(cmp=self.cmps[-1])
+
                     log.info(f'trading reference market order {order.k_side} {order.status}')
                     time.sleep(0.1)
 
         # log final info
         self.ptm.log_perfect_trades_info()
 
-        net_profit = self.ptm.get_stop_cmp_profit(cmp=self.cmps[-1])
+        # net_profit = self.ptm.get_stop_cmp_profit(cmp=self.cmps[-1])
 
-        log.info(f'session {self.session_id} stopped with net profit: {net_profit:,.2f}')
+        log.info(f'session {self.session_id} stopped with consolidated profit: {consolidated_profit:,.2f}')
+        log.info(f'session {self.session_id} stopped with expected profit: {expected_profit:,.2f}')
 
         self.session_stopped_callback(
             self.session_id,
-            net_profit if abs(net_profit) < 3 else 0,
+            # net_profit if abs(net_profit) < 3 else 0,
+            consolidated_profit,
+            expected_profit,
             self.cmp_count,
             abs(diff)  # number of orders placed at its own price
         )

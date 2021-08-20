@@ -29,7 +29,9 @@ class SessionManager:
         # global sessions info
         self.session_count = 0
 
-        self.global_profit = 0
+        # self.global_profit = 0
+        self.global_consolidated_profit = 0
+        self.global_expected_profit = 0
         self.global_cmp_count = 0
         self.placed_orders_count = 0
 
@@ -41,23 +43,30 @@ class SessionManager:
 
     def _session_stopped_callback(self,
                                   session_id: str,
-                                  net_profit: float,
+                                  consolidated_profit: float,
+                                  expected_profit: float,
                                   cmp_count: int,
                                   placed_orders_count: int,
                                   ) -> None:
-        print(f'session stopped with id: {session_id} net profit: {net_profit}')
-        log.info(f'session stopped with id: {session_id} net profit: {net_profit}')
+        print(f'session stopped with id: {session_id} net profit: {consolidated_profit}')
+        print(f'session stopped with id: {session_id} net profit: {expected_profit}')
+        log.info(f'session stopped with id: {session_id} net profit: {consolidated_profit}')
+        log.info(f'session stopped with id: {session_id} net profit: {expected_profit}')
 
-        self.global_profit += net_profit
+        # self.global_profit += net_profit
+        self.global_consolidated_profit += consolidated_profit
+        self.global_expected_profit += expected_profit
+
         self.global_cmp_count += cmp_count
         self.placed_orders_count += placed_orders_count
 
         print(f'********** sessions count: {self.session_count} **********')
         print(f'********** partial cmp count: {self.global_cmp_count / 3600.0:,.2f} [hours]')
-        print(f'********** partial global profit: {self.global_profit:,.2f} **********')
+        print(f'********** partial global profit: {self.global_consolidated_profit:,.2f} **********')
+        print(f'********** partial global profit: {self.global_expected_profit:,.2f} **********')
         print(f'********** placed orders count: {self.placed_orders_count} **********')
 
-        if self.session_count < 100:
+        if self.session_count < 1000:
             self.start_new_session()
         else:
             self.stop_global_session()

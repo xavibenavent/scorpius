@@ -64,7 +64,7 @@ class DashLayout:
                                         html.H6(id='global-placed-orders', children='0', className='session-info'),
                                         html.H6("Session number", className="card-title"),
                                         html.H6(id='session-count', children='0', className='session-info'),
-                                        html.H6("Total profit (minimum)", className="card-title"),
+                                        html.H6("Consolidated / Expected profit", className="card-title"),
                                         html.H6(id='global-partial-profit', children='0', className='session-info')
                                     ]),
                                     # dbc.CardFooter('Footer')

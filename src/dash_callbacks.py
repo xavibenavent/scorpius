@@ -190,7 +190,7 @@ def display_value(value):
 @app.callback(Output('global-partial-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # called the method in session to check buy_count == sell_count
-    return f'{dfm.sm.global_profit:,.2f} €'
+    return f'{dfm.sm.global_consolidated_profit:,.2f} € / {dfm.sm.global_expected_profit:,.2f} €'
 
 
 # ********** PT count / traded orders count **********
