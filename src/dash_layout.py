@@ -18,6 +18,7 @@ class DashLayout:
     def get_layout(self) -> html.Div:
         layout = html.Div(className='app-overall', children=[
             html.Div(children=[
+                # app info & session data #1
                 dbc.Row([
                     dbc.Col([
                         html.Img(src='assets/btc_001.jpg', className='header-image'),
@@ -72,7 +73,15 @@ class DashLayout:
                         ])
                     ], xs=12, sm=12, md=12, lg=12, xl=12),
                 ]),
-                html.Br(), html.Br(), html.Br(),
+                # html.Br(), html.Br(), html.Br(),
+                # session data #2
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Row([
+                            html.H1(id='cycles-to-new-pt', children='XXX', className='cycles-to-new-pt'),
+                        ]),
+                    ]),
+                ]),
                 # symbol & balance cards
                 dbc.Row([
                     dbc.Col([

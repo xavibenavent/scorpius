@@ -32,6 +32,14 @@
     color: YellowGreen;
 }
 
+.cycles-to-new-pt {
+    padding: 20px;
+    font-size: 24px;
+    color: DarkGray;
+}
+
+
+
 .max-negative-profit-allowed {
     padding: 20px;
     font-size: 24px;

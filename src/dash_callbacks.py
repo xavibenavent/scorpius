@@ -197,14 +197,17 @@ def display_value(value):
 @app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     pt_count = len(dfm.sm.session.ptm.perfect_trades)
-    return f'pt: {pt_count}   b: {dfm.sm.session.buy_count}   s: {dfm.sm.session.sell_count}'
+    buy_count = dfm.sm.session.buy_count
+    sell_count = dfm.sm.session.sell_count
+    return f'pt: {pt_count}   b: {buy_count}   s: {sell_count}'
 
 
-# # ********** eur needed **********
-# @app.callback(Output('eur-needed', 'children'), Input('update', 'n_intervals'))
-# def display_value(value):
-#     eur_needed, btc_needed = dfm.sm.session.ptm.get_total_eur_btc_needed()
-#     return f'{eur_needed:,.2f}'
+@app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    ccfi = dfm.sm.session.cycles_count_for_inactivity
+    cycles_to_new_pt = ccfi - dfm.sm.session.cycles_from_last_trade
+    time_to_new_pt = timedelta(seconds=cycles_to_new_pt)
+    return f'({ccfi})  {time_to_new_pt}'
 
 
 # ********** session cycle count **********
