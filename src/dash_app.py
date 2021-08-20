@@ -5,10 +5,15 @@
 
 
 import dash
+import dash_auth
 import dash_bootstrap_components as dbc
 from dash_layout import DashLayout
 
 import logging
+
+VALID_USERNAME_PASSWORD_PAIRS = {
+    'xavi': '7639'
+}
 
 print('dash_app.py')
 
@@ -16,6 +21,9 @@ app = dash.Dash(__name__,
                 suppress_callback_exceptions=True,
                 external_stylesheets=[dbc.themes.DARKLY]
                 )
+# set basic authentication
+auth = dash_auth.BasicAuth(app=app, username_password_list=VALID_USERNAME_PASSWORD_PAIRS)
+
 server = app.server
 app.layout = DashLayout().get_layout()
 
