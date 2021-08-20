@@ -2,10 +2,9 @@
 
 import logging
 import time
-from datetime import datetime
 from enum import Enum
 
-from typing import Optional, Callable
+from typing import Callable
 from binance import enums as k_binance
 
 from sc_market import Market
@@ -75,7 +74,7 @@ class Session:
 
         self.total_profit_series = [0.0]
 
-        self.pt_created_count = 0
+        # self.pt_created_count = 0
         self.buy_count = 0
         self.sell_count = 0
         self.cmp_count = 0
@@ -90,8 +89,8 @@ class Session:
             session_id=self.session_id,
             last_cmp=self.cmps[-1] if self.cmps else 0,
             elapsed_hours=round(self.cmp_count / 3600, 2),
-            pt_created_count=self.pt_created_count,
-            buy_count= self.buy_count,
+            pt_created_count=self.ptm.pt_created_count,
+            buy_count=self.buy_count,
             sell_count=self.sell_count,
             cmp_count=self.cmp_count,
             cycles_from_last_trade=self.cycles_from_last_trade,
