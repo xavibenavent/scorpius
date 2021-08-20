@@ -170,7 +170,8 @@ class Session:
     def _check_dynamic_parameters(self):
         # neb (increase)
         neb_target_rate = int(self.target_total_net_profit / self.net_eur_balance)
-        if self.pt_created_count > neb_target_rate + 2:  # todo: move to parameter
+        print(neb_target_rate, self.ptm.pt_created_count)
+        if self.ptm.pt_created_count > neb_target_rate + 1:  # todo: move to parameter
             self.target_total_net_profit += self.net_eur_balance
 
     def _check_exit_conditions(self, cmp):

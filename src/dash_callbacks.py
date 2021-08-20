@@ -102,8 +102,9 @@ def on_button_click(n):
 @app.callback(Output('msg-2', 'children'), Input('button-new-pt', 'n_clicks'))
 def on_button_click(n):
     if n:
-        if dfm.sm.session.allow_new_pt_creation():
-            dfm.sm.session.ptm.create_new_pt(dfm.sm.session.get_info()['last_cmp'])
+        cmp = dfm.sm.session.get_info()['last_cmp']
+        if dfm.sm.session.allow_new_pt_creation(cmp=cmp):
+            dfm.sm.session.ptm.create_new_pt(cmp=cmp)
     return ''
 
 
