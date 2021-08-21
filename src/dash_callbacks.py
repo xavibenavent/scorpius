@@ -1,12 +1,12 @@
 # dash_callbacks.py
 
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 from dash_app import app
-from dash_aux import get_balance_bar_chart, get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
+from dash_aux import get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
 from sc_session import QuitMode
 from sc_df_manager import DataframeManager
 
-import dash_bootstrap_components as dbc
+# import dash_bootstrap_components as dbc
 
 import pandas as pd
 from datetime import datetime, timedelta
@@ -132,10 +132,14 @@ def on_button_click(n):
     Input(component_id='update', component_property='n_intervals')
 )
 def update_figure(timer):
-    ab = dfm.sm.session.bm.current_ab
-    return f'{ab.s2.free:,.2f}', f'{ab.s2.locked:,.2f}',\
-           f'{ab.s1.free:,.6f}', f'{ab.s1.locked:,.6f}',\
-           f'{ab.bnb.free:,.6f}', f'{ab.bnb.locked:,.6f}'
+    ab = dfm.sm.session.bm.accounts
+    return f'{ab[1].free:,.2f}', f'{ab[1].locked:,.2f}',\
+           f'{ab[0].free:,.6f}', f'{ab[0].locked:,.6f}',\
+           f'{ab[2].free:,.6f}', f'{ab[2].locked:,.6f}'
+    # ab = dfm.sm.session.bm.current_ab
+    # return f'{ab.s2.free:,.2f}', f'{ab.s2.locked:,.2f}',\
+    #        f'{ab.s1.free:,.6f}', f'{ab.s1.locked:,.6f}',\
+    #        f'{ab.bnb.free:,.6f}', f'{ab.bnb.locked:,.6f}'
 
 
 @app.callback(

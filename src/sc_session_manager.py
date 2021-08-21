@@ -1,15 +1,15 @@
 # sc_session_manager.py
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 import logging
 import os
 import signal
 
 from sc_session import Session
 from sc_market import Market
-from sc_account_balance import AccountBalance
-from sc_balance_manager import BalanceManager
+# from sc_account_balance import AccountBalance
+from sc_balance_manager import BalanceManager, Account
 
 log = logging.getLogger('log')
 
@@ -24,7 +24,7 @@ class SessionManager:
 
         self.session: Optional[Session] = None
 
-        self.bm = BalanceManager(market=self.market)
+        self.bm = BalanceManager(market=self.market, account_names=['BTC', 'EUR', 'BNB'])
 
         # global sessions info
         self.session_count = 0
@@ -139,5 +139,5 @@ class SessionManager:
     def _fake_order_socket_callback(self, foo_1: str, foo_2: float, foo_3: float):
         pass
 
-    def _fake_account_socket_callback(self, foo: AccountBalance):
+    def _fake_account_socket_callback(self, foo: List[Account]):
         pass

@@ -7,7 +7,8 @@ from enum import Enum
 from random import choice
 import threading
 
-from sc_account_balance import AssetBalance, AccountBalance
+# from sc_account_balance import AssetBalance, AccountBalance
+from sc_balance_manager import Account
 
 # from config import SIMULATOR_MODE and parameters
 import configparser
@@ -82,12 +83,11 @@ class FakeClient:
         self.api_key = ''
         self.api_secret = ''
 
-        self._account_balance = AccountBalance(
-            d=dict(
-                s1=AssetBalance(name='btc', free=initial_btc, locked=0.0),
-                s2=AssetBalance(name='eur', free=initial_eur, locked=0.0, precision=2),
-                bnb=AssetBalance(name='bnb', free=initial_bnb, locked=0.0)
-            ))
+        self._accounts = [
+            Account(name='BTC', free=initial_btc, locked=0.0),
+            Account(name='EUR', free=initial_eur, locked=0.0),
+            Account(name='BNB', free=initial_bnb, locked=0.0),
+        ]
 
         self.tcg = ThreadCmpGenerator(interval=update_rate, f_callback=self._update_cmp)
 
@@ -125,11 +125,13 @@ class FakeClient:
 
         # check enough balance
         if order.side == 'BUY' \
-                and self._account_balance.get_free_price_s2() < order.get_total():
+                and self._accounts[1].free < order.get_total():
+                # and self._account_balance.get_free_price_s2() < order.get_total():
             log.critical(f'not enough balance to place the order')
             return {}
         elif order.side == 'SELL' \
-                and self._account_balance.get_free_amount_s1() < order.quantity:
+                and self._accounts[0].free < order.quantity:
+                # and self._account_balance.get_free_amount_s1() < order.quantity:
             log.critical(f'not enough amount to place the order')
             return {}
 
@@ -164,11 +166,11 @@ class FakeClient:
 
         # check enough balance
         if order.side == 'BUY' \
-                and self._account_balance.get_free_price_s2() < order.get_total():
+                and self._accounts[1].free < order.get_total():
             log.critical(f'not enough balance to place the order')
             return {}
         elif order.side == 'SELL' \
-                and self._account_balance.get_free_amount_s1() < order.quantity:
+                and self._accounts[0].free < order.quantity:
             log.critical(f'not enough amount to place the order')
             return {}
 
@@ -210,11 +212,11 @@ class FakeClient:
 
         # check enough balance
         if order.side == 'BUY' \
-                and self._account_balance.get_free_price_s2() < order.get_total():
+                and self._accounts[1].free < order.get_total():
             log.critical(f'not enough balance to place the order')
             return {}
         elif order.side == 'SELL' \
-                and self._account_balance.get_free_amount_s1() < order.quantity:
+                and self._accounts[0].free < order.quantity:
             log.critical(f'not enough amount to place the order')
             return {}
 
@@ -253,11 +255,11 @@ class FakeClient:
                 self._placed_orders.remove(order)
                 # update balance
                 if order.side == 'BUY':
-                    self._account_balance.s2.free += order.get_total()
-                    self._account_balance.s2.locked -= order.get_total()
+                    self._accounts[1].free += order.get_total()
+                    self._accounts[1].locked -= order.get_total()
                 else:
-                    self._account_balance.s1.free += order.quantity
-                    self._account_balance.s1.locked -= order.quantity
+                    self._accounts[0].free += order.quantity
+                    self._accounts[0].locked -= order.quantity
                 # call user socket callback
                 self._call_user_socket_balance_update()
                 return {
@@ -302,14 +304,14 @@ class FakeClient:
 
     def get_asset_balance(self, asset: str) -> dict:
         if asset == 'BTC':
-            free = self._account_balance.s1.free
-            locked = self._account_balance.s1.locked
+            free = self._accounts[0].free
+            locked = self._accounts[0].locked
         elif asset == 'EUR':
-            free = self._account_balance.s2.free
-            locked = self._account_balance.s2.locked
+            free = self._accounts[1].free
+            locked = self._accounts[1].locked
         elif asset == 'BNB':
-            free = self._account_balance.bnb.free
-            locked = self._account_balance.bnb.locked
+            free = self._accounts[2].free
+            locked = self._accounts[2].locked
         else:
             log.critical(f'wrong asset')
             return {}
@@ -352,43 +354,27 @@ class FakeClient:
     def _place_order(self, order: FakeOrder):
         self._placed_orders.append(order)
         if order.side == 'BUY':
-            self._account_balance.s2.free -= order.get_total()
-            self._account_balance.s2.locked += order.get_total()
+            self._accounts[1].free -= order.get_total()
+            self._accounts[1].locked += order.get_total()
         else:
-            self._account_balance.s1.free -= order.quantity
-            self._account_balance.s1.locked += order.quantity
+            self._accounts[0].free -= order.quantity
+            self._accounts[0].locked += order.quantity
         # call user socket callback
         self._call_user_socket_balance_update()
-
-    # def _place_market_order(self, order: FakeOrder):
-    #     self._placed_orders.append(order)
-    #     if order.side == 'BUY':
-    #         self._account_balance.s2.free -= order.get_total()
-    #         self._account_balance.s2.locked += order.get_total()
-    #     else:
-    #         self._account_balance.s1.free -= order.quantity
-    #         self._account_balance.s1.locked += order.quantity
-    #     # call user socket callback
-    #     self._call_user_socket_balance_update()
-    #
-    #     # trade immediately
-    #     self._trade_order(order=order)
 
     def _trade_order(self, order: FakeOrder):
         if order in self._placed_orders:
             self._placed_orders.remove(order)
             # update account balance
             if order.side == 'BUY':
-                self._account_balance.s2.locked -= order.get_total()
-                self._account_balance.s1.free += order.quantity
+                self._accounts[1].locked -= order.get_total()
+                self._accounts[0].free += order.quantity
             else:
-                self._account_balance.s1.locked -= order.quantity
-                self._account_balance.s2.free += order.get_total()
-            # eur_commission = order.get_total() * K_FEE
+                self._accounts[0].locked -= order.quantity
+                self._accounts[1].free += order.get_total()
             btc_commission = order.quantity * self._FEE  # K_FEE
             bnb_commission = btc_commission / self._BNBBTC  # K_BNBBTC
-            self._account_balance.bnb.free -= bnb_commission
-            # print(f'fee: {order.get_total() * K_FEE}')
+            self._accounts[2].free -= bnb_commission
             # call binance user socket twice
             # call for order traded
             self._call_user_socket_order_traded(order=order)
@@ -417,18 +403,18 @@ class FakeClient:
             B=[
                 dict(
                     a='BTC',
-                    f=self._account_balance.s1.free,
-                    l=self._account_balance.s1.locked
+                    f=self._accounts[0].free,
+                    l=self._accounts[0].locked,
                 ),
                 dict(
                     a='EUR',
-                    f=self._account_balance.s2.free,
-                    l=self._account_balance.s2.locked
+                    f=self._accounts[1].free,
+                    l=self._accounts[1].locked,
                 ),
                 dict(
                     a='BNB',
-                    f=self._account_balance.bnb.free,
-                    l=self._account_balance.bnb.locked
+                    f=self._accounts[2].free,
+                    l=self._accounts[2].locked,
                 )
             ]
         )

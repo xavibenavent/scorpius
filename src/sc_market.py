@@ -17,7 +17,7 @@ import socket
 from requests.exceptions import ConnectionError, ReadTimeout
 
 from sc_order import Order
-from sc_account_balance import AccountBalance, AssetBalance
+# from sc_account_balance import AccountBalance, AssetBalance
 from sc_fake_client import FakeClient
 from sc_balance_manager import Account
 
@@ -32,14 +32,20 @@ class ClientMode(Enum):
 
 
 class Market:
+
+    BALANCE_ARRAY = 'B'
+    ASSET_NAME = 'a'
+    FREE = 'f'
+    LOCKED = 'l'
+
     def __init__(self,
                  symbol_ticker_callback: Optional[Callable[[float], None]],
                  order_traded_callback: Optional[Callable[[str, float, float], None]],
-                 account_balance_callback: Optional[Callable[[AccountBalance], None]]):
+                 account_balance_callback: Optional[Callable[[List[Account]], None]]):
 
         self.symbol_ticker_callback: Callable[[float], None] = symbol_ticker_callback
         self.order_traded_callback: Callable[[str, float, float], None] = order_traded_callback
-        self.account_balance_callback: Callable[[AccountBalance], None] = account_balance_callback
+        self.account_balance_callback: Callable[[List[Account]], None] = account_balance_callback
 
         # get app parameters from config.ini
         config = configparser.ConfigParser()
@@ -81,8 +87,8 @@ class Market:
 
             # properly close the WebSocket, only if it is running
             # trying to stop it when it is not running, will raise an error
-            if reactor.running:
-                reactor.stop()
+            # if reactor.running:
+            #     reactor.stop()
 
         elif self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
             self.client.stop_cmp_generator()
@@ -111,38 +117,13 @@ class Market:
                 pass
 
         elif event_type == 'outboundAccountPosition':
-            # account balance change
-            balances = msg['B']
-            d = {}
-            # create dictionary from msg to use in account balance instantiation
-            for item in balances:
-                # to avoid errors in case of having more assets
-                if item['a'] in ['BTC', 'EUR', 'BNB']:
-                    # set precision
-                    if item['a'] in ['BTC', 'BNB']:
-                        p = 8
-                    else:
-                        p = 2
-                    ab = AssetBalance(
-                        name=item['a'],
-                        free=float(item['f']),
-                        locked=float(item['l']),
-                        tag='current',
-                        precision=p)
-                    d.update(ab.to_dict(symbol=self.symbol))
-            # todo: since the msg only contains the assets that changed during the event,
-            # in a trade different from BTCEUR (for example TVK/BTC)
-            # one of the fields will be missing, creating a wrong dictionary
-            # and then a wrong account balance
+            binance_accounts = msg[self.BALANCE_ARRAY]
+            # convert to list of accounts
+            accounts = [
+                Account(name=ba[self.ASSET_NAME], free=ba[self.FREE], locked=ba[self.LOCKED])
+                for ba in binance_accounts]
 
-            # todo: check the following statement, it is probably not true
-            # todo: if the asset or the quote of the symbol traded is different from BTC, EUR or BNB,
-            # then the dictionary d is void (d={}) or it lacks one of the values,
-            # and, as a consequence, the AccountBalance created is wrong.
-            # when sending the worng account balance to the callback, it updates the current balance
-            # with the wrong one and the error persists not updating the balances in future trades
-            account_balance = AccountBalance(d=d)
-            self.account_balance_callback(account_balance)
+            self.account_balance_callback(accounts)
 
     def binance_symbol_ticker_callback(self, msg: Any) -> None:
         # called from Binance API each time the cmp is updated
@@ -243,20 +224,6 @@ class Market:
             self.hot_reconnect()
         return None
 
-    def get_asset_balance(self, asset: str, tag: str, p=8) -> AssetBalance:
-        try:
-            d = self.client.get_asset_balance(asset)
-            free = float(d.get('free'))
-            locked = float(d.get('locked'))
-            return AssetBalance(name=asset, free=free, locked=locked, tag=tag, precision=p)
-        except (BinanceAPIException, BinanceRequestException) as e:
-            log.critical(e)
-        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
-            log.critical(e)
-            self.hot_reconnect()
-        # return 0.0 if there is a connection error
-        return AssetBalance(name=asset, free=0.0, locked=0.0, tag=tag, precision=p)
-
     def get_account(self, asset_name: str) -> Optional[Account]:
         try:
             d = self.client.get_asset_balance(asset=asset_name)
@@ -271,9 +238,7 @@ class Market:
         return None
 
     def get_asset_liquidity(self, asset: str) -> float:
-        asset_balance = self.get_asset_balance(asset=asset, tag='')
-        asset_liquidity = asset_balance.free
-        return asset_liquidity
+        return self.get_account(asset_name=asset).free
 
     def get_cmp(self, symbol: str) -> float:
         try:

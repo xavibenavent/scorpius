@@ -9,11 +9,11 @@ from binance import enums as k_binance
 
 from sc_market import Market
 from sc_order import Order, OrderStatus
-from sc_account_balance import AccountBalance
-from sc_balance_manager import BalanceManager
+# from sc_account_balance import AccountBalance
+from sc_balance_manager import BalanceManager, Account
 from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
-from sc_pt_calculator import get_compensation
+# from sc_pt_calculator import get_compensation
 
 import configparser
 
@@ -73,8 +73,6 @@ class Session:
 
         # used in dashboard in the cmp line chart. initiated with current cmp
         self.cmps = [self.market.get_cmp(self.symbol)]
-        # self.orders_book_depth = []
-        # self.orders_book_span = []
 
         self.total_profit_series = [0.0]
 
@@ -230,63 +228,63 @@ class Session:
                 self.cycles_from_last_trade -= 60  # todo: move to parameter
 
     # ********** compensation (not used) **********
-    def _check_monitor_orders_for_compensation(self, cmp: float) -> None:
-        # get monitor orders of pt with one order traded
-        orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.MONITOR],
-            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-        )
-        for order in orders:
-            if order.order_id != 'CONCENTRATED' and order.get_abs_distance(cmp=cmp) > self.compensation_distance:
-                # compensate
-                b1, s1 = self._compensate_order(order=order, ref_mp=cmp, ref_gap=self.compensation_gap)
-                # set values
-                b1.sibling_order = None
-                b1.pt = order.pt
-                s1.sibling_order = None
-                s1.pt = order.pt
-                # add to pt orders list
-                order.pt.orders.append(b1)
-                order.pt.orders.append(s1)
-                # change original order status
-                order.status = OrderStatus.CANCELED
-                # change pt type to avoid generating a new pt after trading the new orders
-                order.pt.pt_type = 'FROM_COMPENSATION'
-
-    def _compensate_order(self, order: Order, ref_mp: float, ref_gap: float) -> (Order, Order):
-        amount, total, _ = BalanceManager.get_balance_for_list([order])
-        # get equivalent pair b1-s1
-        s1_p, b1_p, s1_qty, b1_qty = get_compensation(
-            cmp=ref_mp,
-            gap=ref_gap,
-            qty_bal=order.get_signed_amount(),
-            price_bal=order.get_signed_total(),  # todo: assess whether it has to be signed or not
-            buy_fee=self.fee,
-            sell_fee=self.fee
-        )
-        # validate values received for b1 and s1
-        if s1_p < 0 or b1_p < 0 or s1_qty < 0 or b1_qty < 0:
-            raise Exception(f'negative value(s) after compensation: b1p: {b1_p} b1q: {b1_qty} 1p: {s1_p} s1q: {s1_qty}')
-        else:
-            # create both orders
-            b1 = Order(
-                order_id='CONCENTRATED',
-                k_side=k_binance.SIDE_BUY,
-                price=b1_p,
-                amount=b1_qty,
-                uid=Order.get_new_uid(),
-                name='con-b1'
-            )
-            s1 = Order(
-                order_id='CONCENTRATED',
-                k_side=k_binance.SIDE_SELL,
-                price=s1_p,
-                amount=s1_qty,
-                status=OrderStatus.MONITOR,
-                uid=Order.get_new_uid(),
-                name='con-s1'
-            )
-            return b1, s1
+    # def _check_monitor_orders_for_compensation(self, cmp: float) -> None:
+    #     # get monitor orders of pt with one order traded
+    #     orders = self.ptm.get_orders_by_request(
+    #         orders_status=[OrderStatus.MONITOR],
+    #         pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+    #     )
+    #     for order in orders:
+    #         if order.order_id != 'CONCENTRATED' and order.get_abs_distance(cmp=cmp) > self.compensation_distance:
+    #             # compensate
+    #             b1, s1 = self._compensate_order(order=order, ref_mp=cmp, ref_gap=self.compensation_gap)
+    #             # set values
+    #             b1.sibling_order = None
+    #             b1.pt = order.pt
+    #             s1.sibling_order = None
+    #             s1.pt = order.pt
+    #             # add to pt orders list
+    #             order.pt.orders.append(b1)
+    #             order.pt.orders.append(s1)
+    #             # change original order status
+    #             order.status = OrderStatus.CANCELED
+    #             # change pt type to avoid generating a new pt after trading the new orders
+    #             order.pt.pt_type = 'FROM_COMPENSATION'
+    #
+    # def _compensate_order(self, order: Order, ref_mp: float, ref_gap: float) -> (Order, Order):
+    #     amount, total, _ = BalanceManager.get_balance_for_list([order])
+    #     # get equivalent pair b1-s1
+    #     s1_p, b1_p, s1_qty, b1_qty = get_compensation(
+    #         cmp=ref_mp,
+    #         gap=ref_gap,
+    #         qty_bal=order.get_signed_amount(),
+    #         price_bal=order.get_signed_total(),  # todo: assess whether it has to be signed or not
+    #         buy_fee=self.fee,
+    #         sell_fee=self.fee
+    #     )
+    #     # validate values received for b1 and s1
+    #     if s1_p < 0 or b1_p < 0 or s1_qty < 0 or b1_qty < 0:
+    #         raise Exception(f'negative value(s) after compensation: b1p: {b1_p} b1q: {b1_qty} 1p: {s1_p} s1q: {s1_qty}')
+    #     else:
+    #         # create both orders
+    #         b1 = Order(
+    #             order_id='CONCENTRATED',
+    #             k_side=k_binance.SIDE_BUY,
+    #             price=b1_p,
+    #             amount=b1_qty,
+    #             uid=Order.get_new_uid(),
+    #             name='con-b1'
+    #         )
+    #         s1 = Order(
+    #             order_id='CONCENTRATED',
+    #             k_side=k_binance.SIDE_SELL,
+    #             price=s1_p,
+    #             amount=s1_qty,
+    #             status=OrderStatus.MONITOR,
+    #             uid=Order.get_new_uid(),
+    #             name='con-s1'
+    #         )
+    #         return b1, s1
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
         print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
@@ -427,9 +425,9 @@ class Session:
         else:
             return True
 
-    def account_balance_callback(self, ab: AccountBalance) -> None:
+    def account_balance_callback(self, accounts: List[Account]) -> None:
         # update of current balance from Binance
-        self.bm.update_current(last_ab=ab)
+        self.bm.update_current_accounts(received_accounts=accounts)
 
     # ********** check methods **********
     def _place_market_order(self, order) -> None:  # (bool, Optional[str]):

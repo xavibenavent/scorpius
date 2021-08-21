@@ -8,7 +8,7 @@ import logging
 from sc_order import Order, OrderStatus
 from sc_pt_calculator import get_prices_given_neb  # get_pt_values
 from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
-from sc_account_balance import AccountBalance
+# from sc_account_balance import AccountBalance
 
 log = logging.getLogger('log')
 
