@@ -35,11 +35,23 @@ class SessionManager:
         self.global_cmp_count = 0
         self.placed_orders_count = 0
 
+        self.placed_orders_from_previous_sessions = []
+
         # todo: not sure whether it will work
         self.market.start_sockets()
 
         # start first session
         self.start_new_session()
+
+    def _global_profit_update_callback(self, consolidated, expected):
+        # called when an order from a previous session is traded in Binance
+        self.global_consolidated_profit += consolidated
+        self.global_expected_profit -= expected
+        print('check are equals:')
+        log.info('********** global profit updated **********')
+        log.info(f'consolidated: {consolidated} expected: {expected}')
+        log.info('*****************************************************************************')
+        [print(order) for order in self.placed_orders_from_previous_sessions]
 
     def _session_stopped_callback(self,
                                   session_id: str,
@@ -48,10 +60,10 @@ class SessionManager:
                                   cmp_count: int,
                                   placed_orders_count: int,
                                   ) -> None:
-        print(f'session stopped with id: {session_id} net profit: {consolidated_profit}')
-        print(f'session stopped with id: {session_id} net profit: {expected_profit}')
-        log.info(f'session stopped with id: {session_id} net profit: {consolidated_profit}')
-        log.info(f'session stopped with id: {session_id} net profit: {expected_profit}')
+        print(f'session stopped with id: {session_id} consolidated profit: {consolidated_profit}')
+        print(f'session stopped with id: {session_id} expected profit: {expected_profit}')
+        log.info(f'session stopped with id: {session_id} consolidated profit: {consolidated_profit}')
+        log.info(f'session stopped with id: {session_id} expected profit: {expected_profit}')
 
         # self.global_profit += net_profit
         self.global_consolidated_profit += consolidated_profit
@@ -62,9 +74,12 @@ class SessionManager:
 
         print(f'********** sessions count: {self.session_count} **********')
         print(f'********** partial cmp count: {self.global_cmp_count / 3600.0:,.2f} [hours]')
-        print(f'********** partial global profit: {self.global_consolidated_profit:,.2f} **********')
-        print(f'********** partial global profit: {self.global_expected_profit:,.2f} **********')
+        print(f'********** global consolidated profit: {self.global_consolidated_profit:,.2f} **********')
+        print(f'********** global expected profit: {self.global_expected_profit:,.2f} **********')
         print(f'********** placed orders count: {self.placed_orders_count} **********')
+
+        print('placed orders:')
+        [print(order) for order in self.placed_orders_from_previous_sessions]
 
         if self.session_count < 1000:
             self.start_new_session()
@@ -85,7 +100,9 @@ class SessionManager:
             session_id=session_id,
             session_stopped_callback=self._session_stopped_callback,
             market=self.market,
-            balance_manager=self.bm
+            balance_manager=self.bm,
+            placed_orders_from_previous_sessions=self.placed_orders_from_previous_sessions,
+            global_profit_update_callback=self._global_profit_update_callback
         )
 
         # after having the session created, set again the callback functions that were None
