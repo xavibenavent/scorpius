@@ -1,6 +1,6 @@
 # pp_account_balance.py
 import logging
-from typing import Dict
+from typing import Dict, List, Optional
 
 log = logging.getLogger('log')
 
@@ -67,6 +67,40 @@ class AssetBalance:
     def log_print(self):
         print(self)
         log.info(self)
+
+
+class NewAssetBalance:
+    ASSET_NAME = 'a'
+    FREE = 'f'
+    LOCKED = 'l'
+
+    def __init__(self, asset_d: Dict):
+        self.name = asset_d[self.ASSET_NAME]
+        self.free = float(asset_d[self.FREE])
+        self.locked = float(asset_d[self.LOCKED])
+
+    def get_total(self) -> float:
+        return self.free + self.locked
+
+
+class NewAccountBalance:
+    def __init__(self, asset_balances: List[NewAssetBalance]):
+        self.asset_balances = asset_balances
+
+    def get_asset_by_name(self, name: str) -> Optional[NewAssetBalance]:
+        # if found return the asset with this name, otherwise return None
+        for asset_balance in self.asset_balances:
+            if asset_balance.name == name:
+                return asset_balance
+        return None
+
+    def update(self, new_assets: List[NewAssetBalance]) -> None:
+        for new_asset_balance in new_assets:
+            if new_asset_balance.name in [asset.name for asset in self.asset_balances]:
+                # set new value as current asset
+                asset_to_update = self.get_asset_by_name(name=new_asset_balance.name)
+                asset_to_update.free = new_asset_balance.free
+                new_asset_balance.locked = new_asset_balance.locked
 
 
 class AccountBalance:
