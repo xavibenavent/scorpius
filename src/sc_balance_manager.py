@@ -2,6 +2,7 @@
 
 from typing import List, Dict
 from binance import enums as k_binance
+import logging
 
 # from sc_account_balance import AccountBalance
 # from sc_market import Market
@@ -13,6 +14,9 @@ BTC_MIN_BALANCE = 0.02  # 0.04  # remaining guaranteed BTC balance
 # below _MIN_BALANCE + BUFFER some liquidity will be forced
 EUR_BUFFER = 1000.0
 BTC_BUFFER = 0.02
+
+
+log = logging.getLogger('log')
 
 
 class Account:
@@ -38,6 +42,8 @@ class BalanceManager:
                 self.accounts.append(account)
 
     def update_current_accounts(self, received_accounts: List[Account]) -> None:
+        log.debug([account.name for account in received_accounts])
+        log.debug([account.name for account in self.accounts])
         # loop through names of received accounts
         for received_account in received_accounts:
             # compare against already existing accounts
@@ -53,6 +59,9 @@ class BalanceManager:
             # create new account if it doesn't exist
             if not account_updated:
                 self.accounts.append(received_account)
+
+        log.debug([account.name for account in self.accounts])
+
 
     # @staticmethod
     # def get_balance_for_list(orders: List[Order]) -> (float, float, float, float):

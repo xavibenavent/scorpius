@@ -120,7 +120,7 @@ class Market:
             binance_accounts = msg[self.BALANCE_ARRAY]
             # convert to list of accounts
             accounts = [
-                Account(name=ba[self.ASSET_NAME], free=ba[self.FREE], locked=ba[self.LOCKED])
+                Account(name=ba[self.ASSET_NAME], free=float(ba[self.FREE]), locked=float(ba[self.LOCKED]))
                 for ba in binance_accounts]
 
             self.account_balance_callback(accounts)

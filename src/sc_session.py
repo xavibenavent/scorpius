@@ -427,6 +427,7 @@ class Session:
 
     def account_balance_callback(self, accounts: List[Account]) -> None:
         # update of current balance from Binance
+        log.debug([account.name for account in accounts])
         self.bm.update_current_accounts(received_accounts=accounts)
 
     # ********** check methods **********
