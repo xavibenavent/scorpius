@@ -19,6 +19,7 @@ from requests.exceptions import ConnectionError, ReadTimeout
 from sc_order import Order
 from sc_account_balance import AccountBalance, AssetBalance
 from sc_fake_client import FakeClient
+from sc_balance_manager import Account
 
 import configparser
 
@@ -255,6 +256,19 @@ class Market:
             self.hot_reconnect()
         # return 0.0 if there is a connection error
         return AssetBalance(name=asset, free=0.0, locked=0.0, tag=tag, precision=p)
+
+    def get_account(self, asset_name: str) -> Optional[Account]:
+        try:
+            d = self.client.get_asset_balance(asset=asset_name)
+            free = float(d.get('free'))
+            locked = float(d.get('locked'))
+            return Account(name=asset_name, free=free, locked=locked)
+        except (BinanceAPIException, BinanceRequestException) as e:
+            log.critical(e)
+        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
+            log.critical(e)
+            self.hot_reconnect()
+        return None
 
     def get_asset_liquidity(self, asset: str) -> float:
         asset_balance = self.get_asset_balance(asset=asset, tag='')

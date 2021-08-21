@@ -69,32 +69,20 @@ class AssetBalance:
         log.info(self)
 
 
-class NewAssetBalance:
-    ASSET_NAME = 'a'
-    FREE = 'f'
-    LOCKED = 'l'
-
-    def __init__(self, asset_d: Dict):
-        self.name = asset_d[self.ASSET_NAME]
-        self.free = float(asset_d[self.FREE])
-        self.locked = float(asset_d[self.LOCKED])
-
-    def get_total(self) -> float:
-        return self.free + self.locked
 
 
 class NewAccountBalance:
-    def __init__(self, asset_balances: List[NewAssetBalance]):
+    def __init__(self, asset_balances: List[Account]):
         self.asset_balances = asset_balances
 
-    def get_asset_by_name(self, name: str) -> Optional[NewAssetBalance]:
+    def get_asset_by_name(self, name: str) -> Optional[Account]:
         # if found return the asset with this name, otherwise return None
         for asset_balance in self.asset_balances:
             if asset_balance.name == name:
                 return asset_balance
         return None
 
-    def update(self, new_assets: List[NewAssetBalance]) -> None:
+    def update(self, new_assets: List[Account]) -> None:
         for new_asset_balance in new_assets:
             if new_asset_balance.name in [asset.name for asset in self.asset_balances]:
                 # set new value as current asset

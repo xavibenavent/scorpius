@@ -1,6 +1,6 @@
 # pp_balance_manager.py
 
-from typing import List
+from typing import List, Dict
 from binance import enums as k_binance
 
 from sc_account_balance import AccountBalance
@@ -15,18 +15,48 @@ EUR_BUFFER = 1000.0
 BTC_BUFFER = 0.02
 
 
+class Account:
+    # ASSET_NAME = 'a'
+    # FREE = 'f'
+    # LOCKED = 'l'
+
+    def __init__(self, name: str, free=0.0, locked=0.0):
+        self.name = name
+        self.free = free
+        self.locked = locked
+
+    def get_total(self) -> float:
+        return self.free + self.locked
+
+
 class BalanceManager:
-    def __init__(self, market: Market):
-        self.market = market
+    def __init__(self, market: Market, account_names: List[str]):
+        self.market = market[]
 
-        # account balances: initial, current and diff
-        self.initial_ab = self.get_account_balance(tag='initial')
-        self.current_ab = self.get_account_balance(tag='current')
-        self.net_ab = self.current_ab - self.initial_ab
+        self.accounts = []
 
-    def update_current(self, last_ab: AccountBalance) -> None:
-        self.current_ab = last_ab
-        self.net_ab = last_ab - self.initial_ab
+        # set accounts
+        for name in account_names:
+            account=self.market.get_account(asset_name=name)
+            if account:
+                self.accounts.append(account)
+
+    def update_current_accounts(self, received_accounts: List[Account]) -> None:
+        # loop through names of received accounts
+        for received_account in received_accounts:
+            # compare against already existing accounts
+            # if exists, update it, otherwise add new account
+            account_updated = False
+            for account in self.accounts:
+                if account.name == received_account.name:
+                    # update account
+                    account.free = received_account.free
+                    account.locked = received_account.locked
+                    account_updated = True
+                    break
+            # create new account if it doesn't exist
+            if not account_updated:
+                self.accounts.append(received_account)
 
     def is_s2_below_buffer(self):
         buffer = EUR_BUFFER + EUR_MIN_BALANCE
