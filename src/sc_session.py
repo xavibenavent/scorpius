@@ -4,7 +4,7 @@ import logging
 import time
 from enum import Enum
 
-from typing import Callable
+from typing import Callable, List
 from binance import enums as k_binance
 
 from sc_market import Market
@@ -32,11 +32,15 @@ class Session:
                  session_id: str,
                  session_stopped_callback: Callable[[str, float, float, int, int], None],
                  market: Market,
-                 balance_manager: BalanceManager
+                 balance_manager: BalanceManager,
+                 placed_orders_from_previous_sessions: List[Order],
+                 global_profit_update_callback: Callable[[float, float], None]
                  ):
 
         self.session_id = session_id
         self.session_stopped_callback = session_stopped_callback
+        self.placed_orders_from_previous_sessions = placed_orders_from_previous_sessions
+        self.global_profit_update_callback = global_profit_update_callback
         self.market = market
         self.bm = balance_manager
 
@@ -355,6 +359,45 @@ class Session:
                 # since the traded orders has been identified, do not check more orders
                 break
 
+        # if no order found, then check in placed_orders_from_previous_sessions list
+        for order in self.placed_orders_from_previous_sessions:
+            if order.uid == uid:
+                log.info(f'traded order from previous sessions {order}')
+
+                # assess whether the actual profit is higher or lower than the expected
+                qty = order.get_amount()
+                # todo: fix it
+                # the total to remove must be from the order and its sibling
+                total_to_sustract_from_expected = abs(order.price - order.sibling_order.price) * qty
+                total_to_add_to_consolidated = 0.0
+                diff = abs(order.price - order_price) * qty
+
+                if order.k_side == k_binance.SIDE_BUY:
+                    if order.price < order_price:
+                        # bought at a lower price (GOOD)
+                        total_to_add_to_consolidated = total_to_sustract_from_expected + diff
+                    else:
+                        # BAD
+                        total_to_add_to_consolidated = total_to_sustract_from_expected - diff
+
+                elif order.k_side == k_binance.SIDE_SELL:
+                    if order.price > order_price:
+                        # sold at a higher price (GOOD)
+                        total_to_add_to_consolidated = total_to_sustract_from_expected + diff
+                    else:
+                        # BAD
+                        total_to_add_to_consolidated = total_to_sustract_from_expected - diff
+
+                # update global profit values
+                log.info(f'total to add to consolidate: {total_to_add_to_consolidated:,.2f}')
+                log.info(f'total to add to expected: {total_to_sustract_from_expected:,.2f}')
+                self.global_profit_update_callback(total_to_add_to_consolidated, total_to_sustract_from_expected)
+
+                # remove order from list
+                [print(order) for order in self.placed_orders_from_previous_sessions]
+                self.placed_orders_from_previous_sessions.remove(order)
+
+
     def allow_new_pt_creation(self, cmp: float) -> bool:
         # get total eur & btc needed to trade all alive orders at their own price
         eur_needed, btc_needed = self.ptm.get_total_eur_btc_needed()
@@ -370,8 +413,16 @@ class Session:
 
         # check available liquidity (eur & btc) vs needed when trading both orders
         if self.market.get_asset_liquidity(asset='EUR') < eur_needed + (self.quantity * cmp):
+            # get EUR by selling BTC
+            # 1. get SELL placed orders
+            # 2. choose one (criteria: farthest or nearest distance)
+            # 3. cancel order
+            # 4. place same qty at MARKET price
+
             return False
         elif self.market.get_asset_liquidity(asset='BTC') < btc_needed + self.quantity:
+            # get BTC by buying BTC
+
             return False
         else:
             return True
@@ -449,6 +500,8 @@ class Session:
                 # place only MONITOR orders
                 if order.status == OrderStatus.MONITOR:
                     self._place_limit_order(order=order)
+                    # add to list
+                    self.placed_orders_from_previous_sessions.append(order)
 
                 log.info(f'trading limit order {order.k_side} {order.status} {order.price}')
                 time.sleep(0.1)

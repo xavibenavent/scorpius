@@ -129,6 +129,17 @@ class Market:
                         tag='current',
                         precision=p)
                     d.update(ab.to_dict(symbol=self.symbol))
+            # todo: since the msg only contains the assets that changed during the event,
+            # in a trade different from BTCEUR (for example TVK/BTC)
+            # one of the fields will be missing, creating a wrong dictionary
+            # and then a wrong account balance
+
+            # todo: check the following statement, it is probably not true
+            # todo: if the asset or the quote of the symbol traded is different from BTC, EUR or BNB,
+            # then the dictionary d is void (d={}) or it lacks one of the values,
+            # and, as a consequence, the AccountBalance created is wrong.
+            # when sending the worng account balance to the callback, it updates the current balance
+            # with the wrong one and the error persists not updating the balances in future trades
             account_balance = AccountBalance(d=d)
             self.account_balance_callback(account_balance)
 
