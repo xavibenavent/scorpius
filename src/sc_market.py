@@ -4,7 +4,7 @@ import sys
 import logging
 import time
 from typing import Callable, Union, Any, Optional, List
-from twisted.internet import reactor
+# from twisted.internet import reactor
 from binance.client import Client
 from binance import ThreadedWebsocketManager
 from binance import enums as k_binance
@@ -33,10 +33,10 @@ class ClientMode(Enum):
 
 class Market:
 
-    BALANCE_ARRAY = 'B'
-    ASSET_NAME = 'a'
-    FREE = 'f'
-    LOCKED = 'l'
+    B_BALANCE_ARRAY = 'B'
+    B_ASSET_NAME = 'a'
+    B_FREE = 'f'
+    B_LOCKED = 'l'
 
     def __init__(self,
                  symbol_ticker_callback: Optional[Callable[[float], None]],
@@ -117,10 +117,10 @@ class Market:
                 pass
 
         elif event_type == 'outboundAccountPosition':
-            binance_accounts = msg[self.BALANCE_ARRAY]
+            binance_accounts = msg[self.B_BALANCE_ARRAY]
             # convert to list of accounts
             accounts = [
-                Account(name=ba[self.ASSET_NAME], free=float(ba[self.FREE]), locked=float(ba[self.LOCKED]))
+                Account(name=ba[self.B_ASSET_NAME], free=float(ba[self.B_FREE]), locked=float(ba[self.B_LOCKED]))
                 for ba in binance_accounts]
 
             self.account_balance_callback(accounts)
@@ -140,7 +140,7 @@ class Market:
 
     def place_limit_order(self, order: Order) -> Optional[dict]:
         try:
-            msg = {}
+            # msg = {}
             msg = self.client.create_order(
                 symbol=self.symbol,
                 side=order.k_side,
@@ -224,7 +224,28 @@ class Market:
             self.hot_reconnect()
         return None
 
-    def get_account(self, asset_name: str) -> Optional[Account]:
+    def get_account_info(self) -> Optional[List[Account]]:
+        try:
+            msg = self.client.get_account()
+            binance_accounts = msg['balances']
+            # convert to list of accounts
+            accounts = [
+                Account(name=ba['asset'], free=float(ba['free']), locked=float(ba['locked']))
+                for ba in binance_accounts
+                if ba['asset'] in ['BTC', 'EUR', 'BNB']
+            ]
+            # if float(ba['free']) > 0 or float(ba['locked']) > 0]
+            for a in accounts:
+                print(f'{a.name} {a.free} {a.locked}')
+            return accounts
+        except (BinanceAPIException, BinanceRequestException) as e:
+            log.critical(e)
+        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
+            log.critical(e)
+            self.hot_reconnect()
+        return None
+
+    def get_asset_balance(self, asset_name: str) -> Optional[Account]:
         try:
             d = self.client.get_asset_balance(asset=asset_name)
             free = float(d.get('free'))
@@ -238,7 +259,7 @@ class Market:
         return None
 
     def get_asset_liquidity(self, asset: str) -> float:
-        return self.get_account(asset_name=asset).free
+        return self.get_asset_balance(asset_name=asset).free
 
     def get_cmp(self, symbol: str) -> float:
         try:

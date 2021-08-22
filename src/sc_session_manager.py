@@ -24,7 +24,9 @@ class SessionManager:
 
         self.session: Optional[Session] = None
 
-        self.bm = BalanceManager(market=self.market, account_names=['BTC', 'EUR', 'BNB'])
+        # get initial accounts to create the balance manager
+        accounts = self.market.get_account_info()
+        self.bm = BalanceManager(accounts=accounts)
 
         # global sessions info
         self.session_count = 0

@@ -9,11 +9,9 @@ from binance import enums as k_binance
 
 from sc_market import Market
 from sc_order import Order, OrderStatus
-# from sc_account_balance import AccountBalance
 from sc_balance_manager import BalanceManager, Account
 from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
-# from sc_pt_calculator import get_compensation
 
 import configparser
 
@@ -394,7 +392,6 @@ class Session:
                 # remove order from list
                 [print(order) for order in self.placed_orders_from_previous_sessions]
                 self.placed_orders_from_previous_sessions.remove(order)
-
 
     def allow_new_pt_creation(self, cmp: float) -> bool:
         # get total eur & btc needed to trade all alive orders at their own price

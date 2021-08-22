@@ -302,6 +302,34 @@ class FakeClient:
             log.critical(f'wrong symbol {symbol}')
             return {}
 
+    def get_account(self):
+        return {
+            "makerCommission": 15,
+            "takerCommission": 15,
+            "buyerCommission": 0,
+            "sellerCommission": 0,
+            "canTrade": True,
+            "canWithdraw": True,
+            "canDeposit": True,
+            "balances": [
+                {
+                    "asset": "BTC",
+                    "free": str(self._accounts[0].free),
+                    "locked": str(self._accounts[0].locked)
+                },
+                {
+                    "asset": "EUR",
+                    "free": str(self._accounts[1].free),
+                    "locked": str(self._accounts[1].locked)
+                },
+                {
+                    "asset": "BNB",
+                    "free": str(self._accounts[2].free),
+                    "locked": str(self._accounts[2].locked)
+                },
+            ]
+        }
+
     def get_asset_balance(self, asset: str) -> dict:
         if asset == 'BTC':
             free = self._accounts[0].free

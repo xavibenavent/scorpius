@@ -1,27 +1,21 @@
 # pp_balance_manager.py
 
-from typing import List, Dict
-from binance import enums as k_binance
+from typing import List, Optional
 import logging
 
-# from sc_account_balance import AccountBalance
-# from sc_market import Market
-from sc_order import Order
-
-EUR_MIN_BALANCE = 1000.0  # 2000.0  # remaining guaranteed EUR balance
-BTC_MIN_BALANCE = 0.02  # 0.04  # remaining guaranteed BTC balance
-
-# below _MIN_BALANCE + BUFFER some liquidity will be forced
-EUR_BUFFER = 1000.0
-BTC_BUFFER = 0.02
-
+# EUR_MIN_BALANCE = 1000.0  # 2000.0  # remaining guaranteed EUR balance
+# BTC_MIN_BALANCE = 0.02  # 0.04  # remaining guaranteed BTC balance
+#
+# # below _MIN_BALANCE + BUFFER some liquidity will be forced
+# EUR_BUFFER = 1000.0
+# BTC_BUFFER = 0.02
 
 log = logging.getLogger('log')
 
 
 class Account:
     def __init__(self, name: str, free=0.0, locked=0.0):
-        self.name = name
+        self.name = name.upper()
         self.free = free
         self.locked = locked
 
@@ -30,16 +24,8 @@ class Account:
 
 
 class BalanceManager:
-    def __init__(self, market, account_names: List[str]):
-        self.market = market
-
-        self.accounts = []
-
-        # set accounts
-        for name in account_names:
-            account=self.market.get_account(asset_name=name)
-            if account:
-                self.accounts.append(account)
+    def __init__(self, accounts: List[Account]):
+        self.accounts = accounts
 
     def update_current_accounts(self, received_accounts: List[Account]) -> None:
         log.debug([account.name for account in received_accounts])
@@ -62,6 +48,11 @@ class BalanceManager:
 
         log.debug([account.name for account in self.accounts])
 
+    def get_account_by_name(self, name: str) -> Optional[Account]:
+        for account in self.accounts:
+            if account.name == name:
+                return account
+        return None
 
     # @staticmethod
     # def get_balance_for_list(orders: List[Order]) -> (float, float, float, float):
