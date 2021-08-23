@@ -4,6 +4,7 @@ from dash.dependencies import Input, Output
 from dash_app import app
 from dash_aux import get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
 from sc_session import QuitMode
+from sc_balance_manager import BalanceManager, Account
 from sc_df_manager import DataframeManager
 
 # import dash_bootstrap_components as dbc
@@ -133,9 +134,13 @@ def on_button_click(n):
 )
 def update_figure(timer):
     ab = dfm.sm.session.bm.accounts
-    return f'{ab[1].free:,.2f}', f'{ab[1].locked:,.2f}',\
-           f'{ab[0].free:,.6f}', f'{ab[0].locked:,.6f}',\
-           f'{ab[2].free:,.6f}', f'{ab[2].locked:,.6f}'
+    bm = dfm.sm.session.bm
+    eur_account = bm.get_account_by_name('EUR')
+    btc_account = bm.get_account_by_name('BTC')
+    bnb_account = bm.get_account_by_name('BNB')
+    return f'{eur_account.free:,.2f}', f'{eur_account.locked:,.2f}',\
+           f'{btc_account.free:,.6f}', f'{btc_account.locked:,.6f}',\
+           f'{bnb_account.free:,.6f}', f'{bnb_account.locked:,.6f}'
     # ab = dfm.sm.session.bm.current_ab
     # return f'{ab.s2.free:,.2f}', f'{ab.s2.locked:,.2f}',\
     #        f'{ab.s1.free:,.6f}', f'{ab.s1.locked:,.6f}',\

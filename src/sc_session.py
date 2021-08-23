@@ -393,7 +393,7 @@ class Session:
                 [print(order) for order in self.placed_orders_from_previous_sessions]
                 self.placed_orders_from_previous_sessions.remove(order)
 
-    def allow_new_pt_creation(self, cmp: float) -> bool:
+    def allow_new_pt_creation(self, cmp: float, symbol='BTCEUR') -> bool:
         # get total eur & btc needed to trade all alive orders at their own price
         eur_needed, btc_needed = self.ptm.get_total_eur_btc_needed()
 
