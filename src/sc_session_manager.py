@@ -10,6 +10,8 @@ from sc_session import Session
 from sc_market import Market
 # from sc_account_balance import AccountBalance
 from sc_balance_manager import BalanceManager, Account
+from sc_isolated_manager import IsolatedOrdersManager
+from sc_order import Order
 
 log = logging.getLogger('log')
 
@@ -17,6 +19,9 @@ log = logging.getLogger('log')
 class SessionManager:
     def __init__(self):
         print('session manager')
+
+        self.iom = IsolatedOrdersManager()
+
         self.market = Market(
             symbol_ticker_callback=self._fake_symbol_socket_callback,
             order_traded_callback=self._fake_order_socket_callback,
@@ -32,12 +37,11 @@ class SessionManager:
         self.session_count = 0
 
         # self.global_profit = 0
-        self.global_consolidated_profit = 0
-        self.global_expected_profit = 0
+        self.global_consolidated_profit = 0.0
+        self.global_expected_profit = 0.0
+
         self.global_cmp_count = 0
         self.placed_orders_count = 0
-
-        self.placed_orders_from_previous_sessions = []
 
         # todo: not sure whether it will work
         self.market.start_sockets()
@@ -47,13 +51,20 @@ class SessionManager:
 
     def _global_profit_update_callback(self, consolidated, expected):
         # called when an order from a previous session is traded in Binance
+        self._update_global_profit(consolidated=consolidated, expected=expected)
+
+        # print('check are equals:')
+        # [print(order) for order in self.placed_orders_from_previous_sessions]
+
+    def _update_global_profit(self, consolidated: float, expected: float):
+        # update
         self.global_consolidated_profit += consolidated
-        self.global_expected_profit -= expected
-        print('check are equals:')
+        self.global_expected_profit -= expected  # subtraction because expected is calculated as an absolut value
+
+        # log
         log.info('********** global profit updated **********')
         log.info(f'consolidated: {consolidated} expected: {expected}')
         log.info('*****************************************************************************')
-        [print(order) for order in self.placed_orders_from_previous_sessions]
 
     def _session_stopped_callback(self,
                                   session_id: str,
@@ -81,7 +92,7 @@ class SessionManager:
         print(f'********** placed orders count: {self.placed_orders_count} **********')
 
         print('placed orders:')
-        [print(order) for order in self.placed_orders_from_previous_sessions]
+        [print(order) for order in self.iom.isolated_orders]
 
         if self.session_count < 1000:
             self.start_new_session()
@@ -103,7 +114,9 @@ class SessionManager:
             session_stopped_callback=self._session_stopped_callback,
             market=self.market,
             balance_manager=self.bm,
-            placed_orders_from_previous_sessions=self.placed_orders_from_previous_sessions,
+            check_isolated_callback=self._check_isolated_callback,
+            place_isolated_callback=self._place_isolated_callback,
+            # placed_orders_from_previous_sessions=self.placed_orders_from_previous_sessions,
             global_profit_update_callback=self._global_profit_update_callback
         )
 
@@ -121,7 +134,6 @@ class SessionManager:
         print(f'\n\n******** NEW SESSION STARTED: {session_id}********\n')
         log.info(f'\n\n******** NEW SESSION STARTED: {session_id}********\n')
 
-
     def stop_global_session(self):
         # stop market (binance sockets)
         self.market.stop()
@@ -134,6 +146,18 @@ class SessionManager:
 
         # exit
         raise Exception("********** SESSION TERMINATED, PRESS CTRL-C ********")
+
+    def _check_isolated_callback(self, uid: str, order_price):
+        # check the isolated orders and, in case an order from previous session have been traded,
+        # return the variation in profit (consolidated & expected), otherwise return zero
+        consolidated, expected = self.iom.check_isolated_orders(uid=uid, order_price=order_price)
+
+        # update profit
+        self._update_global_profit(consolidated=consolidated, expected=expected)
+
+    def _place_isolated_callback(self, order: Order):
+        self.iom.isolated_orders.append(order)
+        pass
 
     def _fake_symbol_socket_callback(self, foo: float):
         pass

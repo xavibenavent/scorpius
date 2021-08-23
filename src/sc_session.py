@@ -32,16 +32,22 @@ class Session:
                  session_stopped_callback: Callable[[str, float, float, int, int], None],
                  market: Market,
                  balance_manager: BalanceManager,
-                 placed_orders_from_previous_sessions: List[Order],
+                 check_isolated_callback: Callable[[str, float], None],
+                 place_isolated_callback: Callable[[Order], None],
+                 # placed_orders_from_previous_sessions: List[Order],
                  global_profit_update_callback: Callable[[float, float], None]
                  ):
 
         self.session_id = session_id
         self.session_stopped_callback = session_stopped_callback
-        self.placed_orders_from_previous_sessions = placed_orders_from_previous_sessions
+        # self.placed_orders_from_previous_sessions = placed_orders_from_previous_sessions
         self.global_profit_update_callback = global_profit_update_callback
         self.market = market
         self.bm = balance_manager
+
+        # isolated manager callbacks
+        self.check_isolated_callback = check_isolated_callback
+        self.place_isolated_callback = place_isolated_callback
 
         print('session')
 
@@ -85,7 +91,7 @@ class Session:
         self.cmp_count = 0
         self.cycles_from_last_trade = 0
 
-        self.modal_alert_messages = []
+        # self.modal_alert_messages = []
 
     def get_traded_orders_profit(self) -> str:
         # get profit only if buy_orders_count == sell_orders_count
@@ -259,42 +265,7 @@ class Session:
                 break
 
         # if no order found, then check in placed_orders_from_previous_sessions list
-        for order in self.placed_orders_from_previous_sessions:
-            if order.uid == uid:
-                log.info(f'traded order from previous sessions {order}')
-
-                # assess whether the actual profit is higher or lower than the expected
-                qty = order.get_amount()
-                # todo: fix it
-                # the total to remove must be from the order and its sibling
-                total_to_sustract_from_expected = abs(order.price - order.sibling_order.price) * qty
-                total_to_add_to_consolidated = 0.0
-                diff = abs(order.price - order_price) * qty
-
-                if order.k_side == k_binance.SIDE_BUY:
-                    if order.price < order_price:
-                        # bought at a lower price (GOOD)
-                        total_to_add_to_consolidated = total_to_sustract_from_expected + diff
-                    else:
-                        # BAD
-                        total_to_add_to_consolidated = total_to_sustract_from_expected - diff
-
-                elif order.k_side == k_binance.SIDE_SELL:
-                    if order.price > order_price:
-                        # sold at a higher price (GOOD)
-                        total_to_add_to_consolidated = total_to_sustract_from_expected + diff
-                    else:
-                        # BAD
-                        total_to_add_to_consolidated = total_to_sustract_from_expected - diff
-
-                # update global profit values
-                log.info(f'total to add to consolidate: {total_to_add_to_consolidated:,.2f}')
-                log.info(f'total to add to expected: {total_to_sustract_from_expected:,.2f}')
-                self.global_profit_update_callback(total_to_add_to_consolidated, total_to_sustract_from_expected)
-
-                # remove order from list
-                [print(order) for order in self.placed_orders_from_previous_sessions]
-                self.placed_orders_from_previous_sessions.remove(order)
+        self.check_isolated_callback(uid, order_price)
 
     def _allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> bool:
         # 1. liquidity
@@ -375,7 +346,7 @@ class Session:
         diff = 0
 
         # completed pt
-        consolidated_profit = 0.0
+        # consolidated_profit = 0.0
 
         # non completed pt
         expected_profit = 0.0
@@ -412,7 +383,8 @@ class Session:
                 if order.status == OrderStatus.MONITOR:
                     self._place_limit_order(order=order)
                     # add to list
-                    self.placed_orders_from_previous_sessions.append(order)
+                    self.place_isolated_callback(order)
+                    # self.placed_orders_from_previous_sessions.append(order)
 
                 log.info(f'trading limit order {order.k_side} {order.status} {order.price}')
                 time.sleep(0.1)
