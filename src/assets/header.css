@@ -38,6 +38,12 @@
     color: DarkGray;
 }
 
+.accounts-info {
+    padding: 20px;
+    font-size: 24px;
+    color: SteelBlue;
+}
+
 
 
 .max-negative-profit-allowed {

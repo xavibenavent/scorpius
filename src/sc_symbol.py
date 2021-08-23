@@ -3,8 +3,9 @@
 
 class Asset:
     def __init__(self, name: str, precision: float):
-        if len(name) != 3:
-            raise Exception('Bad asset creation')
+        # if len(name) != 3:
+        #     print(name)
+        #     raise Exception('Bad asset creation')
         self._name = name.upper()
         self._precision = precision
 

@@ -232,9 +232,9 @@ class Market:
             accounts = [
                 Account(name=ba['asset'], free=float(ba['free']), locked=float(ba['locked']))
                 for ba in binance_accounts
-                if ba['asset'] in ['BTC', 'EUR', 'BNB']
+                # if ba['asset'] in ['BTC', 'EUR', 'BNB']
+                if float(ba['free']) > 0 or float(ba['locked']) > 0
             ]
-            # if float(ba['free']) > 0 or float(ba['locked']) > 0]
             for a in accounts:
                 print(f'{a.name} {a.free} {a.locked}')
             return accounts

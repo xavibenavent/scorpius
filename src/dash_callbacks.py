@@ -220,6 +220,15 @@ def display_value(value):
     return f'({ccfi})  {time_to_new_pt}'
 
 
+@app.callback(Output('accounts-info', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    accounts_info  = [f'{account.name}: {account.free:,.{account.asset.get_precision()}f} '
+                      for account in dfm.sm.session.bm.accounts
+                      if account.name not in ['BTC', 'EUR', 'BNB']]
+    accounts_info_s = ' '.join(map(str, accounts_info))
+    return accounts_info_s
+
+
 # ********** session cycle count **********
 @app.callback(Output('global-cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):

@@ -79,6 +79,7 @@ class DashLayout:
                     dbc.Col([
                         dbc.Row([
                             html.H1(id='cycles-to-new-pt', children='XXX', className='cycles-to-new-pt'),
+                            html.H1(id='accounts-info', children='XXX', className='accounts-info'),
                         ]),
                     ]),
                 ]),

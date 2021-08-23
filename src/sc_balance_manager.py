@@ -3,6 +3,8 @@
 from typing import List, Optional
 import logging
 
+from sc_symbol import Asset
+
 # EUR_MIN_BALANCE = 1000.0  # 2000.0  # remaining guaranteed EUR balance
 # BTC_MIN_BALANCE = 0.02  # 0.04  # remaining guaranteed BTC balance
 #
@@ -14,10 +16,12 @@ log = logging.getLogger('log')
 
 
 class Account:
+    # todo: Account shall be created from Asset
     def __init__(self, name: str, free=0.0, locked=0.0):
         self.name = name.upper()
         self.free = free
         self.locked = locked
+        self.asset = Asset(name=name, precision=4)
 
     def get_total(self) -> float:
         return self.free + self.locked
