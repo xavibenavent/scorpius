@@ -178,6 +178,21 @@ class PTManager:
 
         return quote_asset_needed, base_asset_needed
 
+    def get_momentum(self, cmp: float) -> (float, float, float):
+        # get orders
+        buy_momentum_orders = self.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.SELL_TRADED]
+        )
+        sell_momentum_orders = self.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.BUY_TRADED]
+        )
+        # calculate momentum
+        buy_momentum = sum([order.get_momentum(cmp=cmp) for order in buy_momentum_orders])
+        sell_momentum = sum([order.get_momentum(cmp=cmp) for order in sell_momentum_orders])
+        return sell_momentum - buy_momentum, buy_momentum, sell_momentum
+
     def _get_b1s1(self,
                   mp: float,
                   ) -> (Optional[Order], Optional[Order]):

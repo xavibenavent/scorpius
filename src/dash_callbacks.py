@@ -20,7 +20,7 @@ dfm = DataframeManager()
 # ********** cmp **********
 @app.callback(Output('cmp', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.session.get_info()["last_cmp"]:,.2f}'
+    return f'{dfm.sm.session.cmps[-1] if dfm.sm.session.cmps else 0:,.2f}'
 
 
 @app.callback(Output('current-time', 'children'), Input('update', 'n_intervals'))
@@ -103,7 +103,7 @@ def on_button_click(n):
 @app.callback(Output('msg-2', 'children'), Input('button-new-pt', 'n_clicks'))
 def on_button_click(n):
     if n:
-        cmp = dfm.sm.session.get_info()['last_cmp']
+        cmp = dfm.sm.session.cmps[-1] if dfm.sm.session.cmps else 0
         raise Exception('todo: pass symbol')
         # if dfm.sm.session.allow_new_pt_creation(cmp=cmp):
         #     dfm.sm.session.ptm.create_new_pt(cmp=cmp)
@@ -173,7 +173,7 @@ def display_value(value):
 
     # return f'{dfm.sm.session.get_info()["cmp_count"] / 3600:,.2f} h'
 
-    return f'{timedelta(seconds=dfm.sm.session.get_info()["cmp_count"])}'
+    return f'{timedelta(seconds=dfm.sm.session.cmp_count)}'
 
 
 # ********** stop at cmp **********
@@ -222,7 +222,7 @@ def display_value(value):
 
 @app.callback(Output('accounts-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    accounts_info  = [f'{account.name}: {account.free:,.{account.asset.get_precision()}f} '
+    accounts_info  = [f'{account.name}: {account.free:,.{account.asset.get_precision_for_visualization()}f} '
                       for account in dfm.sm.session.bm.accounts
                       if account.name not in ['BTC', 'EUR', 'BNB']]
     accounts_info_s = ' '.join(map(str, accounts_info))

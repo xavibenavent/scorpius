@@ -53,8 +53,8 @@ class Session:
 
         symbol = config['BINANCE']['symbol']  # BTCEUR
         self.symbol = Symbol(
-            base_asset=Asset(name=symbol[:3], precision=6),  # BTC
-            quote_asset=Asset(name=symbol[3:], precision=2)  # EUR
+            base_asset=Asset(name=symbol[:3], precision_for_transaction=6, precision_for_visualization=6),  # BTC
+            quote_asset=Asset(name=symbol[3:], precision_for_transaction=2, precision_for_visualization=2)  # EUR
         )
         self.target_total_net_profit = float(config['SESSION']['target_total_net_profit'])
         self.cycles_count_for_inactivity = int(config['SESSION']['cycles_count_for_inactivity'])
@@ -87,37 +87,6 @@ class Session:
 
         self.modal_alert_messages = []
 
-    # ********** dashboard callback functions **********
-    def get_info(self):
-        # return a dictionary with data convenient for the dashboard
-        session_data = dict(
-            session_id=self.session_id,
-            last_cmp=self.cmps[-1] if self.cmps else 0,
-            elapsed_hours=round(self.cmp_count / 3600, 2),
-            pt_created_count=self.ptm.pt_created_count,
-            buy_count=self.buy_count,
-            sell_count=self.sell_count,
-            cmp_count=self.cmp_count,
-            cycles_from_last_trade=self.cycles_from_last_trade,
-            momentum=self._get_momentum()
-        )
-        return session_data
-
-    def _get_momentum(self) -> (float, float, float):
-        # get orders
-        buy_momentum_orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
-            pt_status=[PerfectTradeStatus.SELL_TRADED]
-        )
-        sell_momentum_orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
-            pt_status=[PerfectTradeStatus.BUY_TRADED]
-        )
-        # calculate momentum
-        buy_momentum = sum([order.get_momentum(cmp=self.cmps[-1]) for order in buy_momentum_orders])
-        sell_momentum = sum([order.get_momentum(cmp=self.cmps[-1]) for order in sell_momentum_orders])
-        return sell_momentum - buy_momentum, buy_momentum, sell_momentum
-
     def get_traded_orders_profit(self) -> str:
         # get profit only if buy_orders_count == sell_orders_count
         if self.buy_count == self.sell_count:
@@ -131,7 +100,7 @@ class Session:
             try:
                 # 0.1: create first pt
                 if self.cmp_count == 1:
-                    if self.allow_new_pt_creation(cmp=cmp, symbol=self.symbol):
+                    if self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol):
                         self.ptm.create_new_pt(cmp=cmp)
                     else:
                         log.critical("initial pt not allowed, it will be tried again after inactivity period")
@@ -142,15 +111,9 @@ class Session:
 
                 # these two lists will be used to plot
                 self.cmps.append(cmp)
-                # self.cycles_series.append(self.cmp_count)
-
-                # self.last_cmp = cmp
 
                 # counter used to detect inactivity
                 self.cycles_from_last_trade += 1
-
-                # loop through monitoring orders for compensation
-                # self.check_monitor_orders_for_compensation(cmp=cmp)
 
                 # it is important to check first the active list and then the monitor one
                 # with this order we guarantee there is only one status change per cycle
@@ -159,7 +122,7 @@ class Session:
                 # 4. loop through monitoring orders for activating
                 self._check_monitor_orders_for_activating(cmp=cmp)
 
-                # 5. check inactivity & liquidity
+                # 5. check inactivity
                 self._check_inactivity(cmp=cmp)
 
                 # 6. check dynamic parameters
@@ -172,12 +135,6 @@ class Session:
                 print(e)
 
     def _check_dynamic_parameters(self):
-        # neb (increase) depending on profit/neb ratio
-        # neb_target_rate = int(self.target_total_net_profit / self.net_eur_balance)
-        # if self.ptm.pt_created_count > neb_target_rate + 1:  # todo: move to parameter
-        #     self.target_total_net_profit += self.net_eur_balance
-        # todo: check it
-        # self.target_total_net_profit = self.net_eur_balance * (2 + self.ptm.pt_created_count)
         pass
 
     def _check_exit_conditions(self, cmp):
@@ -222,7 +179,7 @@ class Session:
         # check elapsed time since last trade
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
             # check liquidity
-            if self.allow_new_pt_creation(cmp=cmp, symbol=self.symbol):
+            if self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol):
                 self.ptm.create_new_pt(cmp=cmp, pt_type='FROM_INACTIVITY')
                 self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
             else:
@@ -281,7 +238,7 @@ class Session:
                 # it is enough checking the sibling order because a compensated/split pt will have another type
                 if order.pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
                     # check liquidity:
-                    if self.allow_new_pt_creation(cmp=self.cmps[-1], symbol=self.symbol):
+                    if self._allow_new_pt_creation(cmp=self.cmps[-1], symbol=self.symbol):
                         # calculate shift depending on last traded order side
 
                         # todo: assess whether the following criteria is good or not
@@ -339,31 +296,34 @@ class Session:
                 [print(order) for order in self.placed_orders_from_previous_sessions]
                 self.placed_orders_from_previous_sessions.remove(order)
 
-    def allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> bool:
-        # check liquidity
+    def _allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> bool:
+        # 1. liquidity
         if not self._is_liquidity_enough(cmp=cmp, symbol=symbol):
             return False
 
-        # all conditions passed
-        return True
-
-    def _is_liquidity_enough(self, cmp, symbol) -> bool:
-        # liquidity needed for new pt orders (b1 & s1)
-        new_pt_base_asset_liquidity_needed = self.quantity
-        new_pt_quote_asset_liquidity_needed = self.quantity * cmp
-        # get total eur & btc needed to trade all alive orders at their own price
-        quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
-        # 1. liquidity
         # 2. monitor + active count
         # 3. span / depth
         # 2. momentum
         # dynamic parameters:
         #   - inactivity time
         #   - neb/amount
+
+        # if all conditions passed
+        return True
+
+    def _is_liquidity_enough(self, cmp, symbol) -> bool:
+        # liquidity needed for new pt orders (b1 & s1)
+        new_pt_base_asset_liquidity_needed = self.quantity
+        new_pt_quote_asset_liquidity_needed = self.quantity * cmp
+
+        # get total eur & btc needed to trade all alive orders at their own price
+        quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
+
         # check available liquidity (eur & btc) vs needed when trading both orders
         # get existing liquidity
         quote_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_quote_asset().get_name())
         base_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_base_asset().get_name())
+
         if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:
             # get EUR by selling BTC
             # 1. get SELL placed orders

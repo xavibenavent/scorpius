@@ -2,18 +2,23 @@
 
 
 class Asset:
-    def __init__(self, name: str, precision: float):
+    def __init__(self,
+                 name: str,
+                 precision_for_transaction: float,
+                 precision_for_visualization: float
+                 ):
         # if len(name) != 3:
         #     print(name)
         #     raise Exception('Bad asset creation')
         self._name = name.upper()
-        self._precision = precision
+        self._precision_for_transaction = precision_for_transaction
+        self._precision_for_visualization = precision_for_visualization
 
     def get_name(self) -> str:
         return self._name
 
-    def get_precision(self)-> float:
-        return self._precision
+    def get_precision_for_visualization(self) -> float:
+        return self._precision_for_visualization
 
 
 class Symbol:
