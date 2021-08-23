@@ -238,13 +238,15 @@ def display_value(value):
 # ********** session cycle count **********
 @app.callback(Output('global-placed-orders', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.placed_orders_count}'
+    return f'list: {len(dfm.sm.iom.isolated_orders)} / {dfm.sm.placed_orders_count_at_price} / (p: {dfm.sm.placed_pending_orders_count})'
 
 
 # ********** session count **********
 @app.callback(Output('session-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.session_count}'
+    consolidated_count = dfm.sm.global_consolidated_session_count
+    expected_count = dfm.sm.global_expected_session_count
+    return f's: {dfm.sm.session_count - 1}  (c:{consolidated_count}  e:{expected_count})'
 
 
 # # ********** actual profit **********

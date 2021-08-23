@@ -60,9 +60,9 @@ class DashLayout:
                                         html.H6("Global", className="card-header-global"),
                                         html.H6("Elapsed time", className="card-title"),
                                         html.H6(id='global-cycle-count', children='0', className='session-info'),
-                                        html.H1("Total placed orders", className="card-title"),
+                                        html.H1("Total placed orders / pending", className="card-title"),
                                         html.H6(id='global-placed-orders', children='0', className='session-info'),
-                                        html.H6("Session number", className="card-title"),
+                                        html.H6("Session (consolidated / expected)", className="card-title"),
                                         html.H6(id='session-count', children='0', className='session-info'),
                                         html.H6("Consolidated / Expected profit", className="card-title"),
                                         html.H6(id='global-partial-profit', children='0', className='session-info')

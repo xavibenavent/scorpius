@@ -29,12 +29,11 @@ class QuitMode(Enum):
 class Session:
     def __init__(self,
                  session_id: str,
-                 session_stopped_callback: Callable[[str, float, float, int, int], None],
+                 session_stopped_callback: Callable[[str, bool, float, float, int, int, int], None],
                  market: Market,
                  balance_manager: BalanceManager,
                  check_isolated_callback: Callable[[str, float], None],
-                 place_isolated_callback: Callable[[Order], None],
-                 # placed_orders_from_previous_sessions: List[Order],
+                 placed_isolated_callback: Callable[[Order], None],
                  global_profit_update_callback: Callable[[float, float], None]
                  ):
 
@@ -47,7 +46,7 @@ class Session:
 
         # isolated manager callbacks
         self.check_isolated_callback = check_isolated_callback
-        self.place_isolated_callback = place_isolated_callback
+        self.placed_isolated_callback = placed_isolated_callback
 
         print('session')
 
@@ -144,7 +143,7 @@ class Session:
         pass
 
     def _check_exit_conditions(self, cmp):
-        # check profit only if orders are stable (no ACTIVE nor TO_BE_TRADE)
+        # check profit only if orders are stable (no ACTIVE nor TO_BE_TRADED)
         orders = self.ptm.get_orders_by_request(
             orders_status=[OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED],
             pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
@@ -196,22 +195,17 @@ class Session:
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
         print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
         log.info(f'order traded with uid: {uid}')
-        # get orders
+
+        # get candidate orders
         orders_to_be_traded = self.ptm.get_orders_by_request(
             orders_status=[OrderStatus.TO_BE_TRADED],
             pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
         )
-        # for pt in self.ptm.perfect_trades:
-        #     if pt.status != PerfectTradeStatus.COMPLETED:
-        #         for order in pt.orders:
+
         for order in orders_to_be_traded:
             # check uid
             if order.uid == uid:
                 log.info(f'confirmation of order traded {order}')
-
-                # set the cycle in which the order has been traded
-                order.traded_cycle = self.cmp_count
-
                 # reset counter
                 self.cycles_from_last_trade = 0
 
@@ -235,31 +229,13 @@ class Session:
                 # update perfect trades list & pt status
                 self.ptm.order_traded(order=order)
 
-                # # prepare modal alert in the dashboard
-                # self.modal_alert_messages.append(f'{order.pt_id} {order.k_side}')
-
                 # check condition for new pt:
-                # Once activated, if it is the last order to trade in the pt, then create a new pt
-                # only if it was created as NORMAL
-                # it is enough checking the sibling order because a compensated/split pt will have another type
-                if order.pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
+                if order.pt.status == PerfectTradeStatus.COMPLETED:
                     # check liquidity:
                     if self._allow_new_pt_creation(cmp=self.cmps[-1], symbol=self.symbol):
-                        # calculate shift depending on last traded order side
-
-                        # todo: assess whether the following criteria is good or not
-                        shift: float
-                        if order.k_side == k_binance.SIDE_BUY:
-                            shift = self.new_pt_shift
-                        else:
-                            shift = self.new_pt_shift * (-1)
-
-                        # create pt with shift
-                        self.ptm.create_new_pt(cmp=order_price + shift)
-                        self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
-                    else:
-                        # nothing to do, it will be assessed again after another order is traded an PT completed
-                        pass
+                        # create pt
+                        self.ptm.create_new_pt(cmp=order_price)
+                        self.cycles_from_last_trade = 0
 
                 # since the traded orders has been identified, do not check more orders
                 break
@@ -342,58 +318,53 @@ class Session:
         log.info(f'********** STOP {quit_mode.name} **********')
         log.info(f'session {self.session_id} terminated')
 
-        # MONITOR orders (depending on the quit mode will be traded at market price or placed at order price)
+        # init used variables
+        is_session_fully_consolidated = False
         diff = 0
-
-        # completed pt
-        # consolidated_profit = 0.0
-
-        # non completed pt
+        consolidated_profit = 0.0
         expected_profit = 0.0
-
-        # update consolidated profit for completed pt (it does not depend on quit mode)
-        # consolidated_profit += self.ptm.get_pt_completed_profit()
-
-        monitor_orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.MONITOR],
-            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-        )
-
-        # get orders of non completed pt (NEW pt do not count)
-        # the profit of these orders will depend on the quit mode:
-        #   - PLACE_ALL_PENDING => expected profit at price
-        #   - TRADE_ALL_PENDING => consolidated profit at cmp
-        non_completed_pt_orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.MONITOR, OrderStatus.TRADED],
-            pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-        )
-
-        traded_non_completed_pt_orders = \
-            [order for order in non_completed_pt_orders if order.status == OrderStatus.TRADED]
-
-        # update consolidated profit not depending on quit mode
-        consolidated_profit = self.ptm.get_pt_completed_profit()
+        placed_orders_at_order_price = 0
 
         if quit_mode == QuitMode.PLACE_ALL_PENDING:  # place all monitor orders
-            for order in non_completed_pt_orders:
-                # update expected profit at order price
-                expected_profit += order.get_virtual_profit_with_cost()
+            # set session terminating status
+            is_session_fully_consolidated = False
 
-                # place only MONITOR orders
-                if order.status == OrderStatus.MONITOR:
-                    self._place_limit_order(order=order)
-                    # add to list
-                    self.place_isolated_callback(order)
-                    # self.placed_orders_from_previous_sessions.append(order)
+            # get consolidated: total profit considering only the COMPLETED perfect trades
+            consolidated_profit += self.ptm.get_pt_completed_profit()
 
-                log.info(f'trading limit order {order.k_side} {order.status} {order.price}')
-                time.sleep(0.1)
+            # get non completed pt
+            non_completed_pt = [pt for pt in self.ptm.perfect_trades
+                                if pt.status == PerfectTradeStatus.BUY_TRADED or PerfectTradeStatus.SELL_TRADED]
+
+            # get expected profit as the profit of all non completed pt orders (by pairs)
+            for pt in non_completed_pt:
+                for order in pt.orders:
+                    # update expected profit at order price
+                    expected_profit += order.get_virtual_profit_with_cost()
+
+                    # place only MONITOR orders
+                    if order.status == OrderStatus.MONITOR:
+                        self._place_limit_order(order=order)
+                        placed_orders_at_order_price += 1
+                        # add to isolated orders list
+                        self.placed_isolated_callback(order)
+
+                        log.info(f'trading limit order {order.k_side} {order.status} {order.price}')
+                        time.sleep(0.1)
 
         elif quit_mode == QuitMode.TRADE_ALL_PENDING:  # trade diff orders at reference side (BUY or SELL)
-            # get consolidated profit
-            # consolidated_profit += self.ptm.get_stop_cmp_profit(cmp=self.cmps[-1])
-            consolidated_profit += \
-                sum([order.get_virtual_profit_with_cost() for order in traded_non_completed_pt_orders])
+            # set session terminating status
+            is_session_fully_consolidated = True
+
+            # get consolidated profit (expected is zero)
+            consolidated_profit += self.ptm.get_total_actual_profit(cmp=self.cmps[-1])
+
+            # place orders
+            # get MONITOR orders in non completed pt
+            monitor_orders = self.ptm.get_orders_by_request(
+                orders_status=[OrderStatus.MONITOR],
+                pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+            )
 
             # get diff to know at which side to trade & set reference orders
             buy_orders = []
@@ -415,10 +386,6 @@ class Session:
                 for i in range(diff):
                     order = buy_orders[i]
                     self._place_market_order(order=order)
-
-                    # update consolidated profit
-                    consolidated_profit += order.get_virtual_profit_with_cost(cmp=self.cmps[-1])
-
                     log.info(f'trading reference market order {order.k_side} {order.status}')
                     time.sleep(0.1)
             elif diff < 0:  # SELL SIDE
@@ -426,26 +393,24 @@ class Session:
                 for i in range(-diff):
                     order = sell_orders[i]
                     self._place_market_order(order=order)
-
-                    # update consolidated profit
-                    consolidated_profit += order.get_virtual_profit_with_cost(cmp=self.cmps[-1])
-
                     log.info(f'trading reference market order {order.k_side} {order.status}')
                     time.sleep(0.1)
 
         # log final info
         self.ptm.log_perfect_trades_info()
 
-        # net_profit = self.ptm.get_stop_cmp_profit(cmp=self.cmps[-1])
-
         log.info(f'session {self.session_id} stopped with consolidated profit: {consolidated_profit:,.2f}')
         log.info(f'session {self.session_id} stopped with expected profit: {expected_profit:,.2f}')
 
+        market_orders_count_at_cmp = abs(diff)
+
+        # send info & profit to session manager
         self.session_stopped_callback(
             self.session_id,
-            # net_profit if abs(net_profit) < 3 else 0,
+            is_session_fully_consolidated,
             consolidated_profit,
             expected_profit,
             self.cmp_count,
-            abs(diff)  # number of orders placed at its own price
+            market_orders_count_at_cmp,  # number of orders placed at its own price
+            placed_orders_at_order_price
         )

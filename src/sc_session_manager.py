@@ -36,12 +36,20 @@ class SessionManager:
         # global sessions info
         self.session_count = 0
 
-        # self.global_profit = 0
+        self.global_consolidated_session_count = 0
+        self.global_expected_session_count = 0
         self.global_consolidated_profit = 0.0
         self.global_expected_profit = 0.0
 
         self.global_cmp_count = 0
-        self.placed_orders_count = 0
+        # number of orders traded at market price (cmp): quit mode TRADE_ALL_PENDING
+        self.market_orders_count_at_cmp = 0
+
+        # number of orders placed at order price: quir mode PLACE_ALL_PEMDING
+        self.placed_orders_count_at_price = 0
+
+        # current number of pending orders placed at order price (initially placed - traded)
+        self.placed_pending_orders_count = 0
 
         # todo: not sure whether it will work
         self.market.start_sockets()
@@ -68,28 +76,42 @@ class SessionManager:
 
     def _session_stopped_callback(self,
                                   session_id: str,
+                                  is_session_fully_consolidated: bool,
                                   consolidated_profit: float,
                                   expected_profit: float,
                                   cmp_count: int,
-                                  placed_orders_count: int,
+                                  market_orders_count_at_cmp: int,
+                                  placed_orders_count_at_price: int
                                   ) -> None:
         print(f'session stopped with id: {session_id} consolidated profit: {consolidated_profit}')
         print(f'session stopped with id: {session_id} expected profit: {expected_profit}')
         log.info(f'session stopped with id: {session_id} consolidated profit: {consolidated_profit}')
         log.info(f'session stopped with id: {session_id} expected profit: {expected_profit}')
 
-        # self.global_profit += net_profit
+        if is_session_fully_consolidated:
+            self.global_consolidated_session_count += 1
+        else:
+            self.global_expected_session_count += 1
+
         self.global_consolidated_profit += consolidated_profit
         self.global_expected_profit += expected_profit
 
+        # update global cmp count
         self.global_cmp_count += cmp_count
-        self.placed_orders_count += placed_orders_count
+
+        # update number of orders traded at cmp in quit mode TRADE_ALL_PENDING
+        self.market_orders_count_at_cmp += market_orders_count_at_cmp
+
+        # both increased with the number of orders placed in quit mode PLACE_ALL_PENDING
+        self.placed_orders_count_at_price += placed_orders_count_at_price
+        # this will be diminished when a placed order is later traded (in other session)
+        self.placed_pending_orders_count += placed_orders_count_at_price
 
         print(f'********** sessions count: {self.session_count} **********')
         print(f'********** partial cmp count: {self.global_cmp_count / 3600.0:,.2f} [hours]')
         print(f'********** global consolidated profit: {self.global_consolidated_profit:,.2f} **********')
         print(f'********** global expected profit: {self.global_expected_profit:,.2f} **********')
-        print(f'********** placed orders count: {self.placed_orders_count} **********')
+        print(f'********** placed orders count: {self.market_orders_count_at_cmp} **********')
 
         print('placed orders:')
         [print(order) for order in self.iom.isolated_orders]
@@ -115,8 +137,7 @@ class SessionManager:
             market=self.market,
             balance_manager=self.bm,
             check_isolated_callback=self._check_isolated_callback,
-            place_isolated_callback=self._place_isolated_callback,
-            # placed_orders_from_previous_sessions=self.placed_orders_from_previous_sessions,
+            placed_isolated_callback=self._placed_isolated_callback,
             global_profit_update_callback=self._global_profit_update_callback
         )
 
@@ -147,17 +168,22 @@ class SessionManager:
         # exit
         raise Exception("********** SESSION TERMINATED, PRESS CTRL-C ********")
 
-    def _check_isolated_callback(self, uid: str, order_price):
+    def _check_isolated_callback(self, uid: str, order_price: float):
         # check the isolated orders and, in case an order from previous session have been traded,
         # return the variation in profit (consolidated & expected), otherwise return zero
-        consolidated, expected = self.iom.check_isolated_orders(uid=uid, order_price=order_price)
+        is_known_order, consolidated, expected = \
+            self.iom.check_isolated_orders(uid=uid, traded_price=order_price)
+
+        # update actual orders placed count
+        if is_known_order:
+            self.placed_pending_orders_count -= 1
 
         # update profit
         self._update_global_profit(consolidated=consolidated, expected=expected)
 
-    def _place_isolated_callback(self, order: Order):
+    def _placed_isolated_callback(self, order: Order):
+        # once the order have been placed in Binance, it is appended to the list
         self.iom.isolated_orders.append(order)
-        pass
 
     def _fake_symbol_socket_callback(self, foo: float):
         pass
