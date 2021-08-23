@@ -104,8 +104,9 @@ def on_button_click(n):
 def on_button_click(n):
     if n:
         cmp = dfm.sm.session.get_info()['last_cmp']
-        if dfm.sm.session.allow_new_pt_creation(cmp=cmp):
-            dfm.sm.session.ptm.create_new_pt(cmp=cmp)
+        raise Exception('todo: pass symbol')
+        # if dfm.sm.session.allow_new_pt_creation(cmp=cmp):
+        #     dfm.sm.session.ptm.create_new_pt(cmp=cmp)
     return ''
 
 

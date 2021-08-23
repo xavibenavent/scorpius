@@ -12,6 +12,7 @@ from sc_order import Order, OrderStatus
 from sc_balance_manager import BalanceManager, Account
 from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
+from sc_symbol import Asset, Symbol
 
 import configparser
 
@@ -50,7 +51,11 @@ class Session:
         config = configparser.ConfigParser()
         config.read('config.ini')
 
-        self.symbol = config['BINANCE']['symbol']
+        symbol = config['BINANCE']['symbol']  # BTCEUR
+        self.symbol = Symbol(
+            base_asset=Asset(name=symbol[:3], precision=6),  # BTC
+            quote_asset=Asset(name=symbol[3:], precision=2)  # EUR
+        )
         self.target_total_net_profit = float(config['SESSION']['target_total_net_profit'])
         self.cycles_count_for_inactivity = int(config['SESSION']['cycles_count_for_inactivity'])
         self.new_pt_shift = float(config['SESSION']['new_pt_shift'])
@@ -63,14 +68,14 @@ class Session:
         self.max_negative_profit_allowed = float(config['SESSION']['max_negative_profit_allowed'])
 
         # get filters that will be checked before placing an order
-        self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol)
+        self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol.get_name())
 
         self.ptm = PTManager(
             symbol_filters=self.symbol_filters,
             session_id=self.session_id)
 
         # used in dashboard in the cmp line chart. initiated with current cmp
-        self.cmps = [self.market.get_cmp(self.symbol)]
+        self.cmps = [self.market.get_cmp(self.symbol.get_name())]
 
         self.total_profit_series = [0.0]
 
@@ -126,7 +131,7 @@ class Session:
             try:
                 # 0.1: create first pt
                 if self.cmp_count == 1:
-                    if self.allow_new_pt_creation(cmp=cmp):
+                    if self.allow_new_pt_creation(cmp=cmp, symbol=self.symbol):
                         self.ptm.create_new_pt(cmp=cmp)
                     else:
                         log.critical("initial pt not allowed, it will be tried again after inactivity period")
@@ -217,72 +222,13 @@ class Session:
         # check elapsed time since last trade
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
             # check liquidity
-            if self.allow_new_pt_creation(cmp=cmp):
+            if self.allow_new_pt_creation(cmp=cmp, symbol=self.symbol):
                 self.ptm.create_new_pt(cmp=cmp, pt_type='FROM_INACTIVITY')
                 self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
             else:
                 log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
                 # update inactivity counter to try again after 60 cycles if inactivity continues
                 self.cycles_from_last_trade -= 60  # todo: move to parameter
-
-    # ********** compensation (not used) **********
-    # def _check_monitor_orders_for_compensation(self, cmp: float) -> None:
-    #     # get monitor orders of pt with one order traded
-    #     orders = self.ptm.get_orders_by_request(
-    #         orders_status=[OrderStatus.MONITOR],
-    #         pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-    #     )
-    #     for order in orders:
-    #         if order.order_id != 'CONCENTRATED' and order.get_abs_distance(cmp=cmp) > self.compensation_distance:
-    #             # compensate
-    #             b1, s1 = self._compensate_order(order=order, ref_mp=cmp, ref_gap=self.compensation_gap)
-    #             # set values
-    #             b1.sibling_order = None
-    #             b1.pt = order.pt
-    #             s1.sibling_order = None
-    #             s1.pt = order.pt
-    #             # add to pt orders list
-    #             order.pt.orders.append(b1)
-    #             order.pt.orders.append(s1)
-    #             # change original order status
-    #             order.status = OrderStatus.CANCELED
-    #             # change pt type to avoid generating a new pt after trading the new orders
-    #             order.pt.pt_type = 'FROM_COMPENSATION'
-    #
-    # def _compensate_order(self, order: Order, ref_mp: float, ref_gap: float) -> (Order, Order):
-    #     amount, total, _ = BalanceManager.get_balance_for_list([order])
-    #     # get equivalent pair b1-s1
-    #     s1_p, b1_p, s1_qty, b1_qty = get_compensation(
-    #         cmp=ref_mp,
-    #         gap=ref_gap,
-    #         qty_bal=order.get_signed_amount(),
-    #         price_bal=order.get_signed_total(),  # todo: assess whether it has to be signed or not
-    #         buy_fee=self.fee,
-    #         sell_fee=self.fee
-    #     )
-    #     # validate values received for b1 and s1
-    #     if s1_p < 0 or b1_p < 0 or s1_qty < 0 or b1_qty < 0:
-    #         raise Exception(f'negative value(s) after compensation: b1p: {b1_p} b1q: {b1_qty} 1p: {s1_p} s1q: {s1_qty}')
-    #     else:
-    #         # create both orders
-    #         b1 = Order(
-    #             order_id='CONCENTRATED',
-    #             k_side=k_binance.SIDE_BUY,
-    #             price=b1_p,
-    #             amount=b1_qty,
-    #             uid=Order.get_new_uid(),
-    #             name='con-b1'
-    #         )
-    #         s1 = Order(
-    #             order_id='CONCENTRATED',
-    #             k_side=k_binance.SIDE_SELL,
-    #             price=s1_p,
-    #             amount=s1_qty,
-    #             status=OrderStatus.MONITOR,
-    #             uid=Order.get_new_uid(),
-    #             name='con-s1'
-    #         )
-    #         return b1, s1
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
         print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
@@ -335,7 +281,7 @@ class Session:
                 # it is enough checking the sibling order because a compensated/split pt will have another type
                 if order.pt.pt_type == 'NORMAL' and order.sibling_order.status == OrderStatus.TRADED:
                     # check liquidity:
-                    if self.allow_new_pt_creation(cmp=self.cmps[-1]):
+                    if self.allow_new_pt_creation(cmp=self.cmps[-1], symbol=self.symbol):
                         # calculate shift depending on last traded order side
 
                         # todo: assess whether the following criteria is good or not
@@ -393,31 +339,40 @@ class Session:
                 [print(order) for order in self.placed_orders_from_previous_sessions]
                 self.placed_orders_from_previous_sessions.remove(order)
 
-    def allow_new_pt_creation(self, cmp: float, symbol='BTCEUR') -> bool:
-        # get total eur & btc needed to trade all alive orders at their own price
-        eur_needed, btc_needed = self.ptm.get_total_eur_btc_needed()
+    def allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> bool:
+        # check liquidity
+        if not self._is_liquidity_enough(cmp=cmp, symbol=symbol):
+            return False
 
+        # all conditions passed
+        return True
+
+    def _is_liquidity_enough(self, cmp, symbol) -> bool:
+        # liquidity needed for new pt orders (b1 & s1)
+        new_pt_base_asset_liquidity_needed = self.quantity
+        new_pt_quote_asset_liquidity_needed = self.quantity * cmp
+        # get total eur & btc needed to trade all alive orders at their own price
+        quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
         # 1. liquidity
         # 2. monitor + active count
         # 3. span / depth
         # 2. momentum
-
         # dynamic parameters:
         #   - inactivity time
         #   - neb/amount
-
         # check available liquidity (eur & btc) vs needed when trading both orders
-        if self.market.get_asset_liquidity(asset='EUR') < eur_needed + (self.quantity * cmp):
+        # get existing liquidity
+        quote_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_quote_asset().get_name())
+        base_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_base_asset().get_name())
+        if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:
             # get EUR by selling BTC
             # 1. get SELL placed orders
             # 2. choose one (criteria: farthest or nearest distance)
             # 3. cancel order
             # 4. place same qty at MARKET price
-
             return False
-        elif self.market.get_asset_liquidity(asset='BTC') < btc_needed + self.quantity:
+        elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:
             # get BTC by buying BTC
-
             return False
         else:
             return True
