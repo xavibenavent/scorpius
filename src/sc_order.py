@@ -77,7 +77,8 @@ class Order:
             if k not in ['sibling_order', 'pt']:
                 d[k] = v
         d['status'] = self.status.name.lower()
-        d['total'] = self.get_total()
+        d['total'] = abs(self.get_signed_total_at_cmp(cmp=self.price, with_commission=False))
+        # d['total'] = self.get_total()
         return d
 
     @staticmethod
@@ -137,12 +138,6 @@ class Order:
         else:
             return - self.amount
 
-    def get_total(self, precision: int = 2) -> float:
-        return round(self.price * self.amount, precision)
-
-    def get_signed_total(self) -> float:
-        return - (self.price * self.get_signed_amount())
-
     def get_virtual_profit_with_cost(self, cmp: Optional[float] = None) -> float:
         # if the parameter cmp is passed, then this is the value to consider
         price = self.price
@@ -155,6 +150,28 @@ class Order:
         else:
             virtual_profit = self.amount * price - self.get_eur_commission(cmp=price)
         return virtual_profit
+
+    # ********** total methods **********
+
+    def _get_total_at_cmp(self, cmp: float) -> float:
+        # total
+        return cmp * self.amount
+
+    def _get_signed_total_at_cmp(self, cmp: float) -> float:
+        # signed total
+        if self.k_side == k_binance.SIDE_BUY:
+            return self._get_total_at_cmp(cmp=cmp)
+        elif self.k_side == k_binance.SIDE_SELL:
+            return - self._get_total_at_cmp(cmp=cmp)
+        else:
+            raise Exception(f'wrong k_side: {self.k_side}')
+
+    def get_signed_total_at_cmp(self, cmp: float, with_commission: bool, precision=2):
+        # set commission depending on net total or gross total request
+        commission = self.get_eur_commission(cmp=cmp) if with_commission else 0.0
+        return round(self._get_signed_total_at_cmp(cmp=cmp) - commission, precision)
+
+    # ********** end of total methods **********
 
     def get_eur_commission(self, cmp: float) -> float:
         if self.status == OrderStatus.TRADED:

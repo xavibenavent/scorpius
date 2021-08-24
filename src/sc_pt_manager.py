@@ -145,7 +145,9 @@ class PTManager:
         # return the eur & btc needed to trade all 'alive' orders at its own price
         alive_orders = self.get_all_alive_orders()
         # get total eur needed to trade all alive buy orders
-        quote_asset_needed = sum([order.get_total() for order in alive_orders if order.k_side == k_binance.SIDE_BUY])
+        quote_asset_needed = sum([order.get_signed_total_at_cmp(cmp=order.price, with_commission=False)
+                                  for order in alive_orders
+                                  if order.k_side == k_binance.SIDE_BUY])
         # get total btc needed to trade all alive sell orders
         base_asset_needed = sum([order.get_amount() for order in alive_orders if order.k_side == k_binance.SIDE_SELL])
 
