@@ -4,7 +4,7 @@ import logging
 import secrets
 from enum import Enum
 from binance import enums as k_binance
-from typing import Union, Optional
+from typing import Union
 import configparser
 
 log = logging.getLogger('log')
@@ -96,7 +96,6 @@ class Order:
         return False
 
     def is_ready_for_trading(self, cmp: float) -> bool:
-        # todo: implement method
         if self.k_side == k_binance.SIDE_BUY:
             if cmp > self.price:
                 return True
@@ -138,19 +137,6 @@ class Order:
         else:
             return - self.amount
 
-    def get_virtual_profit_with_cost(self, cmp: Optional[float] = None) -> float:
-        # if the parameter cmp is passed, then this is the value to consider
-        price = self.price
-        if cmp:
-            price = cmp
-
-        virtual_profit = 0
-        if self.k_side == k_binance.SIDE_BUY:
-            virtual_profit = -(self.amount * price) - self.get_eur_commission(cmp=price)
-        else:
-            virtual_profit = self.amount * price - self.get_eur_commission(cmp=price)
-        return virtual_profit
-
     # ********** total methods **********
 
     def _get_total_at_cmp(self, cmp: float) -> float:
@@ -160,9 +146,9 @@ class Order:
     def _get_signed_total_at_cmp(self, cmp: float) -> float:
         # signed total
         if self.k_side == k_binance.SIDE_BUY:
-            return self._get_total_at_cmp(cmp=cmp)
-        elif self.k_side == k_binance.SIDE_SELL:
             return - self._get_total_at_cmp(cmp=cmp)
+        elif self.k_side == k_binance.SIDE_SELL:
+            return + self._get_total_at_cmp(cmp=cmp)
         else:
             raise Exception(f'wrong k_side: {self.k_side}')
 
@@ -185,12 +171,10 @@ class Order:
     def set_bnb_commission(self, commission: float, bnbeur_rate: float) -> None:
         self.bnb_commission = commission
         self.eur_commission = commission * bnbeur_rate
-        # print(f'bnb comm: {self.bnb_commission}   eur comm: {self.eur_commission}')
 
     def set_status(self, status: OrderStatus):
         old_status = self.status
         self.status = status
-        self.status_name = self.status.name.lower()
         log.info(f'** ORDER STATUS CHANGED FROM {old_status.name} TO {status.name} - {self}')
 
     def set_binance_id(self, new_id: int):

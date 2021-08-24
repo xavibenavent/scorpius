@@ -108,11 +108,11 @@ class PTManager:
         )
         for order in orders:
             if order.status == OrderStatus.MONITOR:
-                total += order.get_virtual_profit_with_cost()
+                total += order.get_signed_total_at_cmp(cmp=order.price, with_commission=True)
             elif order.status == OrderStatus.ACTIVE:
-                total += order.get_virtual_profit_with_cost(cmp=cmp)
+                total += order.get_signed_total_at_cmp(cmp=cmp, with_commission=True)
             elif order.status == OrderStatus.TRADED:
-                total += order.get_virtual_profit_with_cost()
+                total += order.get_signed_total_at_cmp(cmp=order.price, with_commission=True)
         return total
 
     def get_consolidated_profit(self) -> float:
