@@ -26,14 +26,15 @@ class IsolatedOrdersManager:
                 log.info(f'traded order from previous sessions {order}')
 
                 is_known_order = True
+                original_price = order.price
 
                 # assess whether the actual profit is higher or lower than the expected
                 qty = order.get_amount()
                 # expected is the neb
-                expected = abs(order.price - order.sibling_order.price) * qty
+                expected = order.pt.get_original_expected_profit()
                 consolidated = 0.0
                 # difference between original price and actual traded price
-                diff = abs(order.price - traded_price) * qty
+                diff = abs(original_price - traded_price) * qty
 
                 if order.k_side == k_binance.SIDE_BUY:
                     if order.price > traded_price:
@@ -61,3 +62,6 @@ class IsolatedOrdersManager:
                 break
 
         return is_known_order, consolidated, expected
+
+    def get_expected_profit_at_cmp(self, cmp: float) -> float:
+        return sum([order.pt.get_actual_profit_at_cmp(cmp=cmp) for order in self.isolated_orders])

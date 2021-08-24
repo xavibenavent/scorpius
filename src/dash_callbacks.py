@@ -193,14 +193,17 @@ def display_value(value):
 # ********** completed profit **********
 @app.callback(Output('pt-completed-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.session.ptm.get_pt_completed_profit():,.2f} €'
+    return f'{dfm.sm.session.ptm.get_consolidated_profit():,.2f} €'
 
 
 # ********** traded orders profit **********
 @app.callback(Output('global-partial-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # called the method in session to check buy_count == sell_count
-    return f'{dfm.sm.global_consolidated_profit:,.2f} € / {dfm.sm.global_expected_profit:,.2f} €'
+    consolidated = dfm.sm.global_consolidated_profit
+    expected = dfm.sm.global_expected_profit
+    expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=dfm.sm.session.cmps[-1])
+    return f'{consolidated:,.2f} € / {expected:,.2f} € / {expected_at_cmp:,.2f} €'
 
 
 # ********** PT count / traded orders count **********

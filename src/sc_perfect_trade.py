@@ -25,8 +25,9 @@ class PerfectTrade:
         self.pt_type = pt_type
 
         self.status = PerfectTradeStatus.NEW
+        self._original_expected_profit = sum([order.get_virtual_profit_with_cost() for order in self.orders])
 
-    def get_actual_profit(self, cmp:float) -> float:
+    def get_actual_profit_at_cmp(self, cmp:float) -> float:
         # return the pt profit considering that all remaining orders are traded at current cmp
         pt_profit = 0
 
@@ -46,6 +47,16 @@ class PerfectTrade:
                     pass
 
         return pt_profit
+
+    def get_original_expected_profit(self) -> float:
+        # it does not depend on the actual status
+        return self._original_expected_profit
+
+    def get_consolidated_profit(self) -> float:
+        if self.status == PerfectTradeStatus.COMPLETED:
+            return sum([order.get_virtual_profit_with_cost() for order in self.orders])
+        return 0.0
+
 
 
 

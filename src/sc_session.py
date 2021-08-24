@@ -151,7 +151,7 @@ class Session:
         if len(orders) == 0:
             # 8. check global net profit
             # return the total profit considering that all remaining orders are traded at current cmp
-            total_profit = self.ptm.get_total_actual_profit(cmp=cmp)
+            total_profit = self.ptm.get_total_actual_profit_at_cmp(cmp=cmp)
             # self.total_profit_series.append(total_profit)
             if total_profit > self.target_total_net_profit:
                 self.session_active = False
@@ -330,7 +330,8 @@ class Session:
             is_session_fully_consolidated = False
 
             # get consolidated: total profit considering only the COMPLETED perfect trades
-            consolidated_profit += self.ptm.get_pt_completed_profit()
+            consolidated_profit += self.ptm.get_consolidated_profit()
+            expected_profit += self.ptm.get_expected_profit()
 
             # get non completed pt
             non_completed_pt = [pt for pt in self.ptm.perfect_trades
@@ -339,16 +340,12 @@ class Session:
             # get expected profit as the profit of all non completed pt orders (by pairs)
             for pt in non_completed_pt:
                 for order in pt.orders:
-                    # update expected profit at order price
-                    expected_profit += order.get_virtual_profit_with_cost()
-
                     # place only MONITOR orders
                     if order.status == OrderStatus.MONITOR:
                         self._place_limit_order(order=order)
                         placed_orders_at_order_price += 1
                         # add to isolated orders list
                         self.placed_isolated_callback(order)
-
                         log.info(f'trading limit order {order.k_side} {order.status} {order.price}')
                         time.sleep(0.1)
 
@@ -357,7 +354,7 @@ class Session:
             is_session_fully_consolidated = True
 
             # get consolidated profit (expected is zero)
-            consolidated_profit += self.ptm.get_total_actual_profit(cmp=self.cmps[-1])
+            consolidated_profit += self.ptm.get_total_actual_profit_at_cmp(cmp=self.cmps[-1])
 
             # place orders
             # get MONITOR orders in non completed pt

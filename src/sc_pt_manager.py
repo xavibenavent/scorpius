@@ -89,12 +89,12 @@ class PTManager:
             if completed:
                 pt.status = PerfectTradeStatus.COMPLETED
 
-    def get_total_actual_profit(self, cmp: float) -> float:
+    def get_total_actual_profit_at_cmp(self, cmp: float) -> float:
         # return the total profit considering that all remaining orders are traded at current cmp
         # perfect trades with status NEW are not considered
         total = 0
         for pt in self.perfect_trades:
-            total += pt.get_actual_profit(cmp=cmp)
+            total += pt.get_actual_profit_at_cmp(cmp=cmp)
         return total
 
     def get_stop_cmp_profit(self, cmp: float) -> float:
@@ -141,14 +141,13 @@ class PTManager:
             total += order.get_virtual_profit_with_cost()
         return total
 
-    def get_pt_completed_profit(self) -> float:
-        # return the total profit considering only the COMPLETED perfect trades
-        total = 0
-        for pt in self.perfect_trades:
-            if pt.status == PerfectTradeStatus.COMPLETED:
-                # since the pt is completed, the cmp value does not matter
-                total += pt.get_actual_profit(cmp=0)
-        return total
+    def get_consolidated_profit(self) -> float:
+        return sum([pt.get_consolidated_profit() for pt in self.perfect_trades])
+
+    def get_expected_profit(self) -> float:
+        return sum([pt.get_original_expected_profit()
+                    for pt in self.perfect_trades
+                    if pt.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]])
 
     def get_orders_by_request(self, orders_status: List[OrderStatus], pt_status: List[PerfectTradeStatus]):
         requested_orders: List[Order] = []
