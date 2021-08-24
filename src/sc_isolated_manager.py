@@ -66,21 +66,15 @@ class IsolatedOrdersManager:
     def get_expected_profit_at_cmp(self, cmp: float) -> float:
         return sum([order.pt.get_actual_profit_at_cmp(cmp=cmp) for order in self.isolated_orders])
 
-    def try_to_get_base_asset_liquidity(self) -> Optional[Order]:
-        # try to BUY
-        # get candidate BUY orders
-        candidate_orders = [order for order in self.isolated_orders if order.k_side == k_binance.SIDE_BUY]
+    def try_to_get_asset_liquidity(self, k_side: str, cmp: float) -> Optional[Order]:
+        # get candidate orders depending on side
+        candidate_orders = [order for order in self.isolated_orders if order.k_side == k_side]
         if len(candidate_orders) > 0:
-            return candidate_orders[-1]
-        return None
-
-    def try_to_get_quote_asset_liquidity(self) -> Optional[Order]:
-        # try to SELL
-        # get candidate SELL orders
-        candidate_orders = [order for order in self.isolated_orders if order.k_side == k_binance.SIDE_SELL]
-        if len(candidate_orders) > 0:
-            log.debug(f'order to trade at loss: {candidate_orders[-1]}')
-            [log.debug(order) for order in candidate_orders]
-            # raise Exception()
-            return candidate_orders[-1]
+            # evaluate the last order placed
+            candidate_order = candidate_orders[-1]
+            loss = candidate_order.get_virtual_profit_with_cost(cmp=cmp) \
+                   + candidate_order.sibling_order.get_virtual_profit_with_cost()
+            if loss > -3.0:
+                log.debug(f'found a good order with loss {loss:,.2f} for getting liquidity: {candidate_order}')
+                return candidate_order
         return None

@@ -259,6 +259,7 @@ class Market:
         return None
 
     def get_asset_liquidity(self, asset: str) -> float:
+        # return free
         return self.get_asset_balance(asset_name=asset).free
 
     def get_cmp(self, symbol: str) -> float:

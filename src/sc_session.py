@@ -35,7 +35,7 @@ class Session:
                  check_isolated_callback: Callable[[str, float], None],
                  placed_isolated_callback: Callable[[Order], None],
                  global_profit_update_callback: Callable[[float, float], None],
-                 try_to_get_liquidity_callback: Callable[[str], None]
+                 try_to_get_liquidity_callback: Callable[[str, float], None]
                  ):
 
         self.session_id = session_id
@@ -75,6 +75,7 @@ class Session:
         self.max_negative_profit_allowed = float(config['SESSION']['max_negative_profit_allowed'])
         self.time_between_successive_pt_creation_tries = \
             float(config['SESSION']['time_between_successive_pt_creation_tries'])
+        self.forced_shift = float(config['PT_CREATION']['forced_shift'])
 
         # get filters that will be checked before placing an order
         self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol.get_name())
@@ -94,6 +95,8 @@ class Session:
         self.cmp_count = 0
         self.cycles_from_last_trade = 0
 
+        self.logbook: List[str] = []
+
         print('session object created')
 
     # ********** Binance socket callback functions **********
@@ -102,8 +105,10 @@ class Session:
             try:
                 # 0.1: create first pt
                 if self.cmp_count == 1:
-                    if self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol):
-                        self.ptm.create_new_pt(cmp=cmp)
+                    is_allowed, forced_shift = self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol)
+                    if is_allowed:
+                        shifted_cmp = cmp + forced_shift
+                        self.ptm.create_new_pt(cmp=shifted_cmp)
                     else:
                         log.critical("initial pt not allowed, it will be tried again after inactivity period")
 
@@ -151,11 +156,13 @@ class Session:
 
             # exit point 1: target achieved
             if total_profit > self.target_total_net_profit:
+                self.logbook.append('exit point #1: TRADE_ALL_PENDING')
                 self.session_active = False
                 self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
 
             # exit point 2: reached maximum allowed loss
             elif total_profit < self.max_negative_profit_allowed:
+                self.logbook.append('exit point #2: PLACE_ALL_PENDING')
                 self.session_active = False
                 self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
 
@@ -182,8 +189,10 @@ class Session:
         # check elapsed time since last trade
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
             # check liquidity
-            if self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol):
-                self.ptm.create_new_pt(cmp=cmp, pt_type='FROM_INACTIVITY')
+            is_allowed, forced_shift = self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol)
+            if is_allowed:
+                shifted_cmp = cmp + forced_shift
+                self.ptm.create_new_pt(cmp=shifted_cmp, pt_type='FROM_INACTIVITY')
                 self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
             else:
                 log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
@@ -204,6 +213,7 @@ class Session:
             # check uid
             if order.uid == uid:
                 log.info(f'confirmation of order traded: {order}')
+                self.logbook.append(f'order traded: {order.pt_id} {order.name} {order.k_side}')
                 # reset counter
                 self.cycles_from_last_trade = 0
 
@@ -230,9 +240,11 @@ class Session:
                 # check condition for new pt:
                 if order.pt.status == PerfectTradeStatus.COMPLETED:
                     # check liquidity:
-                    if self._allow_new_pt_creation(cmp=self.cmps[-1], symbol=self.symbol):
+                    is_allowed, forced_shift = self._allow_new_pt_creation(cmp=self.cmps[-1], symbol=self.symbol)
+                    if is_allowed:
+                        shifted_cmp = order_price + forced_shift
                         # create pt
-                        self.ptm.create_new_pt(cmp=order_price)
+                        self.ptm.create_new_pt(cmp=shifted_cmp)
                         self.cycles_from_last_trade = 0
 
                 # since the traded orders has been identified, do not check more orders
@@ -241,10 +253,12 @@ class Session:
         # if no order found, then check in placed_orders_from_previous_sessions list
         self.check_isolated_callback(uid, order_price)
 
-    def _allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> bool:
+    def _allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> (bool, float):
         # 1. liquidity
-        if not self._is_liquidity_enough(cmp=cmp, symbol=symbol):
-            return False
+        is_allowed_by_liquidity, forced_shift = self._is_liquidity_enough(cmp=cmp, symbol=symbol)
+        # in case a new pt is allowed by liquidity, also return the needed shifted (to force SELL or BUY)
+        if not is_allowed_by_liquidity:
+            return False, 0.0
 
         # 2. monitor + active count
         # 3. span / depth
@@ -254,9 +268,9 @@ class Session:
         #   - neb/amount
 
         # if all conditions passed
-        return True
+        return True, forced_shift
 
-    def _is_liquidity_enough(self, cmp, symbol) -> bool:
+    def _is_liquidity_enough(self, cmp: float, symbol: Symbol) -> (bool, float):
         # liquidity needed for new pt orders (b1 & s1)
         new_pt_base_asset_liquidity_needed = self.quantity
         new_pt_quote_asset_liquidity_needed = self.quantity * cmp
@@ -266,19 +280,32 @@ class Session:
 
         # check available liquidity (eur & btc) vs needed when trading both orders
         # get existing liquidity
-        quote_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_quote_asset().get_name())
-        base_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_base_asset().get_name())
+        quote_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_quote_asset().get_name())  # free
+        base_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_base_asset().get_name())  # free
 
-        if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:
-            # get EUR by selling BTC
-            self.try_to_get_liquidity_callback(k_binance.SIDE_SELL)
-            return False
-        elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:
-            # get BTC by buying BTC
-            self.try_to_get_liquidity_callback(k_binance.SIDE_BUY)
-            return False
+        if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # need for EUR
+            # check whether there is enough quote asset to force a pt shifted to SELL
+            if base_asset_liquidity > base_asset_needed + new_pt_base_asset_liquidity_needed:  # enough BTC
+                # force the creation of a shifted pt to SELL BTC and get EUR
+                log.info(f'new pt with forced shift: {-self.forced_shift}')
+                return True, -self.forced_shift  # force SELL
+            else:
+                # get EUR by selling BTC
+                self.try_to_get_liquidity_callback(k_binance.SIDE_SELL, cmp)
+                return False, 0.0
+
+        elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for BTC
+            if quote_asset_liquidity > quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # enough EUR
+                # force the creation of a shifted pt to BUY BTC
+                log.info(f'new pt with forced shift: {+self.forced_shift} q: {quote_asset_liquidity} b: {base_asset_liquidity}')
+                return True, +self.forced_shift  # force SELL
+            else:
+                # get BTC by buying BTC
+                self.try_to_get_liquidity_callback(k_binance.SIDE_BUY, cmp)
+                return False, 0.0
+
         else:
-            return True
+            return True, 0.0
 
     def account_balance_callback(self, accounts: List[Account]) -> None:
         # update of current balance from Binance
@@ -288,6 +315,7 @@ class Session:
     def place_isolated_order(self, order: Order) -> None:
         # method called from session manager to place at MARKET price an isolated order, to get liquidity
         log.info(f'place isolated order at cmp to get liquidity: {order}')
+        self.logbook.append(f'place isolated order at cmp to get liquidity: {order}')
         self._place_market_order(order=order)
 
     # ********** check methods **********
@@ -403,6 +431,10 @@ class Session:
         log.info(f'session {self.session_id} stopped with expected profit: {expected_profit:,.2f}')
 
         market_orders_count_at_cmp = abs(diff)
+
+        print('---------- LOGBOOK:')
+        [print(f'     {msg}') for msg in self.logbook]
+        print('---------- LOGBOOK END')
 
         # send info & profit to session manager
         self.session_stopped_callback(
