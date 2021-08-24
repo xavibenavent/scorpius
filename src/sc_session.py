@@ -366,7 +366,8 @@ class Session:
 
             # get non completed pt
             non_completed_pt = [pt for pt in self.ptm.perfect_trades
-                                if pt.status == PerfectTradeStatus.BUY_TRADED or PerfectTradeStatus.SELL_TRADED]
+                                if pt.status == PerfectTradeStatus.BUY_TRADED
+                                or pt.status == PerfectTradeStatus.SELL_TRADED]
 
             # get expected profit as the profit of all non completed pt orders (by pairs)
             for pt in non_completed_pt:
