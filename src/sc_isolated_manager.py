@@ -1,6 +1,6 @@
 # sc_isolated_manager.py
 
-from typing import List
+from typing import List, Optional
 import logging
 from binance import enums as k_binance
 from sc_order import Order
@@ -65,3 +65,22 @@ class IsolatedOrdersManager:
 
     def get_expected_profit_at_cmp(self, cmp: float) -> float:
         return sum([order.pt.get_actual_profit_at_cmp(cmp=cmp) for order in self.isolated_orders])
+
+    def try_to_get_base_asset_liquidity(self) -> Optional[Order]:
+        # try to BUY
+        # get candidate BUY orders
+        candidate_orders = [order for order in self.isolated_orders if order.k_side == k_binance.SIDE_BUY]
+        if len(candidate_orders) > 0:
+            return candidate_orders[-1]
+        return None
+
+    def try_to_get_quote_asset_liquidity(self) -> Optional[Order]:
+        # try to SELL
+        # get candidate SELL orders
+        candidate_orders = [order for order in self.isolated_orders if order.k_side == k_binance.SIDE_SELL]
+        if len(candidate_orders) > 0:
+            log.debug(f'order to trade at loss: {candidate_orders[-1]}')
+            [log.debug(order) for order in candidate_orders]
+            # raise Exception()
+            return candidate_orders[-1]
+        return None

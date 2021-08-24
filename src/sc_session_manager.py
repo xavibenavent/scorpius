@@ -6,6 +6,8 @@ import logging
 import os
 import signal
 
+from binance import enums as k_binance
+
 from sc_session import Session
 from sc_market import Market
 # from sc_account_balance import AccountBalance
@@ -138,7 +140,8 @@ class SessionManager:
             balance_manager=self.bm,
             check_isolated_callback=self._check_isolated_callback,
             placed_isolated_callback=self._placed_isolated_callback,
-            global_profit_update_callback=self._global_profit_update_callback
+            global_profit_update_callback=self._global_profit_update_callback,
+            try_to_get_liquidity_callback=self._try_to_get_liquidity_callback
         )
 
         # after having the session created, set again the callback functions that were None
@@ -184,6 +187,21 @@ class SessionManager:
     def _placed_isolated_callback(self, order: Order):
         # once the order have been placed in Binance, it is appended to the list
         self.iom.isolated_orders.append(order)
+
+    def _try_to_get_liquidity_callback(self, side: str):
+        log.info(f'try to get liquidity callback called with side: {side}')
+        # call the right method in isolated orders manager
+        order : Optional[Order] = None
+        if side == k_binance.SIDE_BUY:
+            order = self.iom.try_to_get_base_asset_liquidity()
+        elif side == k_binance.SIDE_SELL:
+            order = self.iom.try_to_get_quote_asset_liquidity()
+        else:
+            raise Exception(f'wrong side: {side}')
+        if order:
+            # place at MARKET price
+            log.info(f'order to place at market price with loss: {order}')
+            self.session.place_isolated_order(order=order)
 
     def _fake_symbol_socket_callback(self, foo: float):
         pass

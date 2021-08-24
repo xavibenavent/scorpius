@@ -32,8 +32,8 @@ class BalanceManager:
         self.accounts = accounts
 
     def update_current_accounts(self, received_accounts: List[Account]) -> None:
-        log.debug([account.name for account in received_accounts])
-        log.debug([account.name for account in self.accounts])
+        # log.debug([account.name for account in received_accounts])
+        # log.debug([account.name for account in self.accounts])
         # loop through names of received accounts
         for received_account in received_accounts:
             # compare against already existing accounts
@@ -50,7 +50,7 @@ class BalanceManager:
             if not account_updated:
                 self.accounts.append(received_account)
 
-        log.debug([account.name for account in self.accounts])
+        # log.debug([account.name for account in self.accounts])
 
     def get_account_by_name(self, name: str) -> Optional[Account]:
         for account in self.accounts:

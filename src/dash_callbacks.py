@@ -6,6 +6,7 @@ from dash_aux import get_profit_line_chart, get_cmp_line_chart, get_pending_html
 from sc_session import QuitMode
 from sc_balance_manager import BalanceManager, Account
 from sc_df_manager import DataframeManager
+from binance import enums as k_binance
 
 # import dash_bootstrap_components as dbc
 
@@ -180,7 +181,8 @@ def display_value(value):
 @app.callback(Output('actual-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     # return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
-    return f'{dfm.sm.session.ptm.get_stop_cmp_profit(cmp=dfm.sm.session.cmps[-1]):,.2f} €'
+    cmp = dfm.sm.session.cmps[-1]
+    return f'{dfm.sm.session.ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.2f} €'
 
 
 # ********** stop at price **********
@@ -241,7 +243,11 @@ def display_value(value):
 # ********** session cycle count **********
 @app.callback(Output('global-placed-orders', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'list: {len(dfm.sm.iom.isolated_orders)} / {dfm.sm.placed_orders_count_at_price} / (p: {dfm.sm.placed_pending_orders_count})'
+    placed = dfm.sm.placed_orders_count_at_price
+    still_isolated = dfm.sm.placed_pending_orders_count
+    sell = len([order for order in dfm.sm.iom.isolated_orders if order.k_side == k_binance.SIDE_SELL])
+    buy = len([order for order in dfm.sm.iom.isolated_orders if order.k_side == k_binance.SIDE_BUY])
+    return f'p: {placed} / i: {still_isolated} (s: {sell} b: {buy})'
 
 
 # ********** session count **********

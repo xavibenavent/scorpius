@@ -32,7 +32,7 @@ class ThreadCmpGenerator:
         while self._running:
             # print(f'cmp thread running: {self._running}')
             time.sleep(self._interval)
-            new_cmp = choice([-12, -10, -5, 0, 5, 10, 12])
+            new_cmp = choice([-12, -10, -4, 0, 4, 10, 12])
             self.f_callback(new_cmp)
 
 

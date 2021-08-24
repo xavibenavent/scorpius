@@ -34,7 +34,8 @@ class Session:
                  balance_manager: BalanceManager,
                  check_isolated_callback: Callable[[str, float], None],
                  placed_isolated_callback: Callable[[Order], None],
-                 global_profit_update_callback: Callable[[float, float], None]
+                 global_profit_update_callback: Callable[[float, float], None],
+                 try_to_get_liquidity_callback: Callable[[str], None]
                  ):
 
         self.session_id = session_id
@@ -48,7 +49,8 @@ class Session:
         self.check_isolated_callback = check_isolated_callback
         self.placed_isolated_callback = placed_isolated_callback
 
-        print('session')
+        # method to call when liquidity is needed
+        self.try_to_get_liquidity_callback = try_to_get_liquidity_callback
 
         self.session_active = True
 
@@ -71,6 +73,8 @@ class Session:
         self.quantity = float(config['PT_CREATION']['quantity'])
         self.net_eur_balance = float(config['PT_CREATION']['net_eur_balance'])
         self.max_negative_profit_allowed = float(config['SESSION']['max_negative_profit_allowed'])
+        self.time_between_successive_pt_creation_tries = \
+            float(config['SESSION']['time_between_successive_pt_creation_tries'])
 
         # get filters that will be checked before placing an order
         self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol.get_name())
@@ -90,14 +94,7 @@ class Session:
         self.cmp_count = 0
         self.cycles_from_last_trade = 0
 
-        # self.modal_alert_messages = []
-
-    def get_traded_orders_profit(self) -> str:
-        # get profit only if buy_orders_count == sell_orders_count
-        if self.buy_count == self.sell_count:
-            return f'{self.ptm.get_traded_orders_profit():,.2f}'
-        else:
-            return 'N/A'
+        print('session object created')
 
     # ********** Binance socket callback functions **********
     def symbol_ticker_callback(self, cmp: float) -> None:
@@ -109,7 +106,6 @@ class Session:
                         self.ptm.create_new_pt(cmp=cmp)
                     else:
                         log.critical("initial pt not allowed, it will be tried again after inactivity period")
-                        # raise Exception("initial pt not allowed")
 
                 # 0.2: update cmp count to control timely pt creation
                 self.cmp_count += 1
@@ -152,11 +148,13 @@ class Session:
             # 8. check global net profit
             # return the total profit considering that all remaining orders are traded at current cmp
             total_profit = self.ptm.get_total_actual_profit_at_cmp(cmp=cmp)
-            # self.total_profit_series.append(total_profit)
+
+            # exit point 1: target achieved
             if total_profit > self.target_total_net_profit:
                 self.session_active = False
                 self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
 
+            # exit point 2: reached maximum allowed loss
             elif total_profit < self.max_negative_profit_allowed:
                 self.session_active = False
                 self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
@@ -190,11 +188,11 @@ class Session:
             else:
                 log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
                 # update inactivity counter to try again after 60 cycles if inactivity continues
-                self.cycles_from_last_trade -= 60  # todo: move to parameter
+                self.cycles_from_last_trade -= self.time_between_successive_pt_creation_tries
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
         print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
-        log.info(f'order traded with uid: {uid}')
+        log.info(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
 
         # get candidate orders
         orders_to_be_traded = self.ptm.get_orders_by_request(
@@ -205,7 +203,7 @@ class Session:
         for order in orders_to_be_traded:
             # check uid
             if order.uid == uid:
-                log.info(f'confirmation of order traded {order}')
+                log.info(f'confirmation of order traded: {order}')
                 # reset counter
                 self.cycles_from_last_trade = 0
 
@@ -273,21 +271,24 @@ class Session:
 
         if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:
             # get EUR by selling BTC
-            # 1. get SELL placed orders
-            # 2. choose one (criteria: farthest or nearest distance)
-            # 3. cancel order
-            # 4. place same qty at MARKET price
+            self.try_to_get_liquidity_callback(k_binance.SIDE_SELL)
             return False
         elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:
             # get BTC by buying BTC
+            self.try_to_get_liquidity_callback(k_binance.SIDE_BUY)
             return False
         else:
             return True
 
     def account_balance_callback(self, accounts: List[Account]) -> None:
         # update of current balance from Binance
-        log.debug([account.name for account in accounts])
+        # log.debug([account.name for account in accounts])
         self.bm.update_current_accounts(received_accounts=accounts)
+
+    def place_isolated_order(self, order: Order) -> None:
+        # method called from session manager to place at MARKET price an isolated order, to get liquidity
+        log.info(f'place isolated order at cmp to get liquidity: {order}')
+        self._place_market_order(order=order)
 
     # ********** check methods **********
     def _place_market_order(self, order) -> None:  # (bool, Optional[str]):
@@ -298,7 +299,8 @@ class Session:
         msg = self.market.place_market_order(order=order)
         if msg:
             order.set_binance_id(new_id=msg.get('binance_id'))
-            log.info(f'********** MARKET ORDER PLACED **********      msg: {msg}')
+            log.info(f'********** MARKET ORDER PLACED **********')  # msg: {msg}')
+            log.info(f'order: {order}')
         else:
             log.critical(f'market order not place in binance {order}')
             raise Exception("MARKET order not placed")
@@ -309,7 +311,8 @@ class Session:
         msg = self.market.place_limit_order(order=order)
         if msg:
             order.set_binance_id(new_id=msg.get('binance_id'))
-            log.debug(f'********** LIMIT ORDER PLACED **********      msg: {msg}')
+            log.debug(f'********** LIMIT ORDER PLACED **********')  # msg: {msg}')
+            log.info(f'order: {order}')
         else:
             log.critical(f'error placing order {order}')
             raise Exception("LIMIT order not placed")
