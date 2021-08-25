@@ -100,11 +100,11 @@ class PTManager:
         )
         for order in orders:
             if order.status == OrderStatus.MONITOR:
-                total += order.get_signed_total_at_cmp(cmp=order.price, with_commission=True)
+                total += order.get_total_at_cmp(cmp=order.price)
             elif order.status == OrderStatus.ACTIVE:
-                total += order.get_signed_total_at_cmp(cmp=cmp, with_commission=True)
+                total += order.get_total_at_cmp(cmp=cmp)
             elif order.status == OrderStatus.TRADED:
-                total += order.get_signed_total_at_cmp(cmp=order.price, with_commission=True)
+                total += order.get_total_at_cmp(cmp=order.price)
         return total
 
     def get_consolidated_profit(self) -> float:
@@ -137,7 +137,7 @@ class PTManager:
         # return the eur & btc needed to trade all 'alive' orders at its own price
         alive_orders = self.get_all_alive_orders()
         # get total eur needed to trade all alive buy orders
-        quote_asset_needed = sum([order.get_signed_total_at_cmp(cmp=order.price, with_commission=False)
+        quote_asset_needed = sum([order.get_total_at_cmp(cmp=order.price, with_commission=False)
                                   for order in alive_orders
                                   if order.k_side == k_binance.SIDE_BUY])
         # get total btc needed to trade all alive sell orders

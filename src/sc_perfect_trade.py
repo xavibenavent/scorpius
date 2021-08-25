@@ -33,7 +33,7 @@ class PerfectTrade:
         self.status = PerfectTradeStatus.NEW
         # this is the neb (original)
         self._original_expected_profit = \
-            sum([order.get_signed_total_at_cmp(cmp=order.price, with_commission=True)
+            sum([order.get_total_at_cmp(cmp=order.price)
                  for order in self.orders])
 
     def get_actual_profit_at_cmp(self, cmp:float) -> float:
@@ -49,12 +49,12 @@ class PerfectTrade:
                 if order.status.name in ['MONITOR', 'ACTIVE', 'TO_BE_TRADED']:
                 # if order.status in [OrderStatus.MONITOR, OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED]:
                     # return the value as traded at current cmp
-                    pt_profit += order.get_signed_total_at_cmp(cmp=cmp, with_commission=True)
+                    pt_profit += order.get_total_at_cmp(cmp=cmp)
 
                 elif order.status.name == 'TRADED':
                 # elif order.status == OrderStatus.TRADED:
                     # return the value at the price traded
-                    pt_profit += order.get_signed_total_at_cmp(cmp=order.price, with_commission=True)
+                    pt_profit += order.get_total_at_cmp(cmp=order.price)
 
         return pt_profit
 
@@ -65,7 +65,7 @@ class PerfectTrade:
     def get_consolidated_profit(self) -> float:
         # not all traded orders, only those in completed pt
         if self.status == PerfectTradeStatus.COMPLETED:
-            return sum([order.get_signed_total_at_cmp(cmp=order.price, with_commission=True)
+            return sum([order.get_total_at_cmp(cmp=order.price)
                         for order in self.orders])
         return 0.0
 

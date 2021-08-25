@@ -72,7 +72,7 @@ class Order:
                 d[k] = v
         d['pt_id'] = self.pt.id
         d['status'] = self.status.name.lower()
-        d['total'] = abs(self.get_signed_total_at_cmp(cmp=self.price, with_commission=False))
+        d['total'] = self.get_total_at_cmp(cmp=self.price, signed=False, with_commission=False)
         return d
 
     def is_ready_for_activation(self, cmp: float) -> bool:
@@ -133,10 +133,13 @@ class Order:
         else:
             raise Exception(f'wrong k_side: {self.k_side}')
 
-    def get_signed_total_at_cmp(self, cmp: float, signed=True, with_commission=True, precision=2):
+    def get_total_at_cmp(self, cmp: float, signed=True, with_commission=True, precision=2):
         # set commission depending on net total or gross total request
         commission = self.get_eur_commission(cmp=cmp) if with_commission else 0.0
-        return round(self._get_signed_total_at_cmp(cmp=cmp) - commission, precision)
+        if signed:
+            return round(self._get_signed_total_at_cmp(cmp=cmp) - commission, precision)
+        else:
+            return round(self._get_total_at_cmp(cmp=cmp) - commission, precision)
 
     # ********** end of total methods **********
 

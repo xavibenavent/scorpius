@@ -72,12 +72,9 @@ class IsolatedOrdersManager:
         if len(candidate_orders) > 0:
             # evaluate the last order placed
             candidate_order = candidate_orders[-1]
-            candidate_loss = candidate_order.get_signed_total_at_cmp(
-                cmp=cmp,
-                with_commission=True)
-            sibling_loss = candidate_order.sibling_order.get_signed_total_at_cmp(
-                cmp=candidate_order.sibling_order.price,
-                with_commission=True)
+            candidate_loss = candidate_order.get_total_at_cmp(cmp=cmp)
+            sibling_loss = \
+                candidate_order.sibling_order.get_total_at_cmp(cmp=candidate_order.sibling_order.price)
             loss = candidate_loss + sibling_loss
             if loss > -3.0:
                 log.debug(f'found a good order with loss {loss:,.2f} for getting liquidity: {candidate_order}')
