@@ -78,6 +78,8 @@ class Session:
         # get filters that will be checked before placing an order
         symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
         # self.symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
+        if symbol_filters.get('quote_asset') == 'EUR':
+            symbol_filters['quote_precision'] = 2
 
         pprint.pprint(symbol_filters)
 
