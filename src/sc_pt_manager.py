@@ -8,14 +8,16 @@ import logging
 from sc_order import Order, OrderStatus
 from sc_pt_calculator import get_prices_given_neb  # get_pt_values
 from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
+from sc_symbol import Symbol
 # from sc_account_balance import AccountBalance
 
 log = logging.getLogger('log')
 
 
 class PTManager:
-    def __init__(self, symbol_filters, session_id: str):
-        self.symbol_filters = symbol_filters
+    # def __init__(self, symbol_filters, session_id: str):
+    def __init__(self, session_id: str):
+        # self.symbol_filters = symbol_filters
         self.session_id = session_id
         self.pt_created_count = 0
 
@@ -29,9 +31,9 @@ class PTManager:
         self.fee = float(config['PT_CREATION']['fee'])
         self.net_eur_balance = float(config['PT_CREATION']['net_eur_balance'])
 
-    def create_new_pt(self, cmp: float, pt_type='NORMAL') -> None:
+    def create_new_pt(self, cmp: float, symbol: Symbol, pt_type='NORMAL') -> None:
         # create and get new orders
-        b1, s1 = self._get_b1s1(mp=cmp)
+        b1, s1 = self._get_b1s1(symbol=symbol, mp=cmp)
 
         if b1 and s1:
             # increase created counter
@@ -141,7 +143,9 @@ class PTManager:
                                   for order in alive_orders
                                   if order.k_side == k_binance.SIDE_BUY])
         # get total btc needed to trade all alive sell orders
-        base_asset_needed = sum([order.get_amount() for order in alive_orders if order.k_side == k_binance.SIDE_SELL])
+        base_asset_needed = sum([order.get_amount(signed=False)
+                                 for order in alive_orders
+                                 if order.k_side == k_binance.SIDE_SELL])
 
         return quote_asset_needed, base_asset_needed
 
@@ -161,10 +165,11 @@ class PTManager:
         return sell_momentum - buy_momentum, buy_momentum, sell_momentum
 
     def _get_b1s1(self,
+                  symbol: Symbol,
                   mp: float,
                   ) -> (Optional[Order], Optional[Order]):
-        b1 = None
-        s1 = None
+        # b1 = None
+        # s1 = None
 
         order_id = 'NA'
 
@@ -172,28 +177,31 @@ class PTManager:
         b1_price, s1_price, quantity = get_prices_given_neb(mp=mp)
 
         # check filters before creating order
-        if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=b1_price):
-            # create orders
-            b1 = Order(
-                order_id=order_id,
-                k_side=k_binance.SIDE_BUY,
-                price=b1_price,
-                amount=quantity,
-                name='b1'
-            )
-        else:
-            raise Exception(f'b1 order do not meet limits: {b1}')
+        # todo: check at order init
+        # if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=b1_price):
+        # create orders
+        b1 = Order(
+            symbol=symbol,
+            order_id=order_id,
+            k_side=k_binance.SIDE_BUY,
+            price=b1_price,
+            amount=quantity,
+            name='b1'
+        )
+        # else:
+        #     raise Exception(f'b1 order do not meet limits: {b1}')
 
-        if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=s1_price):
-            s1 = Order(
-                order_id=order_id,
-                k_side=k_binance.SIDE_SELL,
-                price=s1_price,
-                amount=quantity,
-                name='s1'
-            )
-        else:
-            raise Exception(f's1 order do not meet limits: {s1}')
+        # if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=s1_price):
+        s1 = Order(
+            symbol=symbol,
+            order_id=order_id,
+            k_side=k_binance.SIDE_SELL,
+            price=s1_price,
+            amount=quantity,
+            name='s1'
+        )
+        # else:
+        #     raise Exception(f's1 order do not meet limits: {s1}')
 
         return b1, s1
 
@@ -201,4 +209,5 @@ class PTManager:
         for pt in self.perfect_trades:
             log.info(f'perfect trade {pt.id} {pt.pt_type} {pt.status.name}')
             for order in pt.orders:
-                log.info(f'  order {order.k_side} {order.get_amount()} {order.get_price_str()} {order.status.name}')
+                log.info(f'  order {order.k_side} {order.get_amount(signed=False)} '
+                         f'{order.get_price_str()} {order.status.name}')

@@ -146,8 +146,8 @@ class Market:
                 side=order.k_side,
                 type=k_binance.ORDER_TYPE_LIMIT,
                 timeInForce=k_binance.TIME_IN_FORCE_GTC,
-                quantity=order.get_amount(precision=6),
-                price=order.get_price_str(precision=2),
+                quantity=order.get_amount(signed=False),
+                price=order.get_price_str(),
                 newClientOrderId=order.uid)
             if msg:
                 d = dict(binance_id=msg['orderId'], status=msg.get('status'))
@@ -172,12 +172,12 @@ class Market:
             if order.k_side == k_binance.SIDE_BUY:
                 msg = self.client.order_market_buy(
                     symbol=self.symbol,
-                    quantity=order.get_amount(precision=6),
+                    quantity=order.get_amount(signed=False),
                     newClientOrderId=order.uid)
             elif order.k_side == k_binance.SIDE_SELL:
                 msg = self.client.order_market_sell(
                     symbol=self.symbol,
-                    quantity=order.get_amount(precision=6),
+                    quantity=order.get_amount(signed=False),
                     newClientOrderId=order.uid)
             if msg:
                 d = dict(binance_id=msg['orderId'], status=msg.get('status'))
@@ -201,6 +201,8 @@ class Market:
         try:
             d = self.client.get_symbol_info(symbol)
             if d:
+                base_asset = d.get('baseAsset')
+                quote_asset = d.get('quoteAsset')
                 base_precision = int(d.get('baseAssetPrecision'))  # symbol 1
                 max_price = float(d.get('filters')[0].get('maxPrice'))
                 min_price = float(d.get('filters')[0].get('minPrice'))
@@ -214,7 +216,9 @@ class Market:
                             max_qty=max_qty,
                             min_qty=min_qty,
                             min_notional=min_notional,
-                            quote_precision=quote_precision)
+                            quote_precision=quote_precision,
+                            base_asset=base_asset,
+                            quote_asset=quote_asset)
             else:
                 log.critical(f'no symbol info from Binance for {symbol}')
         except (BinanceAPIException, BinanceRequestException) as e:

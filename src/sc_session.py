@@ -1,6 +1,7 @@
 # sc_session.py
 
 import logging
+import pprint
 import time
 from enum import Enum
 
@@ -58,11 +59,6 @@ class Session:
         config = configparser.ConfigParser()
         config.read('config.ini')
 
-        symbol = config['BINANCE']['symbol']  # BTCEUR
-        self.symbol = Symbol(
-            base_asset=Asset(name=symbol[:3], precision_for_transaction=6, precision_for_visualization=6),  # BTC
-            quote_asset=Asset(name=symbol[3:], precision_for_transaction=2, precision_for_visualization=2)  # EUR
-        )
         self.target_total_net_profit = float(config['SESSION']['target_total_net_profit'])
         self.cycles_count_for_inactivity = int(config['SESSION']['cycles_count_for_inactivity'])
         self.new_pt_shift = float(config['SESSION']['new_pt_shift'])
@@ -77,11 +73,31 @@ class Session:
             float(config['SESSION']['time_between_successive_pt_creation_tries'])
         self.forced_shift = float(config['PT_CREATION']['forced_shift'])
 
+        symbol_name = config['BINANCE']['symbol']  # BTCEUR
+
         # get filters that will be checked before placing an order
-        self.symbol_filters = self.market.get_symbol_info(symbol=self.symbol.get_name())
+        symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
+        # self.symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
+
+        pprint.pprint(symbol_filters)
+
+        self.symbol = Symbol(
+            name=symbol_name,
+            base_asset=Asset(
+                name=symbol_filters.get('base_asset'),
+                precision_for_transaction=symbol_filters['base_precision'],  # todo: remove
+                precision_for_visualization=6),  # BTC
+            quote_asset=Asset(
+                name=symbol_filters.get('quote_asset'),
+                precision_for_transaction=symbol_filters['quote_precision'],  # todo: remove
+                precision_for_visualization=2),  # EUR
+            filters=symbol_filters
+            # base_asset=Asset(name=symbol_name[:3], precision_for_transaction=6, precision_for_visualization=6),  # BTC
+            # quote_asset=Asset(name=symbol_name[3:], precision_for_transaction=2, precision_for_visualization=2)  # EUR
+        )
 
         self.ptm = PTManager(
-            symbol_filters=self.symbol_filters,
+            # symbol_filters=self.symbol_filters,
             session_id=self.session_id)
 
         # used in dashboard in the cmp line chart. initiated with current cmp
@@ -108,7 +124,7 @@ class Session:
                     is_allowed, forced_shift = self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol)
                     if is_allowed:
                         shifted_cmp = cmp + forced_shift
-                        self.ptm.create_new_pt(cmp=shifted_cmp)
+                        self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
                     else:
                         log.critical("initial pt not allowed, it will be tried again after inactivity period")
 
@@ -192,7 +208,7 @@ class Session:
             is_allowed, forced_shift = self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol)
             if is_allowed:
                 shifted_cmp = cmp + forced_shift
-                self.ptm.create_new_pt(cmp=shifted_cmp, pt_type='FROM_INACTIVITY')
+                self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol, pt_type='FROM_INACTIVITY')
                 self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
             else:
                 log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
@@ -244,7 +260,7 @@ class Session:
                     if is_allowed:
                         shifted_cmp = order_price + forced_shift
                         # create pt
-                        self.ptm.create_new_pt(cmp=shifted_cmp)
+                        self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
                         self.cycles_from_last_trade = 0
 
                 # since the traded orders has been identified, do not check more orders
@@ -297,7 +313,8 @@ class Session:
         elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for BTC
             if quote_asset_liquidity > quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # enough EUR
                 # force the creation of a shifted pt to BUY BTC
-                log.info(f'new pt with forced shift: {+self.forced_shift} q: {quote_asset_liquidity} b: {base_asset_liquidity}')
+                log.info(f'new pt with forced shift: {+self.forced_shift} '
+                         f'q: {quote_asset_liquidity} b: {base_asset_liquidity}')
                 return True, +self.forced_shift  # force SELL
             else:
                 # get BTC by buying BTC

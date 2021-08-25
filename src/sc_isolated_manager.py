@@ -29,7 +29,7 @@ class IsolatedOrdersManager:
                 original_price = order.price
 
                 # assess whether the actual profit is higher or lower than the expected
-                qty = order.get_amount()
+                qty = order.get_amount(signed=False)
                 # expected is the neb
                 expected = order.pt.get_original_expected_profit()
                 consolidated = 0.0

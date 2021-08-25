@@ -4,8 +4,10 @@ import logging
 import secrets
 from enum import Enum
 from binance import enums as k_binance
-from typing import Union, Optional
+from typing import Optional
 import configparser
+
+from sc_symbol import Symbol
 
 log = logging.getLogger('log')
 
@@ -24,12 +26,12 @@ class OrderStatus(Enum):
 
 class Order:
     def __init__(self,
+                 symbol: Symbol,
                  order_id: str,  # not actually used
                  k_side: k_binance,
                  price: float,
                  amount: float,
                  status: OrderStatus = OrderStatus.MONITOR,
-                 # bnb_commission=0.0,
                  binance_id=0,  # int
                  name=''
                  ):
@@ -41,6 +43,7 @@ class Order:
         self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
         self.fee = float(config['PT_CREATION']['fee'])
 
+        self.symbol = symbol
         self.order_id = order_id
         self.name = name
         self.k_side = k_side
@@ -63,6 +66,10 @@ class Order:
         # set target price
         sign = 1 if self.k_side == k_binance.SIDE_SELL else -1
         self.target_price = self.price + (sign * self.distance_to_target_price)
+
+        # check filters
+        if not self._is_filter_passed():
+            raise Exception('Order not created due to symbol filters not passed')
 
     def to_dict_for_df(self):
         # get a dictionary from the object able to use in dash (through a df)
@@ -101,22 +108,23 @@ class Order:
         return False
 
     def get_distance(self, cmp: float) -> float:
-        if self.k_side == k_binance.SIDE_BUY:
-            return cmp - self.price
-        else:
-            return self.price - cmp
+        return (cmp - self.price) if self.k_side == k_binance.SIDE_BUY else (self.price - cmp)
 
-    def get_price_str(self, precision: int = 2) -> str:
+    def get_price_str(self) -> str:
+        # precision = self.symbol.get_quote_asset().get_precision_for_transaction()  # EUR
+        precision = self.symbol.filters.get('quote_precision')  # EUR
         return f'{self.price:0.0{precision}f}'
 
-    def get_amount(self, precision: int = 6) -> float:
+    def _get_amount(self) -> float:
+        # precision = self.symbol.get_base_asset().get_precision_for_transaction()  # BTC
+        precision = self.symbol.filters.get('base_precision')  # BTC
         return round(self.amount, precision)  # 6 for BTC
 
-    def get_signed_amount(self) -> float:
-        if self.k_side == k_binance.SIDE_BUY:
-            return self.amount
-        else:
-            return - self.amount
+    def _get_signed_amount(self) -> float:
+        return self._get_amount() if self.k_side == k_binance.SIDE_BUY else - self._get_amount()
+
+    def get_amount(self, signed: bool):
+        return self._get_signed_amount() if signed else self._get_amount()
 
     # ********** total methods **********
 
@@ -172,18 +180,34 @@ class Order:
                 f'- {self._binance_id} - {self.uid}'
         )
 
-    @staticmethod
-    def is_filter_passed(filters: dict, qty: float, price: float) -> bool:
-        if not filters.get('min_qty') <= qty <= filters.get('max_qty'):
-            log.critical(f'qty out of min/max limits: {qty}')
+    # @staticmethod
+    # def is_filter_passed(filters: dict, qty: float, price: float) -> bool:
+    #     if not filters.get('min_qty') <= qty <= filters.get('max_qty'):
+    #         log.critical(f'qty out of min/max limits: {qty}')
+    #         log.critical(f"min: {filters.get('min_qty')} - max: {filters.get('max_qty')}")
+    #         return False
+    #     elif not filters.get('min_price') <= price <= filters.get('max_price'):
+    #         log.critical(f'buy price out of min/max limits: {price}')
+    #         log.critical(f"min: {filters.get('min_price')} - max: {filters.get('max_price')}")
+    #         return False
+    #     elif not (qty * price) > filters.get('min_notional'):
+    #         log.critical(f'buy total (price * qty) under minimum: {qty * price}')
+    #         log.critical(f'min notional: {filters.get("min_notional")}')
+    #         return False
+    #     return True
+
+    def _is_filter_passed(self) -> bool:
+        filters = self.symbol.filters
+        if not filters.get('min_qty') <= self.amount <= filters.get('max_qty'):
+            log.critical(f'qty out of min/max limits: {self.amount}')
             log.critical(f"min: {filters.get('min_qty')} - max: {filters.get('max_qty')}")
             return False
-        elif not filters.get('min_price') <= price <= filters.get('max_price'):
-            log.critical(f'buy price out of min/max limits: {price}')
+        elif not filters.get('min_price') <= self.price <= filters.get('max_price'):
+            log.critical(f'buy price out of min/max limits: {self.price}')
             log.critical(f"min: {filters.get('min_price')} - max: {filters.get('max_price')}")
             return False
-        elif not (qty * price) > filters.get('min_notional'):
-            log.critical(f'buy total (price * qty) under minimum: {qty * price}')
+        elif not (self.amount * self.price) > filters.get('min_notional'):
+            log.critical(f'buy total (price * qty) under minimum: {self.amount * self.price}')
             log.critical(f'min notional: {filters.get("min_notional")}')
             return False
         return True
