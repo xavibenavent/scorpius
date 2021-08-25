@@ -29,7 +29,7 @@ class Order:
                  price: float,
                  amount: float,
                  status: OrderStatus = OrderStatus.MONITOR,
-                 uid: str = '',
+                 # uid: str = '',
                  bnb_commission=0.0,
                  binance_id=0,  # int
                  name=''
@@ -42,6 +42,8 @@ class Order:
         self.status = status
         self.bnb_commission = bnb_commission
         self.binance_id = binance_id
+
+        self.uid = secrets.token_hex(8)  # set random uid of 16 characters
 
         # self.pt_id = '001'
 
@@ -66,10 +68,10 @@ class Order:
         self.target_price = self.price + (sign * self.distance_to_target_price)
 
         # set uid depending whether it is first creation or not
-        if uid == '':
-            self.uid = secrets.token_hex(8)
-        else:
-            self.uid = uid
+        # if uid == '':
+        #     self.uid = secrets.token_hex(8)
+        # else:
+        #     self.uid = uid
 
     def to_dict_for_df(self):
         # get a dictionary from the object able to use in dash (through a df)
