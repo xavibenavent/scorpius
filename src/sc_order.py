@@ -4,7 +4,7 @@ import logging
 import secrets
 from enum import Enum
 from binance import enums as k_binance
-from typing import Union
+from typing import Union, Optional
 import configparser
 
 log = logging.getLogger('log')
@@ -43,7 +43,7 @@ class Order:
         self.bnb_commission = bnb_commission
         self.binance_id = binance_id
 
-        self.pt_id = '001'
+        # self.pt_id = '001'
 
         # read config.ini
         config = configparser.ConfigParser()
@@ -57,8 +57,8 @@ class Order:
 
         # new strategy
         # both are set just after order creation, when both orders and pt are known
-        self.sibling_order: Union[Order, None] = None
-        self.pt = None
+        self.sibling_order: Optional[Order] = None
+        self.pt = None  # it should be Optional[None], but there is a crossed reference problem with PerfectTrade
 
         # todo: set values
         self.sign = 1 if self.k_side == k_binance.SIDE_SELL else -1
@@ -74,8 +74,9 @@ class Order:
         # get a dictionary from the object able to use in dash (through a df)
         d = {}
         for k, v in self.__dict__.items():
-            if k not in ['sibling_order', 'pt']:
+            if k not in ['sibling_order', 'pt']:  # variables that are references to other objects
                 d[k] = v
+        d['pt_id'] = self.pt.pt_id
         d['status'] = self.status.name.lower()
         d['total'] = abs(self.get_signed_total_at_cmp(cmp=self.price, with_commission=False))
         return d

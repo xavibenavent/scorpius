@@ -24,6 +24,12 @@ class PerfectTrade:
         self.orders: List[Order] = orders
         self.pt_type = pt_type
 
+        # set order references
+        orders[0].sibling_order = orders[1]
+        orders[1].sibling_order = orders[0]
+        orders[0].pt = self
+        orders[1].pt = self
+
         self.status = PerfectTradeStatus.NEW
         # this is the neb (original)
         self._original_expected_profit = \

@@ -38,19 +38,19 @@ class PTManager:
             self.pt_created_count += 1
             # set pt_id based on created counter
             pt_id = f'{self.pt_created_count:03}'
-            b1.pt_id = pt_id
-            s1.pt_id = pt_id
+            # b1.pt_id = pt_id
+            # s1.pt_id = pt_id
 
             # create new perfect trade from orders and add to list
             # new_pt = PerfectTrade(pt_id=pt_id, buy_order=b1, sell_order=s1, pt_type=pt_type)
             new_pt = PerfectTrade(pt_id=pt_id, orders=[b1, s1], pt_type=pt_type)
             self.perfect_trades.append(new_pt)
 
-            # set order references
-            b1.sibling_order = s1
-            s1.sibling_order = b1
-            b1.pt = new_pt
-            s1.pt = new_pt
+            # # set order references
+            # b1.sibling_order = s1
+            # s1.sibling_order = b1
+            # b1.pt = new_pt
+            # s1.pt = new_pt
         else:
             print('\n********** CRITICAL ERROR CREATING PT **********\n')
 

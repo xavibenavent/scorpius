@@ -213,7 +213,7 @@ class Session:
             # check uid
             if order.uid == uid:
                 log.info(f'confirmation of order traded: {order}')
-                self.logbook.append(f'order traded: {order.pt_id} {order.name} {order.k_side}')
+                self.logbook.append(f'order traded: {order.pt.pt_id} {order.name} {order.k_side}')
                 # reset counter
                 self.cycles_from_last_trade = 0
 
