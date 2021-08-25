@@ -201,6 +201,6 @@ class PTManager:
 
     def log_perfect_trades_info(self):
         for pt in self.perfect_trades:
-            log.info(f'perfect trade {pt.pt_id} {pt.pt_type} {pt.status.name}')
+            log.info(f'perfect trade {pt.id} {pt.pt_type} {pt.status.name}')
             for order in pt.orders:
                 log.info(f'  order {order.k_side} {order.get_amount()} {order.get_price_str()} {order.status.name}')

@@ -29,7 +29,7 @@ class Order:
                  price: float,
                  amount: float,
                  status: OrderStatus = OrderStatus.MONITOR,
-                 bnb_commission=0.0,
+                 # bnb_commission=0.0,
                  binance_id=0,  # int
                  name=''
                  ):
@@ -47,15 +47,16 @@ class Order:
         self.price = price
         self.amount = amount
         self.status = status
-        self.bnb_commission = bnb_commission
-        self.binance_id = binance_id
+
+        self._bnb_commission = 0.0  # bnb_commission
+        self._binance_id = binance_id
 
         self.uid = secrets.token_hex(8)  # set random uid of 16 characters
 
         # set theoretical eur commission, it will be updated when the order is traded
         self.eur_commission = self.price * self.amount * self.fee
 
-        # both are set during pt creation, when both orders and pt are known
+        # sibling_order & pt, both are set during pt creation when they are known
         self.sibling_order: Optional[Order] = None
         self.pt = None  # it should be Optional[None], but there is a crossed reference problem with PerfectTrade
 
@@ -69,7 +70,7 @@ class Order:
         for k, v in self.__dict__.items():
             if k not in ['sibling_order', 'pt']:  # variables that are references to other objects
                 d[k] = v
-        d['pt_id'] = self.pt.pt_id
+        d['pt_id'] = self.pt.id
         d['status'] = self.status.name.lower()
         d['total'] = abs(self.get_signed_total_at_cmp(cmp=self.price, with_commission=False))
         return d
@@ -153,7 +154,7 @@ class Order:
         return abs(self.amount * (cmp - self.price))
 
     def set_bnb_commission(self, commission: float, bnbeur_rate: float) -> None:
-        self.bnb_commission = commission
+        self._bnb_commission = commission
         self.eur_commission = commission * bnbeur_rate
 
     def set_status(self, status: OrderStatus):
@@ -162,14 +163,14 @@ class Order:
         log.info(f'** ORDER STATUS CHANGED FROM {old_status.name} TO {status.name} - {self}')
 
     def set_binance_id(self, new_id: int):
-        self.binance_id = new_id
+        self._binance_id = new_id
 
     def __repr__(self):
         return (
-                f'{self.k_side:4} - {self.pt.pt_id:5} - '
+                f'{self.k_side:4} - {self.pt.id:5} - '
                 f'{self.name:5} - {self.order_id:5} - {self.price:10,.2f} '
-                f'- {self.amount:12,.6f} - {self.bnb_commission:12,.6f} - {self.status.name:10}'
-                f'- {self.binance_id} - {self.uid}'
+                f'- {self.amount:12,.6f} - {self._bnb_commission:12,.6f} - {self.status.name:10}'
+                f'- {self._binance_id} - {self.uid}'
         )
 
     @staticmethod

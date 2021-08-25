@@ -20,7 +20,7 @@ class PerfectTrade:
                  orders: List[Order],
                  pt_type='NORMAL'
                  ):
-        self.pt_id = pt_id
+        self.id = pt_id
         self.orders: List[Order] = orders
         self.pt_type = pt_type
 
