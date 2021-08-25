@@ -75,10 +75,6 @@ class Order:
         d['total'] = abs(self.get_signed_total_at_cmp(cmp=self.price, with_commission=False))
         return d
 
-    @staticmethod
-    def get_new_uid() -> str:
-        return secrets.token_hex(8)
-
     def is_ready_for_activation(self, cmp: float) -> bool:
         if self.k_side == k_binance.SIDE_BUY and cmp < self.price - self.over_activation_shift:
             return True
@@ -137,7 +133,7 @@ class Order:
         else:
             raise Exception(f'wrong k_side: {self.k_side}')
 
-    def get_signed_total_at_cmp(self, cmp: float, with_commission: bool, precision=2):
+    def get_signed_total_at_cmp(self, cmp: float, signed=True, with_commission=True, precision=2):
         # set commission depending on net total or gross total request
         commission = self.get_eur_commission(cmp=cmp) if with_commission else 0.0
         return round(self._get_signed_total_at_cmp(cmp=cmp) - commission, precision)

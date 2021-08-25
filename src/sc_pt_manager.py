@@ -182,8 +182,7 @@ class PTManager:
                 name='b1'
             )
         else:
-            pass
-            # log.critical(f'order do not meet limits: {dynamic_parameters}')
+            raise Exception(f'b1 order do not meet limits: {b1}')
 
         if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=s1_price):
             s1 = Order(
@@ -194,8 +193,7 @@ class PTManager:
                 name='s1'
             )
         else:
-            pass
-            # log.critical(f'trying to create an order that do not meet limits: {dynamic_parameters}')
+            raise Exception(f's1 order do not meet limits: {s1}')
 
         return b1, s1
 
