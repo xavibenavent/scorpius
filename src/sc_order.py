@@ -29,11 +29,18 @@ class Order:
                  price: float,
                  amount: float,
                  status: OrderStatus = OrderStatus.MONITOR,
-                 # uid: str = '',
                  bnb_commission=0.0,
                  binance_id=0,  # int
                  name=''
                  ):
+
+        # read config.ini
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        self.over_activation_shift = float(config['SESSION']['over_activation_shift'])
+        self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
+        self.fee = float(config['PT_CREATION']['fee'])
+
         self.order_id = order_id
         self.name = name
         self.k_side = k_side
@@ -45,33 +52,16 @@ class Order:
 
         self.uid = secrets.token_hex(8)  # set random uid of 16 characters
 
-        # self.pt_id = '001'
-
-        # read config.ini
-        config = configparser.ConfigParser()
-        config.read('config.ini')
-        self.over_activation_shift = float(config['SESSION']['over_activation_shift'])
-        self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
-        self.fee = float(config['PT_CREATION']['fee'])
-
         # set theoretical eur commission, it will be updated when the order is traded
         self.eur_commission = self.price * self.amount * self.fee
 
-        # new strategy
-        # both are set just after order creation, when both orders and pt are known
+        # both are set during pt creation, when both orders and pt are known
         self.sibling_order: Optional[Order] = None
         self.pt = None  # it should be Optional[None], but there is a crossed reference problem with PerfectTrade
 
-        # todo: set values
+        # set target price
         sign = 1 if self.k_side == k_binance.SIDE_SELL else -1
-        # self.sign = 1 if self.k_side == k_binance.SIDE_SELL else -1
         self.target_price = self.price + (sign * self.distance_to_target_price)
-
-        # set uid depending whether it is first creation or not
-        # if uid == '':
-        #     self.uid = secrets.token_hex(8)
-        # else:
-        #     self.uid = uid
 
     def to_dict_for_df(self):
         # get a dictionary from the object able to use in dash (through a df)
