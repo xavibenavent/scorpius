@@ -39,41 +39,18 @@ class PerfectTrade:
 
         if self.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED]:
             for order in self.orders:
+
                 if order.status.name in ['MONITOR', 'ACTIVE', 'TO_BE_TRADED']:
                 # if order.status in [OrderStatus.MONITOR, OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED]:
                     # return the value as traded at current cmp
                     pt_profit += order.get_signed_total_at_cmp(cmp=cmp, with_commission=True)
+
                 elif order.status.name == 'TRADED':
                 # elif order.status == OrderStatus.TRADED:
                     # return the value at the price traded
                     pt_profit += order.get_signed_total_at_cmp(cmp=order.price, with_commission=True)
-                elif order.status == 'CANCELED':
-                # elif order.status == OrderStatus.CANCELED:
-                    # does nothing
-                    pass
 
         return pt_profit
-
-    # def get_profit_at_cmp(self, cmp: float) -> float:
-    #     # return the pt profit considering that all remaining orders, except NEW, are traded at current cmp
-    #     pt_profit = 0
-    #
-    #     if self.status == PerfectTradeStatus.NEW:
-    #         return 0
-    #
-    #     if self.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED]:
-    #         for order in self.orders:
-    #             if order.status in [OrderStatus.MONITOR, OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED]:
-    #                 # return the value as traded at current cmp
-    #                 pt_profit += order.get_virtual_profit_with_cost(cmp=cmp)
-    #             elif order.status == OrderStatus.TRADED:
-    #                 # return the value at the price traded
-    #                 pt_profit += order.get_virtual_profit_with_cost()
-    #             elif order.status == OrderStatus.CANCELED:
-    #                 # does nothing
-    #                 pass
-    #
-    #     return pt_profit
 
     def get_original_expected_profit(self) -> float:
         # it does not depend on the actual status

@@ -78,15 +78,11 @@ class Order:
                 d[k] = v
         d['status'] = self.status.name.lower()
         d['total'] = abs(self.get_signed_total_at_cmp(cmp=self.price, with_commission=False))
-        # d['total'] = self.get_total()
         return d
 
     @staticmethod
     def get_new_uid() -> str:
         return secrets.token_hex(8)
-
-    def is_ready_for_placement(self, cmp: float, min_dist: float) -> bool:
-        return self.get_distance(cmp=cmp) < min_dist
 
     def is_ready_for_activation(self, cmp: float) -> bool:
         if self.k_side == k_binance.SIDE_BUY and cmp < self.price - self.over_activation_shift:
@@ -113,17 +109,11 @@ class Order:
 
         return False
 
-    def is_isolated(self, cmp: float, max_dist: float) -> bool:
-        return self.get_distance(cmp=cmp) > max_dist
-
     def get_distance(self, cmp: float) -> float:
         if self.k_side == k_binance.SIDE_BUY:
             return cmp - self.price
         else:
             return self.price - cmp
-
-    def get_abs_distance(self, cmp: float) -> float:
-        return abs(self.get_distance(cmp))
 
     def get_price_str(self, precision: int = 2) -> str:
         return f'{self.price:0.0{precision}f}'
@@ -179,9 +169,6 @@ class Order:
 
     def set_binance_id(self, new_id: int):
         self.binance_id = new_id
-
-    def get_status_name(self) -> str:
-        return self.status.name
 
     def __repr__(self):
         return (
