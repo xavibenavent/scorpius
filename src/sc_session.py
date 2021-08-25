@@ -29,6 +29,7 @@ class QuitMode(Enum):
 
 class Session:
     def __init__(self,
+                 symbol: Symbol,
                  session_id: str,
                  session_stopped_callback: Callable[[str, bool, float, float, int, int, int], None],
                  market: Market,
@@ -39,6 +40,7 @@ class Session:
                  try_to_get_liquidity_callback: Callable[[str, float], None]
                  ):
 
+        self.symbol = symbol
         self.session_id = session_id
         self.session_stopped_callback = session_stopped_callback
         # self.placed_orders_from_previous_sessions = placed_orders_from_previous_sessions
@@ -73,33 +75,7 @@ class Session:
             float(config['SESSION']['time_between_successive_pt_creation_tries'])
         self.forced_shift = float(config['PT_CREATION']['forced_shift'])
 
-        symbol_name = config['BINANCE']['symbol']  # BTCEUR
-
-        # get filters that will be checked before placing an order
-        symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
-        # self.symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
-        if symbol_filters.get('quote_asset') == 'EUR':
-            symbol_filters['quote_precision'] = 2
-
-        pprint.pprint(symbol_filters)
-
-        self.symbol = Symbol(
-            name=symbol_name,
-            base_asset=Asset(
-                name=symbol_filters.get('base_asset'),
-                precision_for_transaction=symbol_filters['base_precision'],  # todo: remove
-                precision_for_visualization=6),  # BTC
-            quote_asset=Asset(
-                name=symbol_filters.get('quote_asset'),
-                precision_for_transaction=symbol_filters['quote_precision'],  # todo: remove
-                precision_for_visualization=2),  # EUR
-            filters=symbol_filters
-            # base_asset=Asset(name=symbol_name[:3], precision_for_transaction=6, precision_for_visualization=6),  # BTC
-            # quote_asset=Asset(name=symbol_name[3:], precision_for_transaction=2, precision_for_visualization=2)  # EUR
-        )
-
         self.ptm = PTManager(
-            # symbol_filters=self.symbol_filters,
             session_id=self.session_id)
 
         # used in dashboard in the cmp line chart. initiated with current cmp

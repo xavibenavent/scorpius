@@ -21,7 +21,7 @@ class Account:
         self.name = name.upper()
         self.free = free
         self.locked = locked
-        self.asset = Asset(name=name, precision_for_transaction=4, precision_for_visualization=2)
+        self.asset = Asset(name=name, precision_for_visualization=2)
 
     def get_total(self) -> float:
         return self.free + self.locked

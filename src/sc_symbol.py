@@ -6,11 +6,9 @@ from typing import Dict
 class Asset:
     def __init__(self,
                  name: str,
-                 precision_for_transaction: int,
                  precision_for_visualization: int
                  ):
         self._name = name.upper()
-        self._precision_for_transaction = precision_for_transaction
         self._precision_for_visualization = precision_for_visualization
 
     def get_name(self) -> str:
@@ -18,9 +16,6 @@ class Asset:
 
     def get_precision_for_visualization(self) -> int:
         return self._precision_for_visualization
-
-    def get_precision_for_transaction(self) -> int:
-        return self._precision_for_transaction
 
 
 class Symbol:

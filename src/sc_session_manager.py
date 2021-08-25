@@ -1,19 +1,20 @@
 # sc_session_manager.py
 
+import pprint
 from datetime import datetime
 from typing import Optional, List
 import logging
 import os
 import signal
 
-from binance import enums as k_binance
+import configparser
 
 from sc_session import Session
 from sc_market import Market
-# from sc_account_balance import AccountBalance
 from sc_balance_manager import BalanceManager, Account
 from sc_isolated_manager import IsolatedOrdersManager
 from sc_order import Order
+from sc_symbol import Symbol, Asset
 
 log = logging.getLogger('log')
 
@@ -34,6 +35,32 @@ class SessionManager:
         # get initial accounts to create the balance manager
         accounts = self.market.get_account_info()
         self.bm = BalanceManager(accounts=accounts)
+
+        # get sessions symbol
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        symbol_name = config['BINANCE']['symbol']  # BTCEUR
+
+        # get filters that will be checked before placing an order
+        symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
+
+        # change precision for EUR from 8 to 2 (apparently this is a Binance error)
+        if symbol_filters.get('quote_asset') == 'EUR':
+            symbol_filters['quote_precision'] = 2
+
+        pprint.pprint(symbol_filters)
+
+        # set symbol to pass at sessions start
+        self.symbol = Symbol(
+            name=symbol_name,
+            base_asset=Asset(
+                name=symbol_filters.get('base_asset'),
+                precision_for_visualization=6),  # BTC
+            quote_asset=Asset(
+                name=symbol_filters.get('quote_asset'),
+                precision_for_visualization=2),  # EUR
+            filters=symbol_filters
+        )
 
         # global sessions info
         self.session_count = 0
@@ -62,9 +89,6 @@ class SessionManager:
     def _global_profit_update_callback(self, consolidated, expected):
         # called when an order from a previous session is traded in Binance
         self._update_global_profit(consolidated=consolidated, expected=expected)
-
-        # print('check are equals:')
-        # [print(order) for order in self.placed_orders_from_previous_sessions]
 
     def _update_global_profit(self, consolidated: float, expected: float):
         # update
@@ -134,6 +158,7 @@ class SessionManager:
         session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
 
         self.session = Session(
+            symbol=self.symbol,
             session_id=session_id,
             session_stopped_callback=self._session_stopped_callback,
             market=self.market,
@@ -190,15 +215,9 @@ class SessionManager:
 
     def _try_to_get_liquidity_callback(self, side: str, cmp: float):
         log.info(f'try to get liquidity callback called with side: {side}')
-        # call the right method in isolated orders manager
-        # order : Optional[Order] = None
-        # if side == k_binance.SIDE_BUY:
-        #     order = self.iom.try_to_get_base_asset_liquidity()
-        # elif side == k_binance.SIDE_SELL:
-        #     order = self.iom.try_to_get_quote_asset_liquidity()
-        # else:
-        #     raise Exception(f'wrong side: {side}')
+
         order = self.iom.try_to_get_asset_liquidity(cmp=cmp, k_side=side)
+
         if order:
             # place at MARKET price
             log.info(f'order to place at market price with loss: {order}')
