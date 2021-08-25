@@ -61,8 +61,9 @@ class Order:
         self.pt = None  # it should be Optional[None], but there is a crossed reference problem with PerfectTrade
 
         # todo: set values
-        self.sign = 1 if self.k_side == k_binance.SIDE_SELL else -1
-        self.target_price = self.price + (self.sign * self.distance_to_target_price)
+        sign = 1 if self.k_side == k_binance.SIDE_SELL else -1
+        # self.sign = 1 if self.k_side == k_binance.SIDE_SELL else -1
+        self.target_price = self.price + (sign * self.distance_to_target_price)
 
         # set uid depending whether it is first creation or not
         if uid == '':
