@@ -5,7 +5,6 @@ import secrets
 from enum import Enum
 from binance import enums as k_binance
 from typing import Optional
-import configparser
 
 from sc_symbol import Symbol
 
@@ -14,7 +13,6 @@ log = logging.getLogger('log')
 K_ACTIVATION_DISTANCE = 25.0
 
 
-# todo: review available status
 class OrderStatus(Enum):
     # in use
     MONITOR = 1
@@ -37,11 +35,10 @@ class Order:
                  ):
 
         # read config.ini
-        config = configparser.ConfigParser()
-        config.read('config.ini')
-        self.over_activation_shift = float(config['SESSION']['over_activation_shift'])
-        self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
-        self.fee = float(config['PT_CREATION']['fee'])
+        config = symbol.config_data
+        self.over_activation_shift = float(config['over_activation_shift'])
+        self.distance_to_target_price = float(config['distance_to_target_price'])
+        self.fee = float(config['fee'])
 
         self.symbol = symbol
         self.order_id = order_id
@@ -56,7 +53,7 @@ class Order:
 
         self.uid = secrets.token_hex(8)  # set random uid of 16 characters
 
-        # set theoretical eur commission, it will be updated when the order is traded
+        # set theoretical quote commission, it will be updated when the order is traded
         self._quote_commission = self.price * self.amount * self.fee
 
         # sibling_order & pt, both are set during pt creation when they are known
@@ -111,12 +108,12 @@ class Order:
         return (cmp - self.price) if self.k_side == k_binance.SIDE_BUY else (self.price - cmp)
 
     def get_price_str(self) -> str:
-        precision = self.symbol.filters.get('quote_precision')  # EUR
+        precision = self.symbol.filters.get('quote_precision')  # quote
         return f'{self.price:0.0{precision}f}'
 
     def _get_amount(self) -> float:
-        precision = self.symbol.filters.get('base_precision')  # BTC
-        return round(self.amount, precision)  # 6 for BTC
+        precision = self.symbol.filters.get('base_precision')  # base
+        return round(self.amount, precision)
 
     def _get_signed_amount(self) -> float:
         return self._get_amount() if self.k_side == k_binance.SIDE_BUY else - self._get_amount()

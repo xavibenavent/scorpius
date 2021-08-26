@@ -143,10 +143,6 @@ def update_figure(timer):
     return f'{eur_account.free:,.2f}', f'{eur_account.locked:,.2f}',\
            f'{btc_account.free:,.6f}', f'{btc_account.locked:,.6f}',\
            f'{bnb_account.free:,.6f}', f'{bnb_account.locked:,.6f}'
-    # ab = dfm.sm.session.bm.current_ab
-    # return f'{ab.s2.free:,.2f}', f'{ab.s2.locked:,.2f}',\
-    #        f'{ab.s1.free:,.6f}', f'{ab.s1.locked:,.6f}',\
-    #        f'{ab.bnb.free:,.6f}', f'{ab.bnb.locked:,.6f}'
 
 
 @app.callback(

@@ -1,16 +1,17 @@
 # xb_pt_calculator.py
 import sys
-import configparser
+from sc_symbol import Symbol
 
 
 # get buy and sell prices given the net euro balance and the quantity (qb=qs)
-def get_prices_given_neb(mp:float):
+def get_prices_given_neb(mp:float, symbol: Symbol):
     # get parameters from config.ini
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    fee = float(config['PT_CREATION']['fee'])
-    quantity = float(config['PT_CREATION']['quantity'])
-    neb = float(config['PT_CREATION']['net_eur_balance'])
+    # config = configparser.ConfigParser()
+    # config.read('config.ini')
+    config = symbol.config_data
+    fee = float(config['fee'])
+    quantity = float(config['quantity'])
+    neb = float(config['net_quote_balance'])
 
     bp = mp * (1 - fee) - neb / (2 * quantity)
     sp = mp * (1 + fee) + neb / (2 * quantity)
@@ -49,6 +50,9 @@ def get_compensation(
         gap: gap
         qty_bal: 1st symbol balance in BTC/EUR
         price_bal: 2nd symbol balance"""
+    s1_p = 0.0
+    b1_p = 0.0
+    n1 = 0.0
     try:
         s1_p = cmp + gap
         b1_p = cmp - gap

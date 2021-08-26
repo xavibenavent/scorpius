@@ -4,7 +4,6 @@ import sys
 import logging
 import time
 from typing import Callable, Union, Any, Optional, List
-# from twisted.internet import reactor
 from binance.client import Client
 from binance import ThreadedWebsocketManager
 from binance import enums as k_binance
@@ -17,7 +16,6 @@ import socket
 from requests.exceptions import ConnectionError, ReadTimeout
 
 from sc_order import Order
-# from sc_account_balance import AccountBalance, AssetBalance
 from sc_fake_client import FakeClient
 from sc_balance_manager import Account
 

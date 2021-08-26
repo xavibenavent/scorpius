@@ -54,7 +54,7 @@ class PTManager:
             # update the other order price and target_price
             # update perfect trade status
             # get approximate gap * 2
-            b1_price, s1_price, quantity = get_prices_given_neb(mp=order.price)
+            b1_price, s1_price, quantity = get_prices_given_neb(mp=order.price, symbol=self.symbol)
             gap = s1_price - b1_price
 
             if order.k_side == k_binance.SIDE_BUY:
@@ -167,7 +167,7 @@ class PTManager:
         order_id = 'NA'
 
         # get perfect trade
-        b1_price, s1_price, quantity = get_prices_given_neb(mp=mp)
+        b1_price, s1_price, quantity = get_prices_given_neb(mp=mp, symbol=self.symbol)
 
         # create orders
         b1 = Order(

@@ -1,24 +1,16 @@
 # sc_df_manager.py
 
 import pandas as pd
-from typing import Optional
 
-from sc_session import Session
 from sc_order import OrderStatus
 from sc_perfect_trade import PerfectTradeStatus
 from sc_session_manager import SessionManager
 
-print('sc_df_manager.py')
-
 
 class DataframeManager:
     def __init__(self):
-        # self.session = Session()
-        # self.sm = SessionManager()
-        # print('Session init')
-
-        self.sm = self.start_session_manager()
-        # self.sm: Optional[SessionManager] = None
+        self.sm = SessionManager()
+        print('data frame manager')
 
     def get_all_orders_df(self) -> pd.DataFrame:
         # get list with all orders:
@@ -46,7 +38,3 @@ class DataframeManager:
         )
         df1 = df.append(other=cmp_order, ignore_index=True)
         return df1
-
-    def start_session_manager(self) -> SessionManager:
-        print('session manager started')
-        return SessionManager()
