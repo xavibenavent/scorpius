@@ -26,7 +26,7 @@ class SessionManager:
         self.iom = IsolatedOrdersManager()
 
         self.market = Market(
-            symbol_ticker_callback=self._fake_symbol_socket_callback,
+            # symbol_ticker_callback=self._fake_symbol_socket_callback,
             order_traded_callback=self._fake_order_socket_callback,
             account_balance_callback=self._fake_account_socket_callback)
 
@@ -52,6 +52,11 @@ class SessionManager:
             self._init_global_data(symbol=symbol)
             self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
 
+            # start ticker socket for each symbol
+            self.market.start_symbol_ticker_socket(
+                symbol_name=symbol.name,
+                callback=self.active_sessions[symbol.name].binance_symbol_ticker_callback)
+
     def _get_symbols(self) -> List[Symbol]:
         # list to return
         symbols: List[Symbol] = []
@@ -60,7 +65,7 @@ class SessionManager:
         symbols_name = cm.get_symbol_names()
 
         for symbol_name in symbols_name:
-            symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
+            symbol_filters = self.market.get_symbol_info(symbol_name=symbol_name)
 
             # fix Binance mistake in EUR precision (originally 8 and it is enough with 2)
             if symbol_filters.get('quote_asset') == 'EUR':
@@ -143,7 +148,7 @@ class SessionManager:
 
     def start_new_session(self, symbol: Symbol) -> Session:
         # to avoid errors of socket calling None during Session init
-        self.market.symbol_ticker_callback = self._fake_symbol_socket_callback
+        self.market.symbol_ticker_callbacks[symbol.name] = self._fake_symbol_socket_callback
         self.market.order_traded_callback = self._fake_order_socket_callback
         self.market.account_balance_callback = self._fake_account_socket_callback
 
@@ -162,7 +167,7 @@ class SessionManager:
         )
 
         # after having the session created, set again the callback functions that were None
-        self.market.symbol_ticker_callback = session.symbol_ticker_callback
+        self.market.symbol_ticker_callbacks[symbol.name] = session.symbol_ticker_callback
         self.market.order_traded_callback = session.order_traded_callback
         self.market.account_balance_callback = session.account_balance_callback
 

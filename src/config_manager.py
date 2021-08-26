@@ -19,3 +19,15 @@ class ConfigManager:
 
     def get_symbol_data(self, symbol_name: str) -> Dict:
         return dict(self._config.items(symbol_name))
+
+    def get_app_mode(self) -> str:
+        return self._config.get('APP_MODE', 'client_mode')
+
+    def get_fake_cmp_mode(self) -> str:
+        return self._config.get('FAKE_CMP_MODE', 'simulator_mode')
+
+    def get_simulator_data(self, symbol_name: str) -> Dict:
+        return dict(self._config.items(symbol_name + '_SIMULATOR_DATA'))
+
+    def get_simulator_update_rate(self) -> float:
+        return float(self._config.get('SIMULATOR_GLOBAL_DATA', 'update_rate'))

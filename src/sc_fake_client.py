@@ -9,9 +9,9 @@ import threading
 
 # from sc_account_balance import AssetBalance, AccountBalance
 from sc_balance_manager import Account
+from config_manager import ConfigManager
 
 # from config import SIMULATOR_MODE and parameters
-import configparser
 
 log = logging.getLogger('log')
 
@@ -61,24 +61,25 @@ class FakeClient:
         self._placed_orders_count = 0
 
         # FAKE CMP MODE SETTING
-        config = configparser.ConfigParser()
-        config.read('config.ini')
-        sm = config['FAKE_CMP_MODE']['simulator_mode']
-
+        cm = ConfigManager(config_file='config_new.ini')
+        sm = cm.get_fake_cmp_mode()
         self._fake_cmp_mode = FakeCmpMode[sm]
-        initial_btc = float(config['SIMULATOR']['initial_btc'])
-        initial_eur = float(config['SIMULATOR']['initial_eur'])
-        initial_bnb = float(config['SIMULATOR']['initial_bnb'])
-        update_rate = float(config['SIMULATOR']['update_rate'])
+        config = cm.get_simulator_data(symbol_name='BTCEUR')
+
+        initial_btc = float(config['initial_btc'])
+        initial_eur = float(config['initial_eur'])
+        initial_bnb = float(config['initial_bnb'])
+
+        update_rate = cm.get_simulator_update_rate()
 
         # initial cmp
-        self._cmp: float = float(config['SIMULATOR']['initial_cmp'])
+        self._cmp = float(config['initial_cmp'])
         # cmp historical list
         self._cmp_sequence: List[float] = [self._cmp]
 
-        self._FEE = float(config['SIMULATOR']['fee'])
-        self._BNBBTC = float(config['SIMULATOR']['bnb_btc'])
-        self._BNBEUR = float(config['SIMULATOR']['bnb_eur'])
+        self._FEE = float(config['fee'])
+        self._BNBBTC = float(config['bnb_btc'])
+        self._BNBEUR = float(config['bnb_eur'])
 
         self.api_key = ''
         self.api_secret = ''
