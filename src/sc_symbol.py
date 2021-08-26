@@ -19,11 +19,12 @@ class Asset:
 
 
 class Symbol:
-    def __init__(self, name: str, base_asset: Asset, quote_asset: Asset, filters: Dict):
+    def __init__(self, name: str, base_asset: Asset, quote_asset: Asset, filters: Dict, config_data: Dict):
         self.name = name.upper()
         self._base_asset = base_asset
         self._quote_asset = quote_asset
         self.filters = filters
+        self.config_data = config_data
 
     def get_name(self) -> str:
         return self._base_asset.get_name() + self._quote_asset.get_name()

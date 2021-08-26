@@ -15,8 +15,6 @@ from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
 from sc_symbol import Asset, Symbol
 
-import configparser
-
 
 log = logging.getLogger('log')
 
@@ -31,7 +29,7 @@ class Session:
     def __init__(self,
                  symbol: Symbol,
                  session_id: str,
-                 session_stopped_callback: Callable[[str, bool, float, float, int, int, int], None],
+                 session_stopped_callback: Callable[[Symbol, str, bool, float, float, int, int, int], None],
                  market: Market,
                  balance_manager: BalanceManager,
                  check_isolated_callback: Callable[[str, float], None],
@@ -57,23 +55,21 @@ class Session:
 
         self.session_active = True
 
-        # read parameters from config.ini
-        config = configparser.ConfigParser()
-        config.read('config.ini')
+        config = self.symbol.config_data
 
-        self.target_total_net_profit = float(config['SESSION']['target_total_net_profit'])
-        self.cycles_count_for_inactivity = int(config['SESSION']['cycles_count_for_inactivity'])
-        self.new_pt_shift = float(config['SESSION']['new_pt_shift'])
-        self.isolated_distance = float(config['SESSION']['isolated_distance'])
-        self.compensation_distance = float(config['SESSION']['compensation_distance'])
-        self.compensation_gap = float(config['SESSION']['compensation_gap'])
-        self.fee = float(config['PT_CREATION']['fee'])
-        self.quantity = float(config['PT_CREATION']['quantity'])
-        self.net_eur_balance = float(config['PT_CREATION']['net_eur_balance'])
-        self.max_negative_profit_allowed = float(config['SESSION']['max_negative_profit_allowed'])
+        self.target_total_net_profit = float(config['target_total_net_profit'])
+        self.cycles_count_for_inactivity = int(config['cycles_count_for_inactivity'])
+        self.new_pt_shift = float(config['new_pt_shift'])
+        self.isolated_distance = float(config['isolated_distance'])
+        self.compensation_distance = float(config['compensation_distance'])
+        self.compensation_gap = float(config['compensation_gap'])
+        self.fee = float(config['fee'])
+        self.quantity = float(config['quantity'])
+        self.net_eur_balance = float(config['net_eur_balance'])
+        self.max_negative_profit_allowed = float(config['max_negative_profit_allowed'])
         self.time_between_successive_pt_creation_tries = \
-            float(config['SESSION']['time_between_successive_pt_creation_tries'])
-        self.forced_shift = float(config['PT_CREATION']['forced_shift'])
+            float(config['time_between_successive_pt_creation_tries'])
+        self.forced_shift = float(config['forced_shift'])
 
         self.ptm = PTManager(
             session_id=self.session_id)
@@ -220,7 +216,7 @@ class Session:
                 # set commission and price
                 order.set_bnb_commission(
                     commission=bnb_commission,
-                    bnbeur_rate=self.market.get_cmp(symbol='BNBEUR'))
+                    bnb_quote_rate=self.market.get_cmp(symbol='BNBEUR'))  # todo: change string constant
 
                 # set traded order price
                 order.price = order_price
@@ -269,7 +265,7 @@ class Session:
         new_pt_base_asset_liquidity_needed = self.quantity
         new_pt_quote_asset_liquidity_needed = self.quantity * cmp
 
-        # get total eur & btc needed to trade all alive orders at their own price
+        # get total eur & needed to trade all alive orders at their own price
         quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
 
         # check available liquidity (eur & btc) vs needed when trading both orders
@@ -434,6 +430,7 @@ class Session:
 
         # send info & profit to session manager
         self.session_stopped_callback(
+            self.symbol,
             self.session_id,
             is_session_fully_consolidated,
             consolidated_profit,
