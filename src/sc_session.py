@@ -1,7 +1,6 @@
 # sc_session.py
 
 import logging
-import pprint
 import time
 from enum import Enum
 
@@ -13,7 +12,7 @@ from sc_order import Order, OrderStatus
 from sc_balance_manager import BalanceManager, Account
 from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
-from sc_symbol import Asset, Symbol
+from sc_symbol import Symbol
 
 
 log = logging.getLogger('log')
@@ -32,17 +31,17 @@ class Session:
                  session_stopped_callback: Callable[[Symbol, str, bool, float, float, int, int, int], None],
                  market: Market,
                  balance_manager: BalanceManager,
-                 check_isolated_callback: Callable[[str, float], None],
+                 check_isolated_callback: Callable[[Symbol, str, float], None],
                  placed_isolated_callback: Callable[[Order], None],
-                 global_profit_update_callback: Callable[[float, float], None],
-                 try_to_get_liquidity_callback: Callable[[str, float], None]
+                 # global_profit_update_callback: Callable[[float, float], None],
+                 try_to_get_liquidity_callback: Callable[[Symbol, str, float], None]
                  ):
 
         self.symbol = symbol
         self.session_id = session_id
         self.session_stopped_callback = session_stopped_callback
         # self.placed_orders_from_previous_sessions = placed_orders_from_previous_sessions
-        self.global_profit_update_callback = global_profit_update_callback
+        # self.global_profit_update_callback = global_profit_update_callback
         self.market = market
         self.bm = balance_manager
 
@@ -78,7 +77,7 @@ class Session:
         )
 
         # used in dashboard in the cmp line chart. initiated with current cmp
-        self.cmps = [self.market.get_cmp(self.symbol.get_name())]
+        self.cmps = [self.market.get_cmp(self.symbol.name)]
 
         self.total_profit_series = [0.0]
 
@@ -244,7 +243,7 @@ class Session:
                 break
 
         # if no order found, then check in placed_orders_from_previous_sessions list
-        self.check_isolated_callback(uid, order_price)
+        self.check_isolated_callback(self.symbol, uid, order_price)
 
     def _allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> (bool, float):
         # 1. liquidity
@@ -284,7 +283,7 @@ class Session:
                 return True, -self.forced_shift  # force SELL
             else:
                 # get quote by selling base
-                self.try_to_get_liquidity_callback(k_binance.SIDE_SELL, cmp)
+                self.try_to_get_liquidity_callback(self.symbol, k_binance.SIDE_SELL, cmp)
                 return False, 0.0
 
         elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for base
@@ -295,7 +294,7 @@ class Session:
                 return True, +self.forced_shift  # force SELL
             else:
                 # get base buying
-                self.try_to_get_liquidity_callback(k_binance.SIDE_BUY, cmp)
+                self.try_to_get_liquidity_callback(self.symbol, k_binance.SIDE_BUY, cmp)
                 return False, 0.0
 
         else:

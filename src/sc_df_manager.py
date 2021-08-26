@@ -6,6 +6,7 @@ from sc_order import OrderStatus
 from sc_perfect_trade import PerfectTradeStatus
 from sc_session_manager import SessionManager
 
+SYMBOL = 'BTCEUR'
 
 class DataframeManager:
     def __init__(self):
@@ -14,8 +15,8 @@ class DataframeManager:
 
     def get_all_orders_df(self) -> pd.DataFrame:
         # get list with all orders:
-        if self.sm.session:
-            all_orders = self.sm.session.ptm.get_orders_by_request(
+        if self.sm.active_sessions[SYMBOL]:
+            all_orders = self.sm.active_sessions[SYMBOL].ptm.get_orders_by_request(
                 orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
                 pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
                            PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
@@ -31,7 +32,7 @@ class DataframeManager:
         cmp_order = dict(
             pt_id='',
             status='cmp',
-            price=self.sm.session.cmps[-1] if self.sm.session.cmps else 0,
+            price=self.sm.active_sessions[SYMBOL].cmps[-1] if self.sm.active_sessions[SYMBOL].cmps else 0,
             total=0.0,
             name='',
             amount=''

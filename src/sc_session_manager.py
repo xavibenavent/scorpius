@@ -1,6 +1,5 @@
 # sc_session_manager.py
 
-import pprint
 from datetime import datetime
 from typing import Optional, List, Dict
 import logging
@@ -32,25 +31,37 @@ class SessionManager:
             account_balance_callback=self._fake_account_socket_callback)
 
         # session will be started within start_session method
-        # self.session: Optional[Session] = None
-        # self.sessions: List[Optional[Session]] = []
         self.active_sessions: Dict[str, Optional[Session]] = {}
-
         self.terminated_sessions: Dict[str, Dict] = {}
 
         # get initial accounts to create the balance manager (all own accounts managed in Binance)
         accounts = self.market.get_account_info()
         self.bm = BalanceManager(accounts=accounts)
 
-        # get symbols info from config.ini & Binance
+        # get list of symbols info from config.ini & market
+        symbols = self._get_symbols()
+
+        # global sessions info
+        self.session_count = 0
+
+        # todo: start sockets for this symbol
+        self.market.start_sockets()
+
+        # start first sessions
+        for symbol in symbols:
+            self._init_global_data(symbol=symbol)
+            self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
+
+    def _get_symbols(self) -> List[Symbol]:
+        # list to return
+        symbols: List[Symbol] = []
+
         cm = ConfigManager(config_file='config_new.ini')
         symbols_name = cm.get_symbol_names()
 
-        # looping this list items a first session will be created for each symbol
-        symbols: List[Symbol] = []
-
         for symbol_name in symbols_name:
             symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
+
             # fix Binance mistake in EUR precision (originally 8 and it is enough with 2)
             if symbol_filters.get('quote_asset') == 'EUR':
                 symbol_filters['quote_precision'] = 2
@@ -69,50 +80,20 @@ class SessionManager:
                 filters=symbol_filters,
                 config_data=symbol_config_data
             )
-
+            # update list
             symbols.append(symbol)
+        return symbols
 
-        # global sessions info
-        self.session_count = 0
-
-        self.global_consolidated_session_count = 0
-        self.global_expected_session_count = 0
-        self.global_consolidated_profit = 0.0
-        self.global_expected_profit = 0.0
-
-        self.global_cmp_count = 0
-        # number of orders traded at market price (cmp): quit mode TRADE_ALL_PENDING
-        self.market_orders_count_at_cmp = 0
-
-        # number of orders placed at order price: quit mode PLACE_ALL_PENDING
-        self.placed_orders_count_at_price = 0
-
-        # current number of pending orders placed at order price (initially placed - traded)
-        self.placed_pending_orders_count = 0
-
-        # todo: not sure whether it will work
-        self.market.start_sockets()
-
-        # start first sessions
-        for symbol in symbols:
-            self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
-
-        pass
-
-        # [self.start_new_session(symbol=symbol) for symbol in symbols]
-
-    def _global_profit_update_callback(self, consolidated, expected):
-        # called when an order from a previous session is traded in Binance
-        self._update_global_profit(consolidated=consolidated, expected=expected)
-
-    def _update_global_profit(self, consolidated: float, expected: float):
+    def _update_global_profit(self, symbol: Symbol, consolidated: float, expected: float):
         # update
-        self.global_consolidated_profit += consolidated
-        self.global_expected_profit -= expected  # subtraction because expected is calculated as an absolut value
+        if symbol.name in self.terminated_sessions.keys():
+            self.terminated_sessions[symbol.name]['global_consolidated_profit'] += consolidated
+            # subtraction because expected is calculated as an absolut value
+            self.terminated_sessions[symbol.name]['global_expected_profit'] -= expected
 
         # log
-        log.info('********** global profit updated **********')
-        log.info(f'consolidated: {consolidated} expected: {expected}')
+        log.info(f'********** global profit updated for symbol {symbol.name} **********')
+        log.info(f'consolidated: {consolidated:,.2f} expected: {expected:,.2f}')
         log.info('*****************************************************************************')
 
     def _session_stopped_callback(self,
@@ -125,46 +106,6 @@ class SessionManager:
                                   market_orders_count_at_cmp: int,
                                   placed_orders_count_at_price: int
                                   ) -> None:
-        # print(f'session stopped with id: {session_id} consolidated profit: {consolidated_profit}')
-        # print(f'session stopped with id: {session_id} expected profit: {expected_profit}')
-        # log.info(f'session stopped with id: {session_id} consolidated profit: {consolidated_profit}')
-        # log.info(f'session stopped with id: {session_id} expected profit: {expected_profit}')
-        #
-        # if is_session_fully_consolidated:
-        #     self.global_consolidated_session_count += 1
-        # else:
-        #     self.global_expected_session_count += 1
-        #
-        # self.global_consolidated_profit += consolidated_profit
-        # self.global_expected_profit += expected_profit
-        #
-        # # update global cmp count
-        # self.global_cmp_count += cmp_count
-        #
-        # # update number of orders traded at cmp in quit mode TRADE_ALL_PENDING
-        # self.market_orders_count_at_cmp += market_orders_count_at_cmp
-        #
-        # # both increased with the number of orders placed in quit mode PLACE_ALL_PENDING
-        # self.placed_orders_count_at_price += placed_orders_count_at_price
-        # # this will be diminished when a placed order is later traded (in other session)
-        # self.placed_pending_orders_count += placed_orders_count_at_price
-        #
-        # print(f'********** sessions count: {self.session_count} **********')
-        # print(f'********** partial cmp count: {self.global_cmp_count / 3600.0:,.2f} [hours]')
-        # print(f'********** global consolidated profit: {self.global_consolidated_profit:,.2f} **********')
-        # print(f'********** global expected profit: {self.global_expected_profit:,.2f} **********')
-        # print(f'********** placed orders count: {self.market_orders_count_at_cmp} **********')
-        #
-        # print('placed orders:')
-        # [print(order) for order in self.iom.isolated_orders]
-        #
-        # session_outcome = dict(
-        #     is_session_fully_consolidated=is_session_fully_consolidated,
-        #     consolidated_profit=consolidated_profit,
-        #     expected_profit=expected_profit,
-        #     market_orders_count_at_cmp=market_orders_count_at_cmp,
-        #     placed_orders_count_at_price=placed_orders_count_at_price
-        # )
 
         # update terminated sessions or create if first session terminated
         if symbol.name in self.terminated_sessions.keys():
@@ -178,25 +119,27 @@ class SessionManager:
             self.terminated_sessions[symbol.name]['global_market_orders_count_at_cmp'] += market_orders_count_at_cmp
             self.terminated_sessions[symbol.name]['global_placed_orders_count_at_price'] += placed_orders_count_at_price
             self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] += placed_orders_count_at_price
-            pass
         else:
-            # since it is the first session terminated for this symbol, create first data
-            self.terminated_sessions[symbol.name] = {}
-            self.terminated_sessions[symbol.name]['global_consolidated_session_count'] = 0
-            self.terminated_sessions[symbol.name]['global_expected_session_count'] = 0
-            self.terminated_sessions[symbol.name]['global_cmp_count'] = 0
-            self.terminated_sessions[symbol.name]['global_consolidated_profit'] = 0.0
-            self.terminated_sessions[symbol.name]['global_expected_profit'] = 0.0
-            self.terminated_sessions[symbol.name]['global_market_orders_count_at_cmp'] = 0
-            self.terminated_sessions[symbol.name]['global_placed_orders_count_at_price'] = 0
-            self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] = 0
+            raise Exception(f'global data for {symbol.name} should already exist')
 
+        # check for session manager end
         if self.session_count < 1000:
             self.start_new_session(symbol=symbol)
         else:
             self.stop_global_session()
             # self.market.stop()
             # raise Exception('********** GLOBAL SESSION MANAGER FINISHED **********')
+
+    def _init_global_data(self, symbol: Symbol):
+        self.terminated_sessions[symbol.name] = {}
+        self.terminated_sessions[symbol.name]['global_consolidated_session_count'] = 0
+        self.terminated_sessions[symbol.name]['global_expected_session_count'] = 0
+        self.terminated_sessions[symbol.name]['global_cmp_count'] = 0
+        self.terminated_sessions[symbol.name]['global_consolidated_profit'] = 0.0
+        self.terminated_sessions[symbol.name]['global_expected_profit'] = 0.0
+        self.terminated_sessions[symbol.name]['global_market_orders_count_at_cmp'] = 0
+        self.terminated_sessions[symbol.name]['global_placed_orders_count_at_price'] = 0
+        self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] = 0
 
     def start_new_session(self, symbol: Symbol) -> Session:
         # to avoid errors of socket calling None during Session init
@@ -214,7 +157,7 @@ class SessionManager:
             balance_manager=self.bm,
             check_isolated_callback=self._check_isolated_callback,
             placed_isolated_callback=self._placed_isolated_callback,
-            global_profit_update_callback=self._global_profit_update_callback,
+            # global_profit_update_callback=self._global_profit_update_callback,
             try_to_get_liquidity_callback=self._try_to_get_liquidity_callback
         )
 
@@ -247,24 +190,26 @@ class SessionManager:
         # exit
         raise Exception("********** SESSION TERMINATED, PRESS CTRL-C ********")
 
-    def _check_isolated_callback(self, uid: str, order_price: float):
+    def _check_isolated_callback(self, symbol: Symbol, uid: str, order_price: float):
         # check the isolated orders and, in case an order from previous session have been traded,
         # return the variation in profit (consolidated & expected), otherwise return zero
         is_known_order, consolidated, expected = \
             self.iom.check_isolated_orders(uid=uid, traded_price=order_price)
 
-        # update actual orders placed count
+        # update actual orders placed count, decrementing in one unit
         if is_known_order:
-            self.placed_pending_orders_count -= 1
+            if symbol.name in self.terminated_sessions.keys():
+                self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] -= 1
 
         # update profit
-        self._update_global_profit(consolidated=consolidated, expected=expected)
+        self._update_global_profit(symbol=symbol, consolidated=consolidated, expected=expected)
 
     def _placed_isolated_callback(self, order: Order):
         # once the order have been placed in Binance, it is appended to the list
         self.iom.isolated_orders.append(order)
 
-    def _try_to_get_liquidity_callback(self, side: str, cmp: float):
+    def _try_to_get_liquidity_callback(self, symbol: Symbol, side: str, cmp: float):
+        # called from session
         log.info(f'try to get liquidity callback called with side: {side}')
 
         order = self.iom.try_to_get_asset_liquidity(cmp=cmp, k_side=side)
@@ -272,7 +217,11 @@ class SessionManager:
         if order:
             # place at MARKET price
             log.info(f'order to place at market price with loss: {order}')
-            self.session.place_isolated_order(order=order)
+            # sanity check
+            if order.symbol.name != symbol.name:
+                raise Exception(f'{symbol.name} and {order.symbol.name} have to be equals')
+            else:
+                self.active_sessions[symbol.name].place_isolated_order(order=order)
 
             # cancel in Binance the previously placed order
             self.market.cancel_orders([order])

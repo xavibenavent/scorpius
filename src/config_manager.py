@@ -1,7 +1,7 @@
 # config_manager.py
 
 import configparser
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 
 class ConfigManager:
