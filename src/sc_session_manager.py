@@ -30,9 +30,10 @@ class SessionManager:
             order_traded_callback=self._fake_order_socket_callback,
             account_balance_callback=self._fake_account_socket_callback)
 
+        # session will be started within start_session method
         self.session: Optional[Session] = None
 
-        # get initial accounts to create the balance manager
+        # get initial accounts to create the balance manager (all own accounts managed in Binance)
         accounts = self.market.get_account_info()
         self.bm = BalanceManager(accounts=accounts)
 

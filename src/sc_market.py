@@ -283,7 +283,8 @@ class Market:
         log.info('********** CANCELLING PLACED ORDER(S) **********')
         for order in orders:
             try:
-                self.client.cancel_order(symbol='BTCEUR', origClientOrderId=order.uid)
+                # self.client.cancel_order(symbol='BTCEUR', origClientOrderId=order.uid)
+                self.client.cancel_order(symbol=self.symbol, origClientOrderId=order.uid)
                 log.info(f'** ORDER CANCELLED IN BINANCE {order}')
             except (BinanceAPIException, BinanceRequestException) as e:
                 log.critical(e)
