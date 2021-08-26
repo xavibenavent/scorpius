@@ -57,7 +57,7 @@ class Order:
         self.uid = secrets.token_hex(8)  # set random uid of 16 characters
 
         # set theoretical eur commission, it will be updated when the order is traded
-        self.eur_commission = self.price * self.amount * self.fee
+        self._quote_commission = self.price * self.amount * self.fee
 
         # sibling_order & pt, both are set during pt creation when they are known
         self.sibling_order: Optional[Order] = None
@@ -141,7 +141,7 @@ class Order:
 
     def get_total_at_cmp(self, cmp: float, signed=True, with_commission=True, precision=2):
         # set commission depending on net total or gross total request
-        commission = self.get_eur_commission(cmp=cmp) if with_commission else 0.0
+        commission = self.get_quote_commission(cmp=cmp) if with_commission else 0.0
         if signed:
             return round(self._get_signed_total_at_cmp(cmp=cmp) - commission, precision)
         else:
@@ -149,18 +149,18 @@ class Order:
 
     # ********** end of total methods **********
 
-    def get_eur_commission(self, cmp: float) -> float:
+    def get_quote_commission(self, cmp: float) -> float:
         if self.status == OrderStatus.TRADED:
-            return self.eur_commission
+            return self._quote_commission
         else:
             return cmp * self.amount * self.fee
 
     def get_momentum(self, cmp: float):
         return abs(self.amount * (cmp - self.price))
 
-    def set_bnb_commission(self, commission: float, bnbeur_rate: float) -> None:
+    def set_bnb_commission(self, commission: float, bnb_quote_rate: float) -> None:
         self._bnb_commission = commission
-        self.eur_commission = commission * bnbeur_rate
+        self._quote_commission = commission * bnb_quote_rate
 
     def set_status(self, status: OrderStatus):
         old_status = self.status

@@ -7,7 +7,8 @@ import logging
 import os
 import signal
 
-import configparser
+# import configparser
+from config_manager import ConfigManager
 
 from sc_session import Session
 from sc_market import Market
@@ -37,31 +38,35 @@ class SessionManager:
         accounts = self.market.get_account_info()
         self.bm = BalanceManager(accounts=accounts)
 
-        # get sessions symbol
-        config = configparser.ConfigParser()
-        config.read('config.ini')
-        symbol_name = config['BINANCE']['symbol']  # BTCEUR
+        # get symbols info from config.ini & Binance
+        cm = ConfigManager(config_file='config_new.ini')
+        symbols_name = cm.get_symbol_names()
 
-        # get filters that will be checked before placing an order
-        symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
+        # looping this list items a first session will be created for each symbol
+        symbols: List[Symbol] = []
 
-        # change precision for EUR from 8 to 2 (apparently this is a Binance error)
-        if symbol_filters.get('quote_asset') == 'EUR':
-            symbol_filters['quote_precision'] = 2
+        for symbol_name in symbols_name:
+            symbol_filters = self.market.get_symbol_info(symbol=symbol_name)
+            # fix Binance mistake in EUR precision (originally 8 and it is enough with 2)
+            if symbol_filters.get('quote_asset') == 'EUR':
+                symbol_filters['quote_precision'] = 2
 
-        pprint.pprint(symbol_filters)
+            symbol_config_data = cm.get_symbol_data(symbol_name=symbol_name)
 
-        # set symbol to pass at sessions start
-        self.symbol = Symbol(
-            name=symbol_name,
-            base_asset=Asset(
-                name=symbol_filters.get('base_asset'),
-                precision_for_visualization=6),  # BTC
-            quote_asset=Asset(
-                name=symbol_filters.get('quote_asset'),
-                precision_for_visualization=2),  # EUR
-            filters=symbol_filters
-        )
+            # set symbol to pass at sessions start
+            symbol = Symbol(
+                name=symbol_name,
+                base_asset=Asset(
+                    name=symbol_filters.get('base_asset'),
+                    precision_for_visualization=6),  # BTC
+                quote_asset=Asset(
+                    name=symbol_filters.get('quote_asset'),
+                    precision_for_visualization=2),  # EUR
+                filters=symbol_filters,
+                config_data=symbol_config_data
+            )
+
+            symbols.append(symbol)
 
         # global sessions info
         self.session_count = 0
@@ -75,7 +80,7 @@ class SessionManager:
         # number of orders traded at market price (cmp): quit mode TRADE_ALL_PENDING
         self.market_orders_count_at_cmp = 0
 
-        # number of orders placed at order price: quir mode PLACE_ALL_PEMDING
+        # number of orders placed at order price: quit mode PLACE_ALL_PENDING
         self.placed_orders_count_at_price = 0
 
         # current number of pending orders placed at order price (initially placed - traded)
@@ -84,8 +89,8 @@ class SessionManager:
         # todo: not sure whether it will work
         self.market.start_sockets()
 
-        # start first session
-        self.start_new_session()
+        # start first sessions
+        [self.start_new_session(symbol=symbol) for symbol in symbols]
 
     def _global_profit_update_callback(self, consolidated, expected):
         # called when an order from a previous session is traded in Binance
@@ -102,6 +107,7 @@ class SessionManager:
         log.info('*****************************************************************************')
 
     def _session_stopped_callback(self,
+                                  symbol: Symbol,
                                   session_id: str,
                                   is_session_fully_consolidated: bool,
                                   consolidated_profit: float,
@@ -144,13 +150,13 @@ class SessionManager:
         [print(order) for order in self.iom.isolated_orders]
 
         if self.session_count < 1000:
-            self.start_new_session()
+            self.start_new_session(symbol=symbol)
         else:
             self.stop_global_session()
             # self.market.stop()
             # raise Exception('********** GLOBAL SESSION MANAGER FINISHED **********')
 
-    def start_new_session(self):
+    def start_new_session(self, symbol: Symbol):
         # to avoid errors of socket calling None during Session init
         self.market.symbol_ticker_callback = self._fake_symbol_socket_callback
         self.market.order_traded_callback = self._fake_order_socket_callback
@@ -159,7 +165,7 @@ class SessionManager:
         session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
 
         self.session = Session(
-            symbol=self.symbol,
+            symbol=symbol,
             session_id=session_id,
             session_stopped_callback=self._session_stopped_callback,
             market=self.market,
