@@ -2,34 +2,30 @@
 
 from typing import Optional, List
 from binance import enums as k_binance
-import configparser
 import logging
 
 from sc_order import Order, OrderStatus
 from sc_pt_calculator import get_prices_given_neb  # get_pt_values
 from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
 from sc_symbol import Symbol
-# from sc_account_balance import AccountBalance
 
 log = logging.getLogger('log')
 
 
 class PTManager:
     # def __init__(self, symbol_filters, session_id: str):
-    def __init__(self, session_id: str):
-        # self.symbol_filters = symbol_filters
+    def __init__(self, session_id: str, symbol: Symbol):
         self.session_id = session_id
+        self.symbol = symbol
         self.pt_created_count = 0
 
         # list with all the perfect trades created
         self.perfect_trades: List[PerfectTrade] = []
 
-        # read config.ini
-        config = configparser.ConfigParser()
-        config.read('config.ini')
-        self.distance_to_target_price = float(config['SESSION']['distance_to_target_price'])
-        self.fee = float(config['PT_CREATION']['fee'])
-        self.net_eur_balance = float(config['PT_CREATION']['net_eur_balance'])
+        config = symbol.config_data
+        self.distance_to_target_price = float(config['distance_to_target_price'])
+        self.fee = float(config['fee'])
+        self.net_quote_balance = float(config['net_quote_balance'])
 
     def create_new_pt(self, cmp: float, symbol: Symbol, pt_type='NORMAL') -> None:
         # create and get new orders
@@ -60,7 +56,6 @@ class PTManager:
             # get approximate gap * 2
             b1_price, s1_price, quantity = get_prices_given_neb(mp=order.price)
             gap = s1_price - b1_price
-            # print(f'gap: {gap}')
 
             if order.k_side == k_binance.SIDE_BUY:
                 pt.status = PerfectTradeStatus.BUY_TRADED
@@ -136,13 +131,13 @@ class PTManager:
         return orders_alive
 
     def get_symbol_liquidity_needed(self) -> (float, float):
-        # return the eur & btc needed to trade all 'alive' orders at its own price
+        # return the quote & base needed to trade all 'alive' orders at its own price
         alive_orders = self.get_all_alive_orders()
-        # get total eur needed to trade all alive buy orders
+        # get total quote needed to trade all alive buy orders
         quote_asset_needed = sum([order.get_total_at_cmp(cmp=order.price, with_commission=False)
                                   for order in alive_orders
                                   if order.k_side == k_binance.SIDE_BUY])
-        # get total btc needed to trade all alive sell orders
+        # get total base needed to trade all alive sell orders
         base_asset_needed = sum([order.get_amount(signed=False)
                                  for order in alive_orders
                                  if order.k_side == k_binance.SIDE_SELL])
@@ -168,17 +163,12 @@ class PTManager:
                   symbol: Symbol,
                   mp: float,
                   ) -> (Optional[Order], Optional[Order]):
-        # b1 = None
-        # s1 = None
 
         order_id = 'NA'
 
         # get perfect trade
         b1_price, s1_price, quantity = get_prices_given_neb(mp=mp)
 
-        # check filters before creating order
-        # todo: check at order init
-        # if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=b1_price):
         # create orders
         b1 = Order(
             symbol=symbol,
@@ -188,10 +178,6 @@ class PTManager:
             amount=quantity,
             name='b1'
         )
-        # else:
-        #     raise Exception(f'b1 order do not meet limits: {b1}')
-
-        # if Order.is_filter_passed(filters=self.symbol_filters, qty=quantity, price=s1_price):
         s1 = Order(
             symbol=symbol,
             order_id=order_id,
@@ -200,9 +186,6 @@ class PTManager:
             amount=quantity,
             name='s1'
         )
-        # else:
-        #     raise Exception(f's1 order do not meet limits: {s1}')
-
         return b1, s1
 
     def log_perfect_trades_info(self):

@@ -57,6 +57,7 @@ class Session:
 
         config = self.symbol.config_data
 
+        self.commission_rate_symbol = config['commission_rate_symbol']
         self.target_total_net_profit = float(config['target_total_net_profit'])
         self.cycles_count_for_inactivity = int(config['cycles_count_for_inactivity'])
         self.new_pt_shift = float(config['new_pt_shift'])
@@ -65,14 +66,16 @@ class Session:
         self.compensation_gap = float(config['compensation_gap'])
         self.fee = float(config['fee'])
         self.quantity = float(config['quantity'])
-        self.net_eur_balance = float(config['net_eur_balance'])
+        self.net_quote_balance = float(config['net_quote_balance'])
         self.max_negative_profit_allowed = float(config['max_negative_profit_allowed'])
         self.time_between_successive_pt_creation_tries = \
             float(config['time_between_successive_pt_creation_tries'])
         self.forced_shift = float(config['forced_shift'])
 
         self.ptm = PTManager(
-            session_id=self.session_id)
+            session_id=self.session_id,
+            symbol=self.symbol
+        )
 
         # used in dashboard in the cmp line chart. initiated with current cmp
         self.cmps = [self.market.get_cmp(self.symbol.get_name())]
@@ -190,8 +193,8 @@ class Session:
                 self.cycles_from_last_trade -= self.time_between_successive_pt_creation_tries
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
-        print(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
-        log.info(f'********** ORDER TRADED:    price: {order_price} [EUR] - commission: {bnb_commission} [BNB]')
+        print(f'********** ORDER TRADED:    price: {order_price} [Q] - commission: {bnb_commission} [BNB]')
+        log.info(f'********** ORDER TRADED:    price: {order_price} [Q] - commission: {bnb_commission} [BNB]')
 
         # get candidate orders
         orders_to_be_traded = self.ptm.get_orders_by_request(
@@ -216,7 +219,7 @@ class Session:
                 # set commission and price
                 order.set_bnb_commission(
                     commission=bnb_commission,
-                    bnb_quote_rate=self.market.get_cmp(symbol='BNBEUR'))  # todo: change string constant
+                    bnb_quote_rate=self.market.get_cmp(symbol=self.commission_rate_symbol))
 
                 # set traded order price
                 order.price = order_price
@@ -265,33 +268,33 @@ class Session:
         new_pt_base_asset_liquidity_needed = self.quantity
         new_pt_quote_asset_liquidity_needed = self.quantity * cmp
 
-        # get total eur & needed to trade all alive orders at their own price
+        # get total quote & needed to trade all alive orders at their own price
         quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
 
-        # check available liquidity (eur & btc) vs needed when trading both orders
+        # check available liquidity (quote & base) vs needed when trading both orders
         # get existing liquidity
         quote_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_quote_asset().get_name())  # free
         base_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_base_asset().get_name())  # free
 
-        if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # need for EUR
+        if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # need for quote
             # check whether there is enough quote asset to force a pt shifted to SELL
-            if base_asset_liquidity > base_asset_needed + new_pt_base_asset_liquidity_needed:  # enough BTC
-                # force the creation of a shifted pt to SELL BTC and get EUR
+            if base_asset_liquidity > base_asset_needed + new_pt_base_asset_liquidity_needed:  # enough base
+                # force the creation of a shifted pt to SELL base and get quote
                 log.info(f'new pt with forced shift: {-self.forced_shift}')
                 return True, -self.forced_shift  # force SELL
             else:
-                # get EUR by selling BTC
+                # get quote by selling base
                 self.try_to_get_liquidity_callback(k_binance.SIDE_SELL, cmp)
                 return False, 0.0
 
-        elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for BTC
-            if quote_asset_liquidity > quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # enough EUR
-                # force the creation of a shifted pt to BUY BTC
+        elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for base
+            if quote_asset_liquidity > quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # enough quote
+                # force the creation of a shifted pt to BUY base
                 log.info(f'new pt with forced shift: {+self.forced_shift} '
                          f'q: {quote_asset_liquidity} b: {base_asset_liquidity}')
                 return True, +self.forced_shift  # force SELL
             else:
-                # get BTC by buying BTC
+                # get base buying
                 self.try_to_get_liquidity_callback(k_binance.SIDE_BUY, cmp)
                 return False, 0.0
 

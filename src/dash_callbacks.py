@@ -31,7 +31,7 @@ def display_value(value):
 
 @app.callback(Output('neb', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'n: {dfm.sm.session.net_eur_balance:,.2f} EUR'
+    return f'n: {dfm.sm.session.net_quote_balance:,.2f} EUR'
 
 
 @app.callback(Output('qty', 'children'), Input('update', 'n_intervals'))
