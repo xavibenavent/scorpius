@@ -78,10 +78,14 @@ class SessionManager:
                 name=symbol_name,
                 base_asset=Asset(
                     name=symbol_filters.get('base_asset'),
-                    precision_for_visualization=6),  # BTC
+                    # precision_for_visualization=symbol_config_data['base_pv']
+                ),  # todo: read from config.ini
+                    # precision_for_visualization=6),  # todo: read from config.ini
                 quote_asset=Asset(
                     name=symbol_filters.get('quote_asset'),
-                    precision_for_visualization=2),  # EUR
+                    # precision_for_visualization=symbol_config_data['quote_pv']
+                ),  # todo: read from config.ini
+                    # precision_for_visualization=2),  # todo: read from config.ini
                 filters=symbol_filters,
                 config_data=symbol_config_data
             )

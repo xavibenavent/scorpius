@@ -9,11 +9,11 @@ log = logging.getLogger('log')
 
 
 class Account:
-    def __init__(self, name: str, free=0.0, locked=0.0):
+    def __init__(self, name: str, free=0.0, locked=0.0, precision_for_visualization=2):
         self.name = name.upper()
         self.free = free
         self.locked = locked
-        self.asset = Asset(name=name, precision_for_visualization=2)
+        self.asset = Asset(name=name)
 
     def get_total(self) -> float:
         return self.free + self.locked

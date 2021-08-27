@@ -64,7 +64,8 @@ def on_button_click(n):
     if n is None:
         return ''
     else:
-        dfm.sm.active_sessions[SYMBOL].quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+        symbol_name = dfm.dashboard_active_symbol.name
+        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
         return 'cmp stop'
 
 
@@ -73,7 +74,8 @@ def on_button_click(n):
     if n is None:
         return ''
     else:
-        dfm.sm.active_sessions[SYMBOL].quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+        symbol_name = dfm.dashboard_active_symbol.name
+        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
         return 'cmp stop'
 
 
@@ -82,7 +84,8 @@ def on_button_click(n):
     if n is None:
         return ''
     else:
-        dfm.sm.active_sessions[SYMBOL].quit_particular_session(quit_mode=QuitMode.CANCEL_ALL)
+        symbol_name = dfm.dashboard_active_symbol.name
+        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.CANCEL_ALL)
         return 'cmp stop'
 
 
@@ -113,24 +116,28 @@ def on_button_click(n):
 @app.callback(Output('msg-2', 'children'), Input('button-new-pt', 'n_clicks'))
 def on_button_click(n):
     if n:
-        cmp = dfm.sm.active_sessions[SYMBOL].cmps[-1] if dfm.sm.active_sessions[SYMBOL].cmps else 0
-        raise Exception('todo: pass symbol')
-        # if dfm.sm.session.allow_new_pt_creation(cmp=cmp):
-        #     dfm.sm.session.ptm.create_new_pt(cmp=cmp)
+        symbol = dfm.dashboard_active_symbol
+        symbol_name = symbol.name
+        cmp = dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0
+        # raise Exception('todo: pass symbol')
+        if dfm.sm.ctive_sessions[symbol_name].allow_new_pt_creation(cmp=cmp, symbol=symbol):
+            dfm.sm.active_sessions[symbol_name].ptm.create_new_pt(cmp=cmp, symbol=symbol)
     return ''
 
 
 @app.callback(Output('msg-increase-cmp', 'children'), Input('increase-cmp', 'n_clicks'))
 def on_button_click(n):
     if n:
-        dfm.sm.active_sessions[SYMBOL].market.update_fake_client_cmp(step=10.0)
+        symbol_name = dfm.dashboard_active_symbol.name
+        dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=10.0)
     return ''
 
 
 @app.callback(Output('msg-decrease-cmp', 'children'), Input('decrease-cmp', 'n_clicks'))
 def on_button_click(n):
     if n:
-        dfm.sm.active_sessions[SYMBOL].market.update_fake_client_cmp(step=-10.0)
+        symbol_name = dfm.dashboard_active_symbol.name
+        dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=-10.0)
     return ''
 
 
@@ -144,14 +151,19 @@ def on_button_click(n):
     Input(component_id='update', component_property='n_intervals')
 )
 def update_figure(timer):
-    ab = dfm.sm.active_sessions[SYMBOL].bm.accounts
-    bm = dfm.sm.active_sessions[SYMBOL].bm
-    eur_account = bm.get_account_by_name('EUR')
-    btc_account = bm.get_account_by_name('BTC')
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    ab = dfm.sm.active_sessions[symbol_name].bm.accounts
+    bm = dfm.sm.active_sessions[symbol_name].bm
+    quote_account = bm.get_account_by_name(symbol.get_quote_asset().get_name())
+    base_account = bm.get_account_by_name(symbol.get_base_asset().get_name())
     bnb_account = bm.get_account_by_name('BNB')
-    return f'{eur_account.free:,.2f}', f'{eur_account.locked:,.2f}',\
-           f'{btc_account.free:,.6f}', f'{btc_account.locked:,.6f}',\
-           f'{bnb_account.free:,.6f}', f'{bnb_account.locked:,.6f}'
+    return f'{quote_account.free:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}', \
+           f'{quote_account.locked:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}',\
+           f'{base_account.free:,.{symbol.get_base_asset().get_precision_for_visualization()}f}', \
+           f'{base_account.locked:,.{symbol.get_base_asset().get_precision_for_visualization()}f}',\
+           f'{bnb_account.free:,.6f}', \
+           f'{bnb_account.locked:,.6f}'
 
 
 @app.callback(
@@ -164,8 +176,9 @@ def update_table(timer):
     df1 = df.sort_values(by=['price'], ascending=False)
     # filter by status for each table (monitor-placed & traded)
     df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
-    df_pending['price'] = df_pending['price'].map('{:,.2f}'.format)
-    df_pending['total'] = df_pending['total'].map('{:,.2f}'.format)
+    qp = dfm.dashboard_active_symbol.get_quote_asset().get_precision_for_visualization()
+    df_pending['price'] = df_pending['price'].map(f'{{:,.{qp}f}}'.format)  # two {{ }} to escape { in f-string
+    df_pending['total'] = df_pending['total'].map(f'{{:,.{qp}f}}'.format)
 
     return get_pending_html_table(df=df_pending[['pt_id', 'name', 'price', 'amount', 'total', 'status']])
 
@@ -178,55 +191,71 @@ def display_value(value):
     # print(dfm.sm.session.get_info()['momentum'])
 
     # return f'{dfm.sm.session.get_info()["cmp_count"] / 3600:,.2f} h'
-
-    return f'{timedelta(seconds=dfm.sm.active_sessions[SYMBOL].cmp_count)}'
+    symbol_name = dfm.dashboard_active_symbol.name
+    return f'{timedelta(seconds=dfm.sm.active_sessions[symbol_name].cmp_count)}'
 
 
 # ********** stop at cmp **********
 @app.callback(Output('actual-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    # return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
-    cmp = dfm.sm.active_sessions[SYMBOL].cmps[-1]
-    return f'{dfm.sm.active_sessions[SYMBOL].ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.2f} €'
+    symbol_name = dfm.dashboard_active_symbol.name
+    cmp = dfm.sm.active_sessions[symbol_name].cmps[-1]
+    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.2f} €'
 
 
 # ********** stop at price **********
 @app.callback(Output('stop-price-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    # return f'{dfm.session.ptm.get_total_actual_profit(cmp=dfm.session.cmps[-1]):,.2f}'
-    return \
-        f'{dfm.sm.active_sessions[SYMBOL].ptm.get_stop_price_profit(cmp=dfm.sm.active_sessions[SYMBOL].cmps[-1]):,.2f} €'
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    cmp = dfm.sm.active_sessions[symbol_name].cmps[-1]
+    qp = symbol.get_quote_asset().get_precision_for_visualization()
+    coin_symbol = symbol.get_quote_asset().get_name()
+    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f} {coin_symbol}'
 
 
 # ********** completed profit **********
 @app.callback(Output('pt-completed-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.active_sessions[SYMBOL].ptm.get_consolidated_profit():,.2f} €'
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    qp = symbol.get_quote_asset().get_precision_for_visualization()
+    coin_symbol = symbol.get_quote_asset().get_name()
+    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_consolidated_profit():,.{qp}f} {coin_symbol}'
 
 
 # ********** traded orders profit **********
 @app.callback(Output('global-partial-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    cmp = dfm.sm.active_sessions[symbol_name].cmps[-1]
+    qp = symbol.get_quote_asset().get_precision_for_visualization()
+    coin_symbol = symbol.get_quote_asset().get_name()
     # called the method in session to check buy_count == sell_count
-    consolidated = dfm.sm.terminated_sessions[SYMBOL]['global_consolidated_profit']
-    expected = dfm.sm.terminated_sessions[SYMBOL]['global_expected_profit']
-    expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=dfm.sm.active_sessions[SYMBOL].cmps[-1])
-    return f'{consolidated:,.2f} € / {expected:,.2f} € / {expected_at_cmp:,.2f} €'
+    consolidated = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_profit']
+    expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
+    expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=cmp)
+    return f'{consolidated:,.{qp}f} {coin_symbol} / ' \
+           f'{expected:,.{qp}f} {coin_symbol} / ' \
+           f'{expected_at_cmp:,.{qp}f} {coin_symbol}'
 
 
 # ********** PT count / traded orders count **********
 @app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    pt_count = len(dfm.sm.active_sessions[SYMBOL].ptm.perfect_trades)
-    buy_count = dfm.sm.active_sessions[SYMBOL].buy_count
-    sell_count = dfm.sm.active_sessions[SYMBOL].sell_count
+    symbol_name = dfm.dashboard_active_symbol.name
+    pt_count = len(dfm.sm.active_sessions[symbol_name].ptm.perfect_trades)
+    buy_count = dfm.sm.active_sessions[symbol_name].buy_count
+    sell_count = dfm.sm.active_sessions[symbol_name].sell_count
     return f'pt: {pt_count}   b: {buy_count}   s: {sell_count}'
 
 
 @app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    ccfi = dfm.sm.active_sessions[SYMBOL].cycles_count_for_inactivity
-    cycles_to_new_pt = ccfi - dfm.sm.active_sessions[SYMBOL].cycles_from_last_trade
+    symbol_name = dfm.dashboard_active_symbol.name
+    ccfi = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
+    cycles_to_new_pt = ccfi - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
     time_to_new_pt = timedelta(seconds=cycles_to_new_pt)
     return f'({ccfi})  {time_to_new_pt}'
 
@@ -234,8 +263,8 @@ def display_value(value):
 @app.callback(Output('accounts-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     accounts_info  = [f'{account.name}: {account.free:,.{account.asset.get_precision_for_visualization()}f} '
-                      for account in dfm.sm.active_sessions[SYMBOL].bm.accounts
-                      if account.name not in ['BTC', 'EUR', 'BNB']]
+                      for account in dfm.sm.bm.accounts
+                      ]
     accounts_info_s = ' '.join(map(str, accounts_info))
     return accounts_info_s
 
@@ -243,16 +272,18 @@ def display_value(value):
 # ********** session cycle count **********
 @app.callback(Output('global-cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    global_cmp = dfm.sm.terminated_sessions[SYMBOL]["global_cmp_count"]
-    session_cmp = dfm.sm.active_sessions[SYMBOL].cmp_count
+    symbol_name = dfm.dashboard_active_symbol.name
+    global_cmp = dfm.sm.terminated_sessions[symbol_name]["global_cmp_count"]
+    session_cmp = dfm.sm.active_sessions[symbol_name].cmp_count
     return f'{timedelta(seconds=global_cmp + session_cmp)}'
 
 
 # ********** session cycle count **********
 @app.callback(Output('global-placed-orders', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    placed = dfm.sm.terminated_sessions[SYMBOL]['global_placed_orders_count_at_price']
-    still_isolated = dfm.sm.terminated_sessions[SYMBOL]['global_placed_pending_orders_count']
+    symbol_name = dfm.dashboard_active_symbol.name
+    placed = dfm.sm.terminated_sessions[symbol_name]['global_placed_orders_count_at_price']
+    still_isolated = dfm.sm.terminated_sessions[symbol_name]['global_placed_pending_orders_count']
     sell = len([order for order in dfm.sm.iom.isolated_orders if order.k_side == k_binance.SIDE_SELL])
     buy = len([order for order in dfm.sm.iom.isolated_orders if order.k_side == k_binance.SIDE_BUY])
     return f'p: {placed} / i: {still_isolated} (s: {sell} b: {buy})'
@@ -261,8 +292,9 @@ def display_value(value):
 # ********** session count **********
 @app.callback(Output('session-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    consolidated_count = dfm.sm.terminated_sessions[SYMBOL]['global_consolidated_session_count']
-    expected_count = dfm.sm.terminated_sessions[SYMBOL]['global_expected_session_count']
+    symbol_name = dfm.dashboard_active_symbol.name
+    consolidated_count = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_session_count']
+    expected_count = dfm.sm.terminated_sessions[symbol_name]['global_expected_session_count']
     session_count = dfm.sm.session_count - 1
     return f's: {session_count}  (c:{consolidated_count}  e:{expected_count})'
 
@@ -288,7 +320,8 @@ def display_value(value):
 
 @app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
 def update_profit_line(timer):
-    pls = dfm.sm.active_sessions[SYMBOL].total_profit_series
+    symbol_name = dfm.dashboard_active_symbol.name
+    pls = dfm.sm.active_sessions[symbol_name].total_profit_series
     df = pd.DataFrame(data=pls, columns=['cmp'])
     df['rate'] = df.index
     fig = get_profit_line_chart(df=df, pls=pls)
@@ -297,7 +330,8 @@ def update_profit_line(timer):
 
 @app.callback(Output('cmp-line', 'figure'), Input('update', 'n_intervals'))
 def update_profit_line(timer):
-    cmps = dfm.sm.active_sessions[SYMBOL].cmps
+    symbol_name = dfm.dashboard_active_symbol.name
+    cmps = dfm.sm.active_sessions[symbol_name].cmps
     df = pd.DataFrame(data=cmps, columns=['cmp'])
     df['rate'] = df.index
     fig = get_cmp_line_chart(df=df, cmps=cmps)

@@ -17,7 +17,7 @@ from requests.exceptions import ConnectionError, ReadTimeout
 
 from sc_order import Order
 from sc_fake_client import FakeClient
-from sc_balance_manager import Account
+from sc_balance_manager import Account, Asset
 from config_manager import ConfigManager
 
 import configparser
@@ -131,7 +131,7 @@ class Market:
             log.critical(f'symbol ticker socket error: {msg["m"]}')
         elif msg['e'] == '24hrTicker':
             symbol_name = msg['s']
-            if symbol_name != 'BTCEUR':
+            if symbol_name not in ['BTCEUR', 'BNBEUR']:
                 raise Exception(f'wrong symbol name {symbol_name}')
             # trigger actions for new market price
             cmp = float(msg['c'])
@@ -243,7 +243,9 @@ class Market:
                 if float(ba['free']) > 0 or float(ba['locked']) > 0
             ]
             for a in accounts:
-                print(f'{a.name} {a.free} {a.locked}')
+                # default precision for visualization is 2
+                a.asset = Asset(name=a.name)
+                print(f'{a.name} {a.free} {a.locked} {a.asset.get_precision_for_visualization()}')
             return accounts
         except (BinanceAPIException, BinanceRequestException) as e:
             log.critical(e)
