@@ -16,7 +16,7 @@ print('dash_callbacks.py')
 
 dfm = DataframeManager()
 
-SYMBOL = 'BTCEUR'
+# SYMBOL = 'BTCEUR'
 
 
 # ********** cmp **********
@@ -142,10 +142,10 @@ def on_button_click(n):
 
 
 @app.callback(
-    Output(component_id='eur-free', component_property='children'),
-    Output(component_id='eur-locked', component_property='children'),
-    Output(component_id='btc-free', component_property='children'),
-    Output(component_id='btc-locked', component_property='children'),
+    Output(component_id='base-asset-free', component_property='children'),
+    Output(component_id='base-asset-locked', component_property='children'),
+    Output(component_id='quote-free', component_property='children'),
+    Output(component_id='quote-locked', component_property='children'),
     Output(component_id='bnb-free', component_property='children'),
     Output(component_id='bnb-locked', component_property='children'),
     Input(component_id='update', component_property='n_intervals')
@@ -153,17 +153,32 @@ def on_button_click(n):
 def update_figure(timer):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
-    ab = dfm.sm.active_sessions[symbol_name].bm.accounts
-    bm = dfm.sm.active_sessions[symbol_name].bm
-    quote_account = bm.get_account_by_name(symbol.get_quote_asset().get_name())
-    base_account = bm.get_account_by_name(symbol.get_base_asset().get_name())
-    bnb_account = bm.get_account_by_name('BNB')
-    return f'{quote_account.free:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}', \
-           f'{quote_account.locked:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}',\
-           f'{base_account.free:,.{symbol.get_base_asset().get_precision_for_visualization()}f}', \
+    ab = dfm.sm.active_sessions[symbol_name].am.accounts
+    bm = dfm.sm.active_sessions[symbol_name].am
+    quote_account = bm.get_account(symbol.get_quote_asset().get_name())
+    base_account = bm.get_account(symbol.get_base_asset().get_name())
+    bnb_account = bm.get_account('BNB')
+    return f'{base_account.free:,.{symbol.get_base_asset().get_precision_for_visualization()}f}', \
            f'{base_account.locked:,.{symbol.get_base_asset().get_precision_for_visualization()}f}',\
+           f'{quote_account.free:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}', \
+           f'{quote_account.locked:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}',\
            f'{bnb_account.free:,.6f}', \
            f'{bnb_account.locked:,.6f}'
+
+
+@app.callback(Output('symbol', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return dfm.dashboard_active_symbol.name
+
+
+@app.callback(Output('base-asset', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return dfm.dashboard_active_symbol.get_base_asset().get_name()
+
+
+@app.callback(Output('quote-asset', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    return dfm.dashboard_active_symbol.get_quote_asset().get_name()
 
 
 @app.callback(
@@ -262,9 +277,7 @@ def display_value(value):
 
 @app.callback(Output('accounts-info', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    accounts_info  = [f'{account.name}: {account.free:,.{account.asset.get_precision_for_visualization()}f} '
-                      for account in dfm.sm.bm.accounts
-                      ]
+    accounts_info = [f'{account.name}: {account.free:,.2f} ' for account in dfm.sm.am.accounts.values()]
     accounts_info_s = ' '.join(map(str, accounts_info))
     return accounts_info_s
 
@@ -318,6 +331,8 @@ def display_value(value):
     return f'***'
 
 
+
+
 @app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
 def update_profit_line(timer):
     symbol_name = dfm.dashboard_active_symbol.name
@@ -336,6 +351,8 @@ def update_profit_line(timer):
     df['rate'] = df.index
     fig = get_cmp_line_chart(df=df, cmps=cmps)
     return fig
+
+
 
 
 # @app.callback([Output('modal', 'is_open'), Output('modal-body', 'children')],

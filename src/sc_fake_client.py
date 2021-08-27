@@ -85,9 +85,9 @@ class FakeClient:
         self.api_secret = ''
 
         self._accounts = [
-            Account(name='BTC', free=initial_btc, locked=0.0, precision_for_visualization=6),
+            Account(name='BTC', free=initial_btc, locked=0.0),
             Account(name='EUR', free=initial_eur, locked=0.0),
-            Account(name='BNB', free=initial_bnb, locked=0.0, precision_for_visualization=6),
+            Account(name='BNB', free=initial_bnb, locked=0.0),
         ]
 
         self.tcg = ThreadCmpGenerator(interval=update_rate, f_callback=self._update_cmp)

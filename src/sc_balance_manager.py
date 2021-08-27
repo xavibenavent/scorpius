@@ -40,7 +40,7 @@ class BalanceManager:
             if not account_updated:
                 self.accounts.append(received_account)
 
-    def get_account_by_name(self, name: str) -> Optional[Account]:
+    def get_account(self, name: str) -> Optional[Account]:
         for account in self.accounts:
             if account.name == name:
                 return account
