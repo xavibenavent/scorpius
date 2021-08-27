@@ -56,7 +56,7 @@ class FakeClient:
     def __init__(self, user_socket_callback,
                  symbol_ticker_callback):
         self._user_socket_callback = user_socket_callback
-        self._symbol_ticker_callback = symbol_ticker_callback
+        self.symbol_ticker_callback = symbol_ticker_callback
         self._placed_orders: List[FakeOrder] = []
         self._placed_orders_count = 0
 
@@ -371,7 +371,7 @@ class FakeClient:
             e='24hrTicker',
             c=str(self._cmp)
         )
-        self._symbol_ticker_callback(msg)
+        self.symbol_ticker_callback(msg)
 
     def _check_placed_orders_for_trading(self):
         for order in self._placed_orders:

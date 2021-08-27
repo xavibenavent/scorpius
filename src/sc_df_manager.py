@@ -8,6 +8,7 @@ from sc_session_manager import SessionManager
 
 SYMBOL = 'BTCEUR'
 
+
 class DataframeManager:
     def __init__(self):
         self.sm = SessionManager()

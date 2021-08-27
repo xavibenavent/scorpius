@@ -441,14 +441,3 @@ class Session:
             market_orders_count_at_cmp,  # number of orders placed at its own price
             placed_orders_at_order_price
         )
-
-    def binance_symbol_ticker_callback(self, msg: Any) -> None:
-        # called from Binance API each time the cmp is updated
-        if msg['e'] == 'error':
-            log.critical(f'symbol ticker socket error: {msg["m"]}')
-        elif msg['e'] == '24hrTicker':
-            # trigger actions for new market price
-            cmp = float(msg['c'])
-            self.symbol_ticker_callback(cmp)
-        else:
-            log.critical(f'event type not expected: {msg["e"]}')

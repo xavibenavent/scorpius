@@ -26,7 +26,7 @@ class SessionManager:
         self.iom = IsolatedOrdersManager()
 
         self.market = Market(
-            # symbol_ticker_callback=self._fake_symbol_socket_callback,
+            symbol_ticker_callback=self._fake_symbol_socket_callback,
             order_traded_callback=self._fake_order_socket_callback,
             account_balance_callback=self._fake_account_socket_callback)
 
@@ -55,7 +55,8 @@ class SessionManager:
             # start ticker socket for each symbol
             self.market.start_symbol_ticker_socket(
                 symbol_name=symbol.name,
-                callback=self.active_sessions[symbol.name].binance_symbol_ticker_callback)
+                # send the usual callback function
+                callback=self.active_sessions[symbol.name].symbol_ticker_callback)
 
     def _get_symbols(self) -> List[Symbol]:
         # list to return
@@ -129,7 +130,7 @@ class SessionManager:
 
         # check for session manager end
         if self.session_count < 1000:
-            self.start_new_session(symbol=symbol)
+            self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
         else:
             self.stop_global_session()
             # self.market.stop()
@@ -148,7 +149,7 @@ class SessionManager:
 
     def start_new_session(self, symbol: Symbol) -> Session:
         # to avoid errors of socket calling None during Session init
-        self.market.symbol_ticker_callbacks[symbol.name] = self._fake_symbol_socket_callback
+        self.market.symbol_ticker_callback = self._fake_symbol_socket_callback
         self.market.order_traded_callback = self._fake_order_socket_callback
         self.market.account_balance_callback = self._fake_account_socket_callback
 
@@ -167,12 +168,12 @@ class SessionManager:
         )
 
         # after having the session created, set again the callback functions that were None
-        self.market.symbol_ticker_callbacks[symbol.name] = session.symbol_ticker_callback
+        self.market.symbol_ticker_callback = session.symbol_ticker_callback
         self.market.order_traded_callback = session.order_traded_callback
         self.market.account_balance_callback = session.account_balance_callback
 
         # set callback function in session to be called when it is finished
-        session.session_stop_callback = self._session_stopped_callback
+        # session.session_stop_callback = self._session_stopped_callback
 
         self.session_count += 1
 
