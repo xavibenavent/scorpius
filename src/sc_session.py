@@ -33,15 +33,12 @@ class Session:
                  balance_manager: BalanceManager,
                  check_isolated_callback: Callable[[Symbol, str, float], None],
                  placed_isolated_callback: Callable[[Order], None],
-                 # global_profit_update_callback: Callable[[float, float], None],
                  try_to_get_liquidity_callback: Callable[[Symbol, str, float], None]
                  ):
 
         self.symbol = symbol
         self.session_id = session_id
         self.session_stopped_callback = session_stopped_callback
-        # self.placed_orders_from_previous_sessions = placed_orders_from_previous_sessions
-        # self.global_profit_update_callback = global_profit_update_callback
         self.market = market
         self.bm = balance_manager
 

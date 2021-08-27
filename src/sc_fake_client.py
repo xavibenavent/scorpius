@@ -195,7 +195,6 @@ class FakeClient:
             "side": order.side
         }
 
-
     def create_order(self, **kwargs) -> dict:
         order = FakeOrder(
             uid=kwargs.get('newClientOrderId'),
@@ -369,6 +368,7 @@ class FakeClient:
         self._check_placed_orders_for_trading()
         msg = dict(
             e='24hrTicker',
+            s='BTCEUR',
             c=str(self._cmp)
         )
         self.symbol_ticker_callback(msg)
