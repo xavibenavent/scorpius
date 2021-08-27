@@ -4,7 +4,6 @@ from dash.dependencies import Input, Output
 from dash_app import app
 from dash_aux import get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
 from sc_session import QuitMode
-from sc_balance_manager import BalanceManager, Account
 from sc_df_manager import DataframeManager
 from binance import enums as k_binance
 
@@ -23,7 +22,8 @@ SYMBOL = 'BTCEUR'
 # ********** cmp **********
 @app.callback(Output('cmp', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'{dfm.sm.active_sessions[SYMBOL].cmps[-1] if dfm.sm.active_sessions[SYMBOL].cmps else 0:,.2f}'
+    symbol_name = dfm.dashboard_active_symbol.name
+    return f'{dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0:,.2f}'
 
 
 @app.callback(Output('current-time', 'children'), Input('update', 'n_intervals'))
@@ -33,22 +33,29 @@ def display_value(value):
 
 @app.callback(Output('neb', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'n: {dfm.sm.active_sessions[SYMBOL].net_quote_balance:,.2f} EUR'
+    symbol_name = dfm.dashboard_active_symbol.name
+    quote_name = dfm.dashboard_active_symbol.get_quote_asset().get_name()
+    return f'n: {dfm.sm.active_sessions[symbol_name].net_quote_balance:,.2f} {quote_name}'
 
 
 @app.callback(Output('qty', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'q: {dfm.sm.active_sessions[SYMBOL].quantity:,.4f} BTC'
+    symbol_name = dfm.dashboard_active_symbol.name
+    base_name = dfm.dashboard_active_symbol.get_base_asset().get_name()
+    return f'q: {dfm.sm.active_sessions[symbol_name].quantity:,.4f} {base_name}'
 
 
 @app.callback(Output('target', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f't: {dfm.sm.active_sessions[SYMBOL].target_total_net_profit:,.2f} EUR'
+    symbol_name = dfm.dashboard_active_symbol.name
+    quote_name = dfm.dashboard_active_symbol.get_quote_asset().get_name()
+    return f't: {dfm.sm.active_sessions[symbol_name].target_total_net_profit:,.2f} {quote_name}'
 
 
 @app.callback(Output('max-negative-profit-allowed', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return f'({dfm.sm.active_sessions[SYMBOL].max_negative_profit_allowed:,.2f})'
+    symbol_name = dfm.dashboard_active_symbol.name
+    return f'({dfm.sm.active_sessions[symbol_name].max_negative_profit_allowed:,.2f})'
 
 
 # ********** buttons *********

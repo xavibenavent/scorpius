@@ -6,12 +6,19 @@ from sc_order import OrderStatus
 from sc_perfect_trade import PerfectTradeStatus
 from sc_session_manager import SessionManager
 
+
 SYMBOL = 'BTCEUR'
 
 
 class DataframeManager:
     def __init__(self):
         self.sm = SessionManager()
+        # get symbols
+        self.available_symbols = self.sm.symbols
+        if len(self.available_symbols) == 0:
+            raise Exception('no symbols to show')
+        # set the active symbol in dashboard
+        self.dashboard_active_symbol = self.available_symbols[0]
         print('data frame manager')
 
     def get_all_orders_df(self) -> pd.DataFrame:

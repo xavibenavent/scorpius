@@ -38,7 +38,7 @@ class SessionManager:
         self.bm = BalanceManager(accounts=accounts)
 
         # get list of symbols info from config.ini & market
-        symbols = self._get_symbols()
+        self.symbols = self._get_symbols()
 
         # global sessions info
         self.session_count = 0
@@ -47,7 +47,7 @@ class SessionManager:
         self.market.start_sockets()
 
         # start first sessions
-        for symbol in symbols:
+        for symbol in self.symbols:
             self._init_global_data(symbol=symbol)
             self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
 
