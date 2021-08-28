@@ -141,30 +141,83 @@ def on_button_click(n):
     return ''
 
 
+# ********** accounts data **********
+
 @app.callback(
-    Output(component_id='base-asset-free', component_property='children'),
-    Output(component_id='base-asset-locked', component_property='children'),
-    Output(component_id='quote-free', component_property='children'),
-    Output(component_id='quote-locked', component_property='children'),
-    Output(component_id='bnb-free', component_property='children'),
-    Output(component_id='bnb-locked', component_property='children'),
-    Input(component_id='update', component_property='n_intervals')
+    Output('base-asset-free', 'children'),
+    Input('update', 'n_intervals')
 )
-def update_figure(timer):
+def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
-    ab = dfm.sm.active_sessions[symbol_name].am.accounts
+    bm = dfm.sm.active_sessions[symbol_name].am
+    base_account = bm.get_account(symbol.get_base_asset().get_name())
+    return f'{base_account.free:,.{symbol.get_base_asset().get_precision_for_visualization()}f}', \
+
+
+
+@app.callback(
+    Output('base-asset-locked', 'children'),
+    Input('update', 'n_intervals')
+)
+def display_value(value):
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    bm = dfm.sm.active_sessions[symbol_name].am
+    base_account = bm.get_account(symbol.get_base_asset().get_name())
+    return f'{base_account.locked:,.{symbol.get_base_asset().get_precision_for_visualization()}f}'
+
+
+@app.callback(
+    Output('quote-asset-free', 'children'),
+    Input('update', 'n_intervals')
+)
+def display_value(value):
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
     bm = dfm.sm.active_sessions[symbol_name].am
     quote_account = bm.get_account(symbol.get_quote_asset().get_name())
-    base_account = bm.get_account(symbol.get_base_asset().get_name())
-    bnb_account = bm.get_account('BNB')
-    return f'{base_account.free:,.{symbol.get_base_asset().get_precision_for_visualization()}f}', \
-           f'{base_account.locked:,.{symbol.get_base_asset().get_precision_for_visualization()}f}',\
-           f'{quote_account.free:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}', \
-           f'{quote_account.locked:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}',\
-           f'{bnb_account.free:,.6f}', \
-           f'{bnb_account.locked:,.6f}'
+    return f'{quote_account.free:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}'
 
+
+
+@app.callback(
+    Output('quote-asset-locked', 'children'),
+    Input('update', 'n_intervals')
+)
+def display_value(value):
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    bm = dfm.sm.active_sessions[symbol_name].am
+    quote_account = bm.get_account(symbol.get_quote_asset().get_name())
+    return f'{quote_account.locked:,.{symbol.get_quote_asset().get_precision_for_visualization()}f}'
+
+
+@app.callback(
+    Output('bnb-free', 'children'),
+    Input('update', 'n_intervals')
+)
+def display_value(value):
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    bm = dfm.sm.active_sessions[symbol_name].am
+    bnb_account = bm.get_account('BNB')
+    return f'{bnb_account.free:,.6f}'
+
+
+@app.callback(
+    Output('bnb-locked', 'children'),
+    Input('update', 'n_intervals')
+)
+def display_value(value):
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    bm = dfm.sm.active_sessions[symbol_name].am
+    bnb_account = bm.get_account('BNB')
+    return f'{bnb_account.locked:,.6f}'
+
+
+# ********** others **********
 
 @app.callback(Output('symbol', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
@@ -331,8 +384,6 @@ def display_value(value):
     return f'***'
 
 
-
-
 @app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
 def update_profit_line(timer):
     symbol_name = dfm.dashboard_active_symbol.name
@@ -351,8 +402,6 @@ def update_profit_line(timer):
     df['rate'] = df.index
     fig = get_cmp_line_chart(df=df, cmps=cmps)
     return fig
-
-
 
 
 # @app.callback([Output('modal', 'is_open'), Output('modal-body', 'children')],

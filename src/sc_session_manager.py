@@ -27,10 +27,9 @@ class SessionManager:
         self.iom = IsolatedOrdersManager()
 
         self.market = Market(
-            order_traded_callback=self._fake_order_socket_callback,
-            # this callback is direct to sm.am, therefore is always 'alive'
-            # it will be set up after creation of account manager
-            # account_balance_callback=self._fake_account_socket_callback
+            order_traded_callback=self._order_traded_callback,
+            account_balance_callback=self._account_balance_callback,
+            symbol_ticker_callback=self._symbol_ticker_callback
         )
 
         # session will be started within start_session method
@@ -42,7 +41,7 @@ class SessionManager:
         self.am = AccountManager(accounts=accounts)
 
         # set up the callback for account updates
-        self.market.account_balance_callback = self.am.update_current_accounts
+        # self.market.account_balance_callback = self.am.update_current_accounts
 
         # get list of symbols info from config.ini & market
         self.symbols = self._get_symbols()
@@ -77,32 +76,43 @@ class SessionManager:
             # get filters from Binance API
             symbol_filters = self.market.get_symbol_info(symbol_name=symbol_name)
 
-            # fix Binance mistake in EUR precision (originally 8 and it is enough with 2)
-            if symbol_filters.get('quote_asset') == 'EUR':
-                symbol_filters['quote_precision'] = 2
-
             # get session data from config.ini
             symbol_config_data = cm.get_symbol_data(symbol_name=symbol_name)
+
+            # fix Binance mistake in EUR precision by reading the values from config.ini
+            symbol_filters['base_precision'] = symbol_config_data['base_pt']
+            symbol_filters['quote_precision'] = symbol_config_data['quote_pt']
 
             # set symbol to pass at sessions start
             symbol = Symbol(
                 name=symbol_name,
                 base_asset=Asset(
                     name=symbol_filters.get('base_asset'),
-                    # precision_for_visualization=symbol_config_data['base_pv']
-                ),  # todo: read from config.ini
-                    # precision_for_visualization=6),  # todo: read from config.ini
+                ),
                 quote_asset=Asset(
                     name=symbol_filters.get('quote_asset'),
-                    # precision_for_visualization=symbol_config_data['quote_pv']
-                ),  # todo: read from config.ini
-                    # precision_for_visualization=2),  # todo: read from config.ini
+                ),
                 filters=symbol_filters,
                 config_data=symbol_config_data
             )
             # update list
             symbols.append(symbol)
         return symbols
+
+    # ********** market callbacks **********
+    def _account_balance_callback(self, accounts: List[Account]) -> None:
+        self.am.update_current_accounts(received_accounts=accounts)
+
+    def _symbol_ticker_callback(self, symbol_name: str, cmp: float) -> None:
+        # depending on symbol name, send the last price to the right session
+        self.active_sessions[symbol_name].symbol_ticker_callback(cmp=cmp)
+
+    def _order_traded_callback(self, symbol_name: str, uid: str, price: float, bnb_commission: float) -> None:
+        # depending on symbol name, send the traded order data to the right session
+        self.active_sessions[symbol_name].order_traded_callback(
+            uid=uid,
+            order_price=price,
+            bnb_commission=bnb_commission)
 
     def _update_global_profit(self, symbol: Symbol, consolidated: float, expected: float):
         # update
@@ -162,11 +172,6 @@ class SessionManager:
         self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] = 0
 
     def start_new_session(self, symbol: Symbol) -> Session:
-        # to avoid errors of socket calling None during Session init
-        self.market.symbol_ticker_callbacks[symbol.name] = self._fake_symbol_socket_callback
-        self.market.order_traded_callback = self._fake_order_socket_callback
-        # self.market.account_balance_callback = self._fake_account_socket_callback
-
         session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
 
         session = Session(
@@ -179,11 +184,6 @@ class SessionManager:
             placed_isolated_callback=self._placed_isolated_callback,
             try_to_get_liquidity_callback=self._try_to_get_liquidity_callback
         )
-
-        # after having the session created, set again the callback functions that were None
-        self.market.symbol_ticker_callbacks[symbol.name] = session.symbol_ticker_callback
-        self.market.order_traded_callback = session.order_traded_callback
-        # self.market.account_balance_callback = session.account_balance_callback
 
         self.session_count += 1
 
@@ -242,7 +242,7 @@ class SessionManager:
             # cancel in Binance the previously placed order
             self.market.cancel_orders([order])
 
-    def _fake_symbol_socket_callback(self, foo: float):
+    def _fake_symbol_socket_callback(self, baz: str, foo: float):
         pass
 
     def _fake_order_socket_callback(self, foo_1: str, foo_2: float, foo_3: float):

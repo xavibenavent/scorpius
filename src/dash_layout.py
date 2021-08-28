@@ -4,9 +4,9 @@ import pandas as pd
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
-import plotly.express as px
+# import plotly.express as px
 
-import dash_aux as daux
+# import dash_aux as daux
 
 print('dash_layout.py')
 
@@ -98,8 +98,8 @@ class DashLayout:
                         dbc.Card([
                             dbc.CardBody([
                                 html.H6(id='base-asset', className="liquidity-card-title"),
-                                html.H6(id='base-asset-locked', children='0.00', className='locked'),
-                                html.H6(id='base-asset-free', children='0.00', className='free')
+                                html.H6(id='base-asset-locked', children='x', className='locked'),
+                                html.H6(id='base-asset-free', children='x', className='free')
                             ])
                         ], className='liquidity-card'),
                     ],  xs=3, sm=3, md=3, lg=3, xl=3),
@@ -206,4 +206,3 @@ class DashLayout:
         )
 
         return card
-

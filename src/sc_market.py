@@ -3,22 +3,14 @@
 import sys
 import logging
 import time
-from typing import Callable, Union, Any, Optional, List, Dict
+from typing import Callable, Union, Any, Optional, List
 from binance.client import Client
 from binance import ThreadedWebsocketManager
-from binance import enums as k_binance
 from enum import Enum
-from binance.exceptions import *
-
-from urllib3.exceptions import ProtocolError
-import socket
-
-from requests.exceptions import ConnectionError, ReadTimeout
 
 from sc_order import Order
 from sc_fake_client import FakeClient
 from sc_account_manager import Account
-# from sc_balance_manager import Account, Asset
 from config_manager import ConfigManager
 from sc_market_out import MarketOut
 
@@ -38,13 +30,15 @@ class Market:
     B_LOCKED = 'l'
 
     def __init__(self,
-                 order_traded_callback: Optional[Callable[[str, float, float], None]],
-                 # account_balance_callback: Optional[Callable[[List[Account]], None]]
+                 order_traded_callback: Optional[Callable[[str, str, float, float], None]],
+                 account_balance_callback: Optional[Callable[[List[Account]], None]],
+                 symbol_ticker_callback: Callable[[str, float], None]
                  ):
 
-        self.order_traded_callback: Callable[[str, float, float], None] = order_traded_callback
-        self.account_balance_callback: Callable[[List[Account]], None]
-        # self.account_balance_callback: Callable[[List[Account]], None] = account_balance_callback
+        # the three callback functions are in the Session Manager class
+        self.order_traded_callback: Callable[[str, str, float, float], None] = order_traded_callback
+        self.account_balance_callback: Callable[[List[Account]], None] = account_balance_callback
+        self.symbol_ticker_callback: Callable[[str, float], None] = symbol_ticker_callback
 
         # get app parameters from config.ini
         config_manager = ConfigManager(config_file='config_new.ini')
@@ -53,11 +47,11 @@ class Market:
         client_mode = config_manager.get_app_mode()
         self.client_mode = ClientMode[client_mode]
 
-        self._is_binance_socket_manager_started = False
+        self._is_binance_socket_manager_started = False  # todo: check whether it is really necessary
 
         # set the dict that will hold the cmp callback to each session
         # each value will be set when starting particular symbol ticker sockets
-        self.symbol_ticker_callbacks: Dict[str, Callable[[float], None]] = {}
+        # self.symbol_ticker_callbacks: Dict[str, Callable[[float], None]] = {}
 
         # create client depending on client_mode parameter
         self.client: Union[Client, FakeClient] = self._set_client(client_mode=self.client_mode)
@@ -90,27 +84,69 @@ class Market:
 
     def stop(self):
         if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:
-            # stop all
-            self._bsm.stop()
-
-            # properly close the WebSocket, only if it is running
-            # trying to stop it when it is not running, will raise an error
-            # if reactor.running:
-            #     reactor.stop()
+            # stop all sockets
+            self._twm.stop()
 
         elif self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
             self.client.stop_cmp_generator()
 
-        # todo: it does not work
-        # sys.exit()
+    # ********** binance configuration methods **********
+
+    def _set_client(self, client_mode) -> (Union[Client, FakeClient], bool):
+        client: Union[Client, FakeClient]
+
+        if client_mode == ClientMode.CLIENT_MODE_BINANCE:  # 'binance':
+            api_keys = {
+                "key": "JkbTNxP0s6x6ovKcHTWYzDzmzLuKLh6g9gjwHmvAdh8hpsOAbHzS9w9JuyYD9mPf",
+                "secret": "IWjjdrYPyaWK4yMyYPIRhdiS0I7SSyrhb7HIOj4vjDcaFMlbZ1ygR6I8TZMUQ3mW"
+            }
+            client = Client(api_keys['key'], api_keys['secret'])
+
+        elif client_mode == ClientMode.CLIENT_MODE_SIMULATOR:  # 'simulated':
+            client = FakeClient(
+                user_socket_callback=self.binance_user_socket_callback,
+                symbol_ticker_callback=self.binance_symbol_ticker_callback,
+            )
+        else:
+            log.critical(f'client_mode {client_mode} not accepted')
+            sys.exit()
+        return client
+
+    def _fake_symbol_ticker_callback(self, msg: Any):
+        pass
+
+    def _start_sockets(self):
+        # init socket manager
+        self._twm = ThreadedWebsocketManager(api_key=self.client.API_KEY, api_secret=self.client.API_SECRET)
+        self._twm.start()
+
+        # start user socket
+        self._twm.start_user_socket(
+            callback=self.binance_user_socket_callback
+        )
+
+    def start_symbol_ticker_socket(self, symbol_name: str, callback: Callable[[Any], None]) -> None:
+        # check the Threaded Websocket Manager has been previously initiated
+        if self._is_binance_socket_manager_started:
+            if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:
+                # start symbol ticker socket for a particular symbol
+                self._twm.start_symbol_ticker_socket(
+                    symbol=symbol_name,
+                    callback=self.binance_symbol_ticker_callback
+                )
+            elif self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
+                # set the callback in FakeSimulator
+                self.client.symbol_ticker_callback = self.binance_symbol_ticker_callback
+        else:
+            raise Exception(f'Binance Socket Manager not started before starting user ticker socket for {symbol_name}')
 
     # ********** callback functions **********
 
     def binance_user_socket_callback(self, msg) -> None:
-        # called from Binance API each time an order is traded and
-        # each time the account balance changes
-        event_type: str = msg['e']
-        # print(event_type)
+        # depending on the event type, it will call the right callback function
+        # in session manager
+        event_type = msg['e']
+
         if event_type == 'executionReport':
             if (msg['x'] == 'TRADE') and (msg["X"] == 'FILLED'):
                 # order traded
@@ -118,12 +154,9 @@ class Market:
                 uid = str(msg['c'])
                 order_price = float(msg['L'])
                 bnb_commission = float(msg['n'])
-                # trigger actions for traded order in session
-                self.order_traded_callback(uid, order_price, bnb_commission)
-            elif (msg['x'] == 'NEW') and (msg["X"] == 'NEW'):
-                # order accepted (PLACE confirmation)
-                # not used by the moment
-                pass
+
+                # ********** order traded callback **********
+                self.order_traded_callback(symbol, uid, order_price, bnb_commission)
 
         elif event_type == 'outboundAccountPosition':
             binance_accounts = msg[self.B_BALANCE_ARRAY]
@@ -132,22 +165,30 @@ class Market:
                 Account(name=ba[self.B_ASSET_NAME], free=float(ba[self.B_FREE]), locked=float(ba[self.B_LOCKED]))
                 for ba in binance_accounts]
 
+            # ********** account balance callback **********
             self.account_balance_callback(accounts)
 
     def binance_symbol_ticker_callback(self, msg: Any) -> None:
         # called from Binance API each time the cmp is updated
-        if msg['e'] == 'error':
+        event_type = msg['e']
+
+        if event_type == 'error':
             log.critical(f'symbol ticker socket error: {msg["m"]}')
-        elif msg['e'] == '24hrTicker':
+
+        elif event_type == '24hrTicker':
+            # get symbol & check it
             symbol_name = msg['s']
             if symbol_name not in ['BTCEUR', 'BNBEUR']:
                 raise Exception(f'wrong symbol name {symbol_name}')
-            # trigger actions for new market price
-            cmp = float(msg['c'])
-            # self.symbol_ticker_callbacks['BTCEUR'](cmp)
-            self.symbol_ticker_callbacks[symbol_name](cmp)
+
+            # get last market price
+            last_market_price = float(msg['c'])
+
+            # **********  symbol ticker callback **********
+            self.symbol_ticker_callback(symbol_name, last_market_price)
+
         else:
-            log.critical(f'event type not expected: {msg["e"]}')
+            log.critical(f'event type not expected: {event_type}')
 
     # ********** calls to binance api through MarketOut class **********
 
@@ -178,63 +219,6 @@ class Market:
     # ********** simulator mode only **********
 
     def update_fake_client_cmp(self, step: float):
-        # only in SIMULATOR mode
         if self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
             self.client.update_cmp_from_dashboard(step=step)
 
-    # ********** binance configuration methods **********
-
-    def _set_client(self, client_mode) -> (Union[Client, FakeClient], bool):
-        client: Union[Client, FakeClient]
-
-        if client_mode == ClientMode.CLIENT_MODE_BINANCE:  # 'binance':
-            api_keys = {
-                "key": "JkbTNxP0s6x6ovKcHTWYzDzmzLuKLh6g9gjwHmvAdh8hpsOAbHzS9w9JuyYD9mPf",
-                "secret": "IWjjdrYPyaWK4yMyYPIRhdiS0I7SSyrhb7HIOj4vjDcaFMlbZ1ygR6I8TZMUQ3mW"
-            }
-            client = Client(api_keys['key'], api_keys['secret'])
-
-        elif client_mode == ClientMode.CLIENT_MODE_SIMULATOR:  # 'simulated':
-            client = FakeClient(
-                user_socket_callback=self.binance_user_socket_callback,
-                symbol_ticker_callback=self.binance_symbol_ticker_callback,
-            )
-        else:
-            log.critical(f'client_mode {client_mode} not accepted')
-            sys.exit()
-        return client
-
-    def _fake_symbol_ticker_callback(self, msg: Any):
-        pass
-
-    def _start_sockets(self):
-        # init socket manager
-        self._bsm = ThreadedWebsocketManager(api_key=self.client.API_KEY, api_secret=self.client.API_SECRET)
-        self._bsm.start()
-
-        # user socket
-        self._bsm.start_user_socket(
-            callback=self.binance_user_socket_callback
-        )
-
-    def start_symbol_ticker_socket(self, symbol_name: str, callback: Callable[[Any], None]) -> None:
-        # check flag
-        if self._is_binance_socket_manager_started:
-            # add to dictionary the callback to be called from binance_symbol_ticker_callback
-            # to send the cmp to the right session
-            self.symbol_ticker_callbacks[symbol_name] = callback
-
-            # start socket and set callback to self dictionary
-            if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:
-                # start socket
-                self._bsm.start_symbol_ticker_socket(
-                    symbol=symbol_name,
-                    callback=self.binance_symbol_ticker_callback
-                )
-            elif self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
-                # set the callback in FakeSimulator
-                # todo: convert to dict if simulator allowed for multiple symbol sessions
-                self.client.symbol_ticker_callback = self.binance_symbol_ticker_callback
-
-        else:
-            raise Exception(f'Binance Socket Manager not started before starting user ticker socket for {symbol_name}')
