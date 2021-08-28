@@ -11,7 +11,8 @@ from config_manager import ConfigManager
 
 from sc_session import Session
 from sc_market import Market
-from sc_balance_manager import BalanceManager, Account
+from sc_account_manager import Account, AccountManager
+# from sc_balance_manager import BalanceManager, Account
 from sc_isolated_manager import IsolatedOrdersManager
 from sc_order import Order
 from sc_symbol import Symbol, Asset
@@ -35,10 +36,11 @@ class SessionManager:
 
         # get initial accounts to create the balance manager (all own accounts managed in Binance)
         accounts = self.market.get_account_info()
-        self.bm = BalanceManager(accounts=accounts)
+        self.am = AccountManager(accounts=accounts)
 
         # get list of symbols info from config.ini & market
         self.symbols = self._get_symbols()
+        [print(s.name) for s in self.symbols]
 
         # global sessions info
         self.session_count = 0
@@ -62,15 +64,18 @@ class SessionManager:
         symbols: List[Symbol] = []
 
         cm = ConfigManager(config_file='config_new.ini')
+        # get the list of symbol names in config.ini
         symbols_name = cm.get_symbol_names()
 
         for symbol_name in symbols_name:
+            # get filters from Binance API
             symbol_filters = self.market.get_symbol_info(symbol_name=symbol_name)
 
             # fix Binance mistake in EUR precision (originally 8 and it is enough with 2)
             if symbol_filters.get('quote_asset') == 'EUR':
                 symbol_filters['quote_precision'] = 2
 
+            # get session data from config.ini
             symbol_config_data = cm.get_symbol_data(symbol_name=symbol_name)
 
             # set symbol to pass at sessions start
@@ -163,7 +168,7 @@ class SessionManager:
             session_id=session_id,
             session_stopped_callback=self._session_stopped_callback,
             market=self.market,
-            balance_manager=self.bm,
+            account_manager=self.am,
             check_isolated_callback=self._check_isolated_callback,
             placed_isolated_callback=self._placed_isolated_callback,
             try_to_get_liquidity_callback=self._try_to_get_liquidity_callback

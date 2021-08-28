@@ -9,7 +9,8 @@ from binance import enums as k_binance
 
 from sc_market import Market
 from sc_order import Order, OrderStatus
-from sc_balance_manager import BalanceManager, Account
+# from sc_balance_manager import BalanceManager, Account
+from sc_account_manager import Account, AccountManager
 from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
 from sc_symbol import Symbol
@@ -30,7 +31,7 @@ class Session:
                  session_id: str,
                  session_stopped_callback: Callable[[Symbol, str, bool, float, float, int, int, int], None],
                  market: Market,
-                 balance_manager: BalanceManager,
+                 account_manager: AccountManager,
                  check_isolated_callback: Callable[[Symbol, str, float], None],
                  placed_isolated_callback: Callable[[Order], None],
                  try_to_get_liquidity_callback: Callable[[Symbol, str, float], None]
@@ -40,7 +41,7 @@ class Session:
         self.session_id = session_id
         self.session_stopped_callback = session_stopped_callback
         self.market = market
-        self.bm = balance_manager
+        self.am = account_manager
 
         # isolated manager callbacks
         self.check_isolated_callback = check_isolated_callback
@@ -300,7 +301,7 @@ class Session:
     def account_balance_callback(self, accounts: List[Account]) -> None:
         # update of current balance from Binance
         # log.debug([account.name for account in accounts])
-        self.bm.update_current_accounts(received_accounts=accounts)
+        self.am.update_current_accounts(received_accounts=accounts)
 
     def place_isolated_order(self, order: Order) -> None:
         # method called from session manager to place at MARKET price an isolated order, to get liquidity

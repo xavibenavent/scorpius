@@ -17,10 +17,9 @@ from requests.exceptions import ConnectionError, ReadTimeout
 
 from sc_order import Order
 from sc_fake_client import FakeClient
-from sc_balance_manager import Account, Asset
+from sc_account_manager import Account
+# from sc_balance_manager import Account, Asset
 from config_manager import ConfigManager
-
-import configparser
 
 log = logging.getLogger('log')
 
@@ -235,18 +234,16 @@ class Market:
     def get_account_info(self) -> Optional[List[Account]]:
         try:
             msg = self.client.get_account()
+            # check permissions
+            if not msg['canTrade']:
+                raise Exception(f'trading is no allowed by Binance: {msg}')
             binance_accounts = msg['balances']
             # convert to list of accounts
             accounts = [
                 Account(name=ba['asset'], free=float(ba['free']), locked=float(ba['locked']))
                 for ba in binance_accounts
-                # if ba['asset'] in ['BTC', 'EUR', 'BNB']
                 if float(ba['free']) > 0 or float(ba['locked']) > 0
             ]
-            for a in accounts:
-                # default precision for visualization is 2
-                a.asset = Asset(name=a.name)
-                print(f'{a.name} {a.free} {a.locked} {a.asset.get_precision_for_visualization()}')
             return accounts
         except (BinanceAPIException, BinanceRequestException) as e:
             log.critical(e)

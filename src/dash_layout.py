@@ -88,7 +88,7 @@ class DashLayout:
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
-                                html.H6(id='symbol', children='BTCEUR', className='symbol-card-title'),
+                                html.H6(id='symbol', children='', className='symbol-card-title'),
                                 html.H6(id='cmp-foo', children='***', className='locked'),
                                 html.H6(id='cmp', children='', className="symbol-cmp"),
                             ])
@@ -97,18 +97,18 @@ class DashLayout:
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
-                                html.H6("EUR", className="liquidity-card-title"),
-                                html.H6(id='eur-locked', children='0.00', className='locked'),
-                                html.H6(id='eur-free', children='0.00', className='free')
+                                html.H6(id='base-asset', className="liquidity-card-title"),
+                                html.H6(id='base-asset-locked', children='0.00', className='locked'),
+                                html.H6(id='base-asset-free', children='0.00', className='free')
                             ])
                         ], className='liquidity-card'),
                     ],  xs=3, sm=3, md=3, lg=3, xl=3),
                     dbc.Col([
                         dbc.Card([
                             dbc.CardBody([
-                                html.H6("BTC", className="liquidity-card-title"),
-                                html.H6(id='btc-locked', children='0.00', className='locked'),
-                                html.H6(id='btc-free', children='0.00', className='free')
+                                html.H6(id='quote-asset', className="liquidity-card-title"),
+                                html.H6(id='quote-asset-locked', children='0.00', className='locked'),
+                                html.H6(id='quote-asset-free', children='0.00', className='free')
                             ])
                         ], className='liquidity-card'),
                     ],  xs=3, sm=3, md=3, lg=3, xl=3),
