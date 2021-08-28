@@ -6,31 +6,16 @@ from typing import Dict
 class Asset:
     def __init__(self,
                  name: str,
-                 # precision_for_visualization: int
+                 pv: int  # precision for visualization
                  ):
         self._name = name.upper()
-        self._precision_for_visualization = self.set_precision_for_visualization(name=name)
+        self._pv = pv
 
-    def get_name(self) -> str:
+    def name(self) -> str:
         return self._name
 
-    def get_precision_for_visualization(self) -> int:
-        return self._precision_for_visualization
-
-    def set_precision_for_visualization(self, name: str) -> int:
-        # todo: move to config.ini
-        precisions = {
-            'BTC': 6,
-            'BNB': 6,
-            'EUR': 2,
-            'TVK': 2,
-            'ETH': 6,
-            'DOGE': 2
-        }
-        if name in precisions.keys():
-            return precisions[name]
-        else:
-            return 2  # default value
+    def pv(self) -> int:
+        return self._pv
 
 
 class Symbol:
@@ -42,7 +27,7 @@ class Symbol:
         self.config_data = config_data
 
     def get_name(self) -> str:
-        return self._base_asset.get_name() + self._quote_asset.get_name()
+        return self._base_asset.name() + self._quote_asset.name()
 
     def get_base_asset(self) -> Asset:
         # related to quantity (BTC in BTCEUR)
