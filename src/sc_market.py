@@ -106,6 +106,7 @@ class Market:
         if event_type == 'executionReport':
             if (msg['x'] == 'TRADE') and (msg["X"] == 'FILLED'):
                 # order traded
+                symbol = msg['s']
                 uid = str(msg['c'])
                 order_price = float(msg['L'])
                 bnb_commission = float(msg['n'])
