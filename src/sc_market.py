@@ -38,10 +38,12 @@ class Market:
 
     def __init__(self,
                  order_traded_callback: Optional[Callable[[str, float, float], None]],
-                 account_balance_callback: Optional[Callable[[List[Account]], None]]):
+                 # account_balance_callback: Optional[Callable[[List[Account]], None]]
+                 ):
 
         self.order_traded_callback: Callable[[str, float, float], None] = order_traded_callback
-        self.account_balance_callback: Callable[[List[Account]], None] = account_balance_callback
+        self.account_balance_callback: Callable[[List[Account]], None]
+        # self.account_balance_callback: Callable[[List[Account]], None] = account_balance_callback
 
         # get app parameters from config.ini
         config_manager = ConfigManager(config_file='config_new.ini')

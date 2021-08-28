@@ -28,7 +28,10 @@ class SessionManager:
 
         self.market = Market(
             order_traded_callback=self._fake_order_socket_callback,
-            account_balance_callback=self._fake_account_socket_callback)
+            # this callback is direct to sm.am, therefore is always 'alive'
+            # it will be set up after creation of account manager
+            # account_balance_callback=self._fake_account_socket_callback
+        )
 
         # session will be started within start_session method
         self.active_sessions: Dict[str, Optional[Session]] = {}
@@ -37,6 +40,9 @@ class SessionManager:
         # get initial accounts to create the balance manager (all own accounts managed in Binance)
         accounts = self.market.get_account_info()
         self.am = AccountManager(accounts=accounts)
+
+        # set up the callback for account updates
+        self.market.account_balance_callback = self.am.update_current_accounts
 
         # get list of symbols info from config.ini & market
         self.symbols = self._get_symbols()
@@ -159,7 +165,7 @@ class SessionManager:
         # to avoid errors of socket calling None during Session init
         self.market.symbol_ticker_callbacks[symbol.name] = self._fake_symbol_socket_callback
         self.market.order_traded_callback = self._fake_order_socket_callback
-        self.market.account_balance_callback = self._fake_account_socket_callback
+        # self.market.account_balance_callback = self._fake_account_socket_callback
 
         session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
 
@@ -177,7 +183,7 @@ class SessionManager:
         # after having the session created, set again the callback functions that were None
         self.market.symbol_ticker_callbacks[symbol.name] = session.symbol_ticker_callback
         self.market.order_traded_callback = session.order_traded_callback
-        self.market.account_balance_callback = session.account_balance_callback
+        # self.market.account_balance_callback = session.account_balance_callback
 
         self.session_count += 1
 
