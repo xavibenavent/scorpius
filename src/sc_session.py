@@ -270,8 +270,8 @@ class Session:
 
         # check available liquidity (quote & base) vs needed when trading both orders
         # get existing liquidity
-        quote_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_quote_asset().get_name())  # free
-        base_asset_liquidity = self.market.get_asset_liquidity(asset=symbol.get_base_asset().get_name())  # free
+        quote_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.get_quote_asset().get_name())  # free
+        base_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.get_base_asset().get_name())  # free
 
         if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # need for quote
             # check whether there is enough quote asset to force a pt shifted to SELL
