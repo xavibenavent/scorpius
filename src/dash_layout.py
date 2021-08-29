@@ -141,12 +141,17 @@ class DashLayout:
                 # buttons
                 dbc.Row([
                     dbc.Col([
+                        dbc.Button('BTCEUR', id='button-btceur', disabled=False, color='info', block=True, className='sc-button'),
+                        html.Br(),
                         dbc.Button('Hot Re-connect', id='button-start', disabled=False, color='primary', block=True, className='sc-button'),
                         html.Br(),
                         dbc.Button("Stop at cmp", id='button-stop-cmp', color='danger', block=True,
                                    className='sc-button'),
                     ]),
                     dbc.Col([
+                        dbc.Button('BNBEUR', id='button-bnbeur', color='info', block=True,
+                                   className='sc-button'),
+                        html.Br(),
                         dbc.Button('New Perfect Trade', id='button-new-pt', color='warning', block=True,
                                    className='sc-button'),
                         html.Br(),
@@ -154,6 +159,9 @@ class DashLayout:
                                    className='sc-button'),
                     ]),
                     dbc.Col([
+                        dbc.Button('TBD-01', id='button-tbd-01', disabled=False, color='light', block=True,
+                                   className='sc-button'),
+                        html.Br(),
                         dbc.Button('+ 10.0 €', id='increase-cmp', disabled=False, color='warning', block=True,
                                    className='sc-button'),
                         html.Br(),
@@ -161,6 +169,9 @@ class DashLayout:
                                    className='sc-button'),
                     ]),
                     dbc.Col([
+                        dbc.Button('TBD-02', id='button-tbd-02', disabled=False, color='light', block=True,
+                                   className='sc-button'),
+                        html.Br(),
                         dbc.Button('- 10.0 €', id='decrease-cmp', disabled=False, color='warning', block=True,
                                    className='sc-button'),
                         html.Br(),

@@ -59,6 +59,26 @@ def display_value(value):
 
 
 # ********** buttons *********
+@app.callback(Output('button-btceur', 'color'),
+              Input('button-btceur', 'n_clicks'))
+def on_button_click(n):
+    if n is None:
+        return ''
+    else:
+        dfm.set_dashboard_active_symbol(symbol_name='BTCEUR')
+        return 'success'
+
+
+@app.callback(Output('button-bnbeur', 'color'),
+              Input('button-bnbeur', 'n_clicks'))
+def on_button_click(n):
+    if n is None:
+        return ''
+    else:
+        dfm.set_dashboard_active_symbol(symbol_name='BNBEUR')
+        return 'success'
+
+
 @app.callback(Output('msg', 'children'), Input('button-stop-cmp', 'n_clicks'))
 def on_button_click(n):
     if n is None:

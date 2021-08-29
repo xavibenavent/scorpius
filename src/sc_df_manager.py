@@ -12,14 +12,32 @@ from sc_session_manager import SessionManager
 
 class DataframeManager:
     def __init__(self):
+        # init session maanger
         self.sm = SessionManager()
+
         # get symbols
         self.available_symbols = self.sm.symbols
         if len(self.available_symbols) == 0:
             raise Exception('no symbols to show')
+
         # set the active symbol in dashboard
         self.dashboard_active_symbol = self.available_symbols[0]
+
         print('data frame manager')
+
+    def set_dashboard_active_symbol(self, symbol_name: str) -> None:
+        # set the passed symbol as active if exist, otherwise do nothing
+        position_in_list = 0
+
+        # get list of available symbol names
+        names = [symbol.name for symbol in self.available_symbols]
+
+        # get position in list for passed symbol name
+        if symbol_name in names:
+            position_in_list = names.index(symbol_name)
+
+        # set the passed symbol as the one active in dashboard
+        self.dashboard_active_symbol = self.available_symbols[position_in_list]
 
     def get_all_orders_df(self) -> pd.DataFrame:
         # get list with all orders:
