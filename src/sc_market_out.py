@@ -24,38 +24,6 @@ class MarketOut:
         self.client = client
         self.hot_reconnect_callback = hot_reconnect_callback
 
-    def get_symbol_info(self, symbol_name: str) -> Optional[dict]:
-        # return dict with the required values for checking order values
-        try:
-            d = self.client.get_symbol_info(symbol_name)
-            if d:
-                base_asset = d.get('baseAsset')
-                quote_asset = d.get('quoteAsset')
-                base_precision = int(d.get('baseAssetPrecision'))  # symbol 1
-                max_price = float(d.get('filters')[0].get('maxPrice'))
-                min_price = float(d.get('filters')[0].get('minPrice'))
-                max_qty = float(d.get('filters')[2].get('maxQty'))
-                min_qty = float(d.get('filters')[2].get('minQty'))
-                min_notional = float(d.get('filters')[3].get('minNotional'))  # price * qty
-                quote_precision = int(d.get('quoteAssetPrecision'))  # symbol 2
-                return dict(base_precision=base_precision,
-                            max_price=max_price,
-                            min_price=min_price,
-                            max_qty=max_qty,
-                            min_qty=min_qty,
-                            min_notional=min_notional,
-                            quote_precision=quote_precision,
-                            base_asset=base_asset,
-                            quote_asset=quote_asset)
-            else:
-                log.critical(f'no symbol info from Binance for {symbol_name}')
-        except (BinanceAPIException, BinanceRequestException) as e:
-            log.critical(e)
-        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
-            log.critical(e)
-            self.hot_reconnect_callback()
-        return None
-
     def get_all_symbol_info(self, symbol_name: str) -> Optional[dict]:
         # return dict with the required values for checking order values
         try:
