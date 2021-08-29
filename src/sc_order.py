@@ -44,8 +44,8 @@ class Order:
         self.order_id = order_id
         self.name = name
         self.k_side = k_side
-        self.price = price
-        self.amount = amount
+        self.price = round(price, symbol.quote_tp())
+        self.amount = round(amount, symbol.base_tp())
         self.status = status
 
         self._bnb_commission = 0.0  # bnb_commission
@@ -108,11 +108,11 @@ class Order:
         return (cmp - self.price) if self.k_side == k_binance.SIDE_BUY else (self.price - cmp)
 
     def get_price_str(self) -> str:
-        precision = self.symbol.filters.get('quote_precision')  # quote
+        precision = self.symbol.symbol_info.get('quote_precision')  # quote
         return f'{self.price:0.0{precision}f}'
 
     def _get_amount(self) -> float:
-        precision = self.symbol.filters.get('base_precision')  # base
+        precision = self.symbol.symbol_info.get('base_precision')  # base
         return round(self.amount, precision)
 
     def _get_signed_amount(self) -> float:
@@ -176,17 +176,18 @@ class Order:
         )
 
     def _is_filter_passed(self) -> bool:
-        filters = self.symbol.filters
-        if not filters.get('min_qty') <= self.amount <= filters.get('max_qty'):
-            log.critical(f'qty out of min/max limits: {self.amount}')
-            log.critical(f"min: {filters.get('min_qty')} - max: {filters.get('max_qty')}")
-            return False
-        elif not filters.get('min_price') <= self.price <= filters.get('max_price'):
-            log.critical(f'buy price out of min/max limits: {self.price}')
-            log.critical(f"min: {filters.get('min_price')} - max: {filters.get('max_price')}")
-            return False
-        elif not (self.amount * self.price) > filters.get('min_notional'):
-            log.critical(f'buy total (price * qty) under minimum: {self.amount * self.price}')
-            log.critical(f'min notional: {filters.get("min_notional")}')
-            return False
-        return True
+        return self.symbol.are_filters_ok(price=self.price, qty=self.amount)
+        # filters = self.symbol.symbol_info
+        # if not filters.get('min_qty') <= self.amount <= filters.get('max_qty'):
+        #     log.critical(f'qty out of min/max limits: {self.amount}')
+        #     log.critical(f"min: {filters.get('min_qty')} - max: {filters.get('max_qty')}")
+        #     return False
+        # elif not filters.get('min_price') <= self.price <= filters.get('max_price'):
+        #     log.critical(f'buy price out of min/max limits: {self.price}')
+        #     log.critical(f"min: {filters.get('min_price')} - max: {filters.get('max_price')}")
+        #     return False
+        # elif not (self.amount * self.price) > filters.get('min_notional'):
+        #     log.critical(f'buy total (price * qty) under minimum: {self.amount * self.price}')
+        #     log.critical(f'min notional: {filters.get("min_notional")}')
+        #     return False
+        # return True

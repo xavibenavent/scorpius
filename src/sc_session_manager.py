@@ -80,21 +80,23 @@ class SessionManager:
             symbol_config_data = cm.get_symbol_data(symbol_name=symbol_name)
 
             # fix Binance mistake in EUR precision by reading the values from config.ini
-            symbol_filters['base_precision'] = int(symbol_config_data['base_pt'])
-            symbol_filters['quote_precision'] = int(symbol_config_data['quote_pt'])
+            symbol_filters['baseAssetPrecision'] = int(symbol_config_data['base_pt'])
+            symbol_filters['quoteAssetPrecision'] = int(symbol_config_data['quote_pt'])
+            # symbol_filters['base_precision'] = int(symbol_config_data['base_pt'])
+            # symbol_filters['quote_precision'] = int(symbol_config_data['quote_pt'])
 
             # set symbol to pass at sessions start
             symbol = Symbol(
                 name=symbol_name,
                 base_asset=Asset(
-                    name=symbol_filters.get('base_asset'),
+                    name=symbol_filters.get('baseAsset'),
                     pv=int(symbol_config_data['base_pv'])
                 ),
                 quote_asset=Asset(
-                    name=symbol_filters.get('quote_asset'),
+                    name=symbol_filters.get('quoteAsset'),
                     pv=int(symbol_config_data['quote_pv'])
                 ),
-                filters=symbol_filters,
+                symbol_info=symbol_filters,
                 config_data=symbol_config_data
             )
             # update list

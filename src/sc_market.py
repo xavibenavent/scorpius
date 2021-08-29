@@ -199,7 +199,7 @@ class Market:
         return self._api.place_market_order(order=order)
 
     def get_symbol_info(self, symbol_name: str) -> Optional[dict]:
-        return self._api.get_symbol_info(symbol_name=symbol_name)
+        return self._api.get_all_symbol_info(symbol_name=symbol_name)
 
     def get_account_info(self) -> Optional[List[Account]]:
         return self._api.get_account_info()

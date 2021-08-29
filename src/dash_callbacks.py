@@ -34,7 +34,7 @@ def display_value(value):
 @app.callback(Output('neb', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
-    quote_name = dfm.dashboard_active_symbol.get_quote_asset().name()
+    quote_name = dfm.dashboard_active_symbol.quote_asset().name()
     return f'n: {dfm.sm.active_sessions[symbol_name].net_quote_balance:,.2f} {quote_name}'
 
 
@@ -48,7 +48,7 @@ def display_value(value):
 @app.callback(Output('target', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
-    quote_name = dfm.dashboard_active_symbol.get_quote_asset().name()
+    quote_name = dfm.dashboard_active_symbol.quote_asset().name()
     return f't: {dfm.sm.active_sessions[symbol_name].target_total_net_profit:,.2f} {quote_name}'
 
 
@@ -176,8 +176,8 @@ def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
     bm = dfm.sm.active_sessions[symbol_name].am
-    quote_account = bm.get_account(symbol.get_quote_asset().name())
-    return f'{quote_account.free:,.{symbol.get_quote_asset().pv()}f}'
+    quote_account = bm.get_account(symbol.quote_asset().name())
+    return f'{quote_account.free:,.{symbol.quote_asset().pv()}f}'
 
 
 
@@ -189,8 +189,8 @@ def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
     bm = dfm.sm.active_sessions[symbol_name].am
-    quote_account = bm.get_account(symbol.get_quote_asset().name())
-    return f'{quote_account.locked:,.{symbol.get_quote_asset().pv()}f}'
+    quote_account = bm.get_account(symbol.quote_asset().name())
+    return f'{quote_account.locked:,.{symbol.quote_asset().pv()}f}'
 
 
 @app.callback(
@@ -231,7 +231,7 @@ def display_value(value):
 
 @app.callback(Output('quote-asset', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return dfm.dashboard_active_symbol.get_quote_asset().name()
+    return dfm.dashboard_active_symbol.quote_asset().name()
 
 
 @app.callback(
@@ -244,7 +244,7 @@ def update_table(timer):
     df1 = df.sort_values(by=['price'], ascending=False)
     # filter by status for each table (monitor-placed & traded)
     df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
-    qp = dfm.dashboard_active_symbol.get_quote_asset().pv()
+    qp = dfm.dashboard_active_symbol.quote_asset().pv()
     df_pending['price'] = df_pending['price'].map(f'{{:,.{qp}f}}'.format)  # two {{ }} to escape { in f-string
     df_pending['total'] = df_pending['total'].map(f'{{:,.{qp}f}}'.format)
 
@@ -277,8 +277,8 @@ def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
     cmp = dfm.sm.active_sessions[symbol_name].cmps[-1]
-    qp = symbol.get_quote_asset().pv()
-    coin_symbol = symbol.get_quote_asset().name()
+    qp = symbol.quote_asset().pv()
+    coin_symbol = symbol.quote_asset().name()
     return f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f} {coin_symbol}'
 
 
@@ -287,8 +287,8 @@ def display_value(value):
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
-    qp = symbol.get_quote_asset().pv()
-    coin_symbol = symbol.get_quote_asset().name()
+    qp = symbol.quote_asset().pv()
+    coin_symbol = symbol.quote_asset().name()
     return f'{dfm.sm.active_sessions[symbol_name].ptm.get_consolidated_profit():,.{qp}f} {coin_symbol}'
 
 
@@ -298,8 +298,8 @@ def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
     cmp = dfm.sm.active_sessions[symbol_name].cmps[-1]
-    qp = symbol.get_quote_asset().pv()
-    coin_symbol = symbol.get_quote_asset().name()
+    qp = symbol.quote_asset().pv()
+    coin_symbol = symbol.quote_asset().name()
     # called the method in session to check buy_count == sell_count
     consolidated = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_profit']
     expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
