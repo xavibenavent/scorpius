@@ -41,7 +41,7 @@ def display_value(value):
 @app.callback(Output('qty', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
-    base_name = dfm.dashboard_active_symbol.get_base_asset().name()
+    base_name = dfm.dashboard_active_symbol.base_asset().name()
     return f'q: {dfm.sm.active_sessions[symbol_name].quantity:,.4f} {base_name}'
 
 
@@ -151,8 +151,8 @@ def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
     bm = dfm.sm.active_sessions[symbol_name].am
-    base_account = bm.get_account(symbol.get_base_asset().name())
-    return f'{base_account.free:,.{symbol.get_base_asset().pv()}f}', \
+    base_account = bm.get_account(symbol.base_asset().name())
+    return f'{base_account.free:,.{symbol.base_asset().pv()}f}', \
 
 
 
@@ -164,8 +164,8 @@ def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
     bm = dfm.sm.active_sessions[symbol_name].am
-    base_account = bm.get_account(symbol.get_base_asset().name())
-    return f'{base_account.locked:,.{symbol.get_base_asset().pv()}f}'
+    base_account = bm.get_account(symbol.base_asset().name())
+    return f'{base_account.locked:,.{symbol.base_asset().pv()}f}'
 
 
 @app.callback(
@@ -226,7 +226,7 @@ def display_value(value):
 
 @app.callback(Output('base-asset', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    return dfm.dashboard_active_symbol.get_base_asset().name()
+    return dfm.dashboard_active_symbol.base_asset().name()
 
 
 @app.callback(Output('quote-asset', 'children'), Input('update', 'n_intervals'))

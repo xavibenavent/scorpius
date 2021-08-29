@@ -56,6 +56,21 @@ class MarketOut:
             self.hot_reconnect_callback()
         return None
 
+    def get_all_symbol_info(self, symbol_name: str) -> Optional[dict]:
+        # return dict with the required values for checking order values
+        try:
+            d = self.client.get_symbol_info(symbol_name)
+            if d:
+                return d
+            else:
+                log.critical(f'no symbol info from Binance for {symbol_name}')
+        except (BinanceAPIException, BinanceRequestException) as e:
+            log.critical(e)
+        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
+            log.critical(e)
+            self.hot_reconnect_callback()
+        return None
+
     def place_limit_order(self, order: Order) -> Optional[dict]:
         try:
             msg = self.client.create_order(

@@ -26,10 +26,10 @@ class Symbol:
         self.filters = filters
         self.config_data = config_data
 
-    def get_name(self) -> str:
-        return self._base_asset.name() + self._quote_asset.name()
+    # def get_name(self) -> str:
+    #     return self._base_asset.name() + self._quote_asset.name()
 
-    def get_base_asset(self) -> Asset:
+    def base_asset(self) -> Asset:
         # related to quantity (BTC in BTCEUR)
         return self._base_asset
 
