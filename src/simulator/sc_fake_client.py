@@ -8,10 +8,12 @@ from random import choice
 import threading
 
 # from sc_account_balance import AssetBalance, AccountBalance
-from sc_balance_manager import Account
+# from sc_balance_manager import Account
+from sc_account_manager import Account
 from config_manager import ConfigManager
 from thread_cmp_generator import ThreadCmpGenerator
 from sc_fake_simulator_out import FakeSimulatorOut
+from sc_symbol import Symbol
 
 # from config import SIMULATOR_MODE and parameters
 
@@ -24,11 +26,12 @@ class FakeCmpMode(Enum):
 
 
 class FakeOrder:
-    def __init__(self, uid: str, side: str, price: float, quantity: float):
+    def __init__(self, uid: str, side: str, price: float, quantity: float, symbol_name: str):
         self.uid = uid
         self.side = side
         self.price = price
         self.quantity = quantity
+        self.symbol_name = symbol_name
 
     def get_total(self) -> float:
         return self.price * self.quantity
@@ -45,26 +48,29 @@ class FakeClient:
         # fake simulator out
         self.fso = FakeSimulatorOut()
 
+        # cmp generators
+        self.generators: List[ThreadCmpGenerator] = []
+
         # FAKE CMP MODE SETTING
-        cm = ConfigManager(config_file='../config_new.ini')
-        sm = cm.get_fake_cmp_mode()
+        self.cm = ConfigManager(config_file='config_new.ini')  # todo: check path ../config_new.ini
+        sm = self.cm.get_fake_cmp_mode()
         self._fake_cmp_mode = FakeCmpMode[sm]
-        config = cm.get_simulator_data(symbol_name='BTCEUR')
+        self.config = self.cm.get_simulator_data(symbol_name='BTCEUR')
 
-        initial_btc = float(config['initial_btc'])
-        initial_eur = float(config['initial_eur'])
-        initial_bnb = float(config['initial_bnb'])
+        initial_btc = float(self.config['initial_btc'])
+        initial_eur = float(self.config['initial_eur'])
+        initial_bnb = float(self.config['initial_bnb'])
 
-        update_rate = cm.get_simulator_update_rate()
+        self.update_rate = self.cm.get_simulator_update_rate()
 
         # initial cmp
-        self._cmp = float(config['initial_cmp'])
+        self._cmp = float(self.config['initial_cmp'])
         # cmp historical list
         self._cmp_sequence: List[float] = [self._cmp]
 
-        self._FEE = float(config['fee'])
-        self._BNBBTC = float(config['bnb_btc'])
-        self._BNBEUR = float(config['bnb_eur'])
+        self._FEE = float(self.config['fee'])
+        self._BNBBTC = float(self.config['bnb_btc'])
+        self._BNBEUR = float(self.config['bnb_eur'])
 
         self.api_key = ''
         self.api_secret = ''
@@ -74,22 +80,28 @@ class FakeClient:
             Account(name='EUR', free=initial_eur, locked=0.0),
             Account(name='BNB', free=initial_bnb, locked=0.0),
         ]
+    # ********** cmp generator **********
 
-        self.tcg = ThreadCmpGenerator(
-            symbol_name='BTCEUR',  # todo: loop through symbols
-            interval=update_rate,
-            f_callback=self._update_cmp,
-            choice_values=[-12, -10, -4, 0, 4, 10, 12]
-        )
-
-    def start_cmp_generator(self):  # todo: start all generators
+    def create_start_generator(self, symbol_name: str):
         if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
-            x = threading.Thread(target=self.tcg.run)
+            # create
+            new_generator = ThreadCmpGenerator(
+                symbol_name=symbol_name,
+                interval=self.update_rate,
+                f_callback=self._update_cmp,
+                choice_values=self.cm.get_simulator_choice_values(symbol_name=symbol_name)
+            )
+            # start
+            x = threading.Thread(target=new_generator.run)
             x.start()
+
+            # add to list
+            self.generators.append(new_generator)
 
     def stop_cmp_generator(self):  # todo: stop all geberators
         if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
-            self.tcg.terminate()
+            # stop all generators
+            [generator.terminate() for generator in self.generators]
 
     def update_cmp_from_dashboard(self, step: float, symbol_name: str):
         if self._fake_cmp_mode == FakeCmpMode.MODE_MANUAL:
@@ -105,12 +117,15 @@ class FakeClient:
     def get_mode(self) -> FakeCmpMode:
         return self._fake_cmp_mode
 
+    # ********** orders trading **********
+
     def order_market_buy(self, **kwargs) -> dict:
         order = FakeOrder(
             uid=kwargs.get('newClientOrderId'),
             side='BUY',
             price=self._cmp,
-            quantity=kwargs.get('quantity')
+            quantity=kwargs.get('quantity'),
+            symbol_name=kwargs.get('symbol')
         )
         status = 'NEW'
 
@@ -151,7 +166,8 @@ class FakeClient:
             uid=kwargs.get('newClientOrderId'),
             side='SELL',
             price=self._cmp,
-            quantity=kwargs.get('quantity')
+            quantity=kwargs.get('quantity'),
+            symbol_name=kwargs.get('symbol')
         )
         status = 'NEW'
 
@@ -189,8 +205,9 @@ class FakeClient:
         order = FakeOrder(
             uid=kwargs.get('newClientOrderId'),
             side=kwargs.get('side'),
-            price=float(kwargs.get('price')),
-            quantity=kwargs.get('quantity')
+            price=float(kwargs.get('price').replace(',', '')),
+            quantity=kwargs.get('quantity'),
+            symbol_name=kwargs.get('symbol')
         )
         status = 'NEW'
 
@@ -261,6 +278,8 @@ class FakeClient:
         # if not found
         log.critical(f'trying to cancel an order not placed {origClientOrderId}')
         return {}
+
+    # ********** symbol, account & balance **********
 
     def get_symbol_info(self, symbol: str) -> dict:
         return self.fso.get_symbol_info(symbol=symbol)
@@ -339,6 +358,7 @@ class FakeClient:
         bnb_commission = btc_commission / self._BNBBTC  # K_BNBBTC
         msg = dict(
             e='executionReport',
+            s=order.symbol_name,
             x='TRADE',
             X='FILLED',
             c=order.uid,

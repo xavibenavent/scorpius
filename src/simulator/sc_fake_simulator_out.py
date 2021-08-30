@@ -66,6 +66,67 @@ class FakeSimulatorOut:
                     ],
                 'permissions': ['SPOT', 'MARGIN']
             }
+        elif symbol == 'BNBEUR':
+            return {
+                'symbol': 'BNBEUR',
+                'status': 'TRADING',
+                'baseAsset': 'BNB',
+                'baseAssetPrecision': 3,
+                'quoteAsset': 'EUR',
+                'quotePrecision': 8,
+                'quoteAssetPrecision': 1,
+                'baseCommissionPrecision': 8,
+                'quoteCommissionPrecision': 8,
+                'orderTypes': ['LIMIT', 'LIMIT_MAKER', 'MARKET', 'STOP_LOSS_LIMIT', 'TAKE_PROFIT_LIMIT'],
+                'icebergAllowed': True,
+                'ocoAllowed': True,
+                'quoteOrderQtyMarketAllowed': True,
+                'isSpotTradingAllowed': True,
+                'isMarginTradingAllowed': False,
+                'filters': [
+                    {
+                        'filterType': 'PRICE_FILTER',
+                        'minPrice': '0.10000000',
+                        'maxPrice': '10000.00000000',
+                        'tickSize': '0.10000000'
+                    },
+                    {
+                        'filterType': 'PERCENT_PRICE',
+                        'multiplierUp': '5',
+                        'multiplierDown': '0.2',
+                        'avgPriceMins': 5
+                    },
+                    {
+                        'filterType': 'LOT_SIZE',
+                        'minQty': '0.00100000',
+                        'maxQty': '9222449.00000000',
+                        'stepSize': '0.00100000'
+                    },
+                    {
+                        'filterType': 'MIN_NOTIONAL',
+                        'minNotional': '10.00000000',
+                        'applyToMarket': True,
+                        'avgPriceMins': 5
+                    },
+                    {
+                        'filterType': 'ICEBERG_PARTS',
+                        'limit': 10},
+                    {
+                        'filterType': 'MARKET_LOT_SIZE',
+                        'minQty': '0.00000000',
+                        'maxQty': '2350.34381451',
+                        'stepSize': '0.00000000'
+                    },
+                    {
+                        'filterType': 'MAX_NUM_ORDERS',
+                        'maxNumOrders': 200},
+                    {
+                        'filterType': 'MAX_NUM_ALGO_ORDERS',
+                        'maxNumAlgoOrders': 5
+                    }
+                ],
+                'permissions': ['SPOT']
+            }
         else:
             raise Exception(f'wrong symbol {symbol}')
 

@@ -17,12 +17,13 @@ class ThreadCmpGenerator:
         self._choice_values = choice_values
 
     def terminate(self):
-        print('cmp thread terminated')
+        print(f'cmp thread for symbol {self._symbol_name} terminated')
         self._running = False
+        raise Exception(f'generator for symbol {self._symbol_name} terminated')  # todo: check if it is feasible
 
     def run(self):
         # generate a new cmp, between choice_values, every _interval seconds and send it to update_cmp callback function
-        print('thread started')
+        print(f'cmp thread for symbol {self._symbol_name} started')
         while self._running:
             time.sleep(self._interval)
             new_cmp = choice(self._choice_values)

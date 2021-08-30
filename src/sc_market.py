@@ -77,8 +77,8 @@ class Market:
         if self.client_mode == ClientMode.CLIENT_MODE_BINANCE:  # not self.simulator_mode:
             # sockets only started in binance mode (not in simulator mode)
             self._start_sockets()
-        elif self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
-            self.client.start_cmp_generator()
+        # elif self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
+            # self.client.start_cmp_generator()
         self._is_binance_socket_manager_started = True
         log.info(f'client initiated in {self.client_mode} mode')
 
@@ -135,8 +135,10 @@ class Market:
                     callback=self.binance_symbol_ticker_callback
                 )
             elif self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
+                # create & start a thread with ThreadCmpGenerator
+                self.client.create_start_generator(symbol_name=symbol_name)
                 # set the callback in FakeSimulator
-                self.client.symbol_ticker_callback = self.binance_symbol_ticker_callback
+                # self.client.symbol_ticker_callback = self.binance_symbol_ticker_callback
         else:
             raise Exception(f'Binance Socket Manager not started before starting user ticker socket for {symbol_name}')
 
