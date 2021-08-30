@@ -174,7 +174,7 @@ class SessionManager:
         self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] = 0
 
     def start_new_session(self, symbol: Symbol) -> Session:
-        session_id = f'S_{datetime.now().strftime("%Y%m%d_%H%M")}'
+        session_id = f'S_{symbol.name}_{datetime.now().strftime("%d_%H%M")}'
 
         session = Session(
             symbol=symbol,

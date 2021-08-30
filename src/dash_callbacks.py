@@ -83,17 +83,15 @@ def on_button_click(n):
     if n is not None:
         symbol_name = dfm.dashboard_active_symbol.name
         dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-    return 'Stop at price'
+    return 'Stop at cmp'
 
 
-@app.callback(Output('stop-price', 'children'), Input('button-stop-price', 'n_clicks'))
+@app.callback(Output('button-stop-price', 'children'), Input('button-stop-price', 'n_clicks'))
 def on_button_click(n):
-    if n is None:
-        return ''
-    else:
+    if n is not None:
         symbol_name = dfm.dashboard_active_symbol.name
         dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
-        return 'cmp stop'
+    return 'Stop at price'
 
 
 @app.callback(Output('stop-cancel', 'children'), Input('button-stop-cancel', 'n_clicks'))
@@ -365,7 +363,8 @@ def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
     consolidated_count = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_session_count']
     expected_count = dfm.sm.terminated_sessions[symbol_name]['global_expected_session_count']
-    session_count = dfm.sm.session_count - 1
+    session_count = consolidated_count + expected_count
+    # session_count = dfm.sm.session_count - 1  # todo: fix it. it must reflect the value per symbol
     return f's: {session_count}  (c:{consolidated_count}  e:{expected_count})'
 
 

@@ -198,8 +198,8 @@ class DashLayout:
                     [
                         # html.H6(id='symbol', children='BTCEUR', className='symbol'),
                         # html.H6(id='cmp', children='', className="card-title-symbol-cmp"),
-                        html.H6(id='msg', children=''),
-                        html.H6(id='stop-price', children=''),
+                        # html.H6(id='msg', children=''),
+                        # html.H6(id='stop-price', children=''),
                         html.H6(id='stop-cancel', children=''),
                         html.H6(id='stop-global-session', children=''),
                         html.H6(id='msg-2', children=''),
