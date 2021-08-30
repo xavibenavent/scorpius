@@ -218,7 +218,7 @@ class Market:
 
     # ********** simulator mode only **********
 
-    def update_fake_client_cmp(self, step: float):
+    def update_fake_client_cmp(self, step: float, symbol_name: str):
         if self.client_mode == ClientMode.CLIENT_MODE_SIMULATOR:
-            self.client.update_cmp_from_dashboard(step=step)
+            self.client.update_cmp_from_dashboard(step=step, symbol_name=symbol_name)
 

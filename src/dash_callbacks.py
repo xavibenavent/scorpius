@@ -158,7 +158,7 @@ def on_button_click(n):
 def on_button_click(n):
     if n:
         symbol_name = dfm.dashboard_active_symbol.name
-        dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=10.0)
+        dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=10.0, symbol_name=symbol_name)
     return ''
 
 
@@ -166,7 +166,7 @@ def on_button_click(n):
 def on_button_click(n):
     if n:
         symbol_name = dfm.dashboard_active_symbol.name
-        dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=-10.0)
+        dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=-10.0, symbol_name=symbol_name)
     return ''
 
 

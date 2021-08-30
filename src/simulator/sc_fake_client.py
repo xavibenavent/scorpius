@@ -75,27 +75,32 @@ class FakeClient:
             Account(name='BNB', free=initial_bnb, locked=0.0),
         ]
 
-        self.tcg = ThreadCmpGenerator(interval=update_rate, f_callback=self._update_cmp)
+        self.tcg = ThreadCmpGenerator(
+            symbol_name='BTCEUR',  # todo: loop through symbols
+            interval=update_rate,
+            f_callback=self._update_cmp,
+            choice_values=[-12, -10, -4, 0, 4, 10, 12]
+        )
 
-    def start_cmp_generator(self):
+    def start_cmp_generator(self):  # todo: start all generators
         if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
             x = threading.Thread(target=self.tcg.run)
             x.start()
 
-    def stop_cmp_generator(self):
+    def stop_cmp_generator(self):  # todo: stop all geberators
         if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
             self.tcg.terminate()
 
-    def update_cmp_from_dashboard(self, step: float):
+    def update_cmp_from_dashboard(self, step: float, symbol_name: str):
         if self._fake_cmp_mode == FakeCmpMode.MODE_MANUAL:
-            self._update_cmp(step=step)
+            self._update_cmp(step=step, symbol_name=symbol_name)
         else:
             log.warning('trying to manually update cmp in GENERATOR MODE')
 
-    def _update_cmp(self, step: float):
+    def _update_cmp(self, step: float, symbol_name: str):
         # when in MANUAL mode the cmp is update from the dashboard
         self._cmp += step
-        self._process_cmp_change()
+        self._process_cmp_change(symbol_name=symbol_name)
 
     def get_mode(self) -> FakeCmpMode:
         return self._fake_cmp_mode
@@ -281,11 +286,11 @@ class FakeClient:
                 "price": price
             }
 
-    def _process_cmp_change(self):
+    def _process_cmp_change(self, symbol_name: str):
         self._check_placed_orders_for_trading()
         msg = dict(
             e='24hrTicker',
-            s='BTCEUR',
+            s=symbol_name,
             c=str(self._cmp)
         )
         self.symbol_ticker_callback(msg)
