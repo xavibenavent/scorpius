@@ -34,7 +34,7 @@ class Session:
                  account_manager: AccountManager,
                  check_isolated_callback: Callable[[Symbol, str, float], None],
                  placed_isolated_callback: Callable[[Order], None],
-                 try_to_get_liquidity_callback: Callable[[Symbol, str, float], None],
+                 try_to_get_liquidity_callback: Callable[[Symbol, Asset, float], None],
                  get_liquidity_needed_callback: Callable[[Asset], float]
                  ):
 
@@ -289,10 +289,10 @@ class Session:
             if base_asset_liquidity > base_asset_needed + new_pt_base_asset_liquidity_needed:  # enough base
                 # force the creation of a shifted pt to SELL base and get quote
                 log.info(f'new pt with forced shift: {-self.forced_shift}')
-                return True, -self.forced_shift  # force SELL
+                return False, -self.forced_shift  # force SELL
             else:
                 # get quote by selling base
-                self.try_to_get_liquidity_callback(self.symbol, k_binance.SIDE_SELL, cmp)
+                self.try_to_get_liquidity_callback(self.symbol, symbol.quote_asset(), cmp)
                 return False, 0.0
 
         elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for base
@@ -300,10 +300,10 @@ class Session:
                 # force the creation of a shifted pt to BUY base
                 log.info(f'new pt with forced shift: {+self.forced_shift} '
                          f'q: {quote_asset_liquidity} b: {base_asset_liquidity}')
-                return True, +self.forced_shift  # force SELL
+                return False, +self.forced_shift  # force SELL
             else:
                 # get base buying
-                self.try_to_get_liquidity_callback(self.symbol, k_binance.SIDE_BUY, cmp)
+                self.try_to_get_liquidity_callback(self.symbol, symbol.base_asset(), cmp)
                 return False, 0.0
 
         else:

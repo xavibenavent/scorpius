@@ -31,3 +31,6 @@ class ConfigManager:
 
     def get_simulator_update_rate(self) -> float:
         return float(self._config.get('SIMULATOR_GLOBAL_DATA', 'update_rate'))
+
+    def get_max_allowed_loss_for_liquidity(self, symbol_name: str) -> float:
+        return float(self._config.get(symbol_name, 'accepted_loss_to_get_liquidity'))

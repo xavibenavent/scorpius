@@ -6,7 +6,7 @@ import logging
 import os
 import signal
 
-from binance import enums as k_binance
+# from binance import enums as k_binance
 
 # import configparser
 from config_manager import ConfigManager
@@ -27,6 +27,8 @@ class SessionManager:
         print('session manager')
 
         self.iom = IsolatedOrdersManager()
+
+        self.cm = ConfigManager(config_file='config_new.ini')
 
         self.market = Market(
             order_traded_callback=self._order_traded_callback,
@@ -70,16 +72,16 @@ class SessionManager:
         # list to return
         symbols: List[Symbol] = []
 
-        cm = ConfigManager(config_file='config_new.ini')
+        # cm = ConfigManager(config_file='config_new.ini')
         # get the list of symbol names in config.ini
-        symbols_name = cm.get_symbol_names()
+        symbols_name = self.cm.get_symbol_names()
 
         for symbol_name in symbols_name:
             # get filters from Binance API
             symbol_filters = self.market.get_symbol_info(symbol_name=symbol_name)
 
             # get session data from config.ini
-            symbol_config_data = cm.get_symbol_data(symbol_name=symbol_name)
+            symbol_config_data = self.cm.get_symbol_data(symbol_name=symbol_name)
 
             # fix Binance mistake in EUR precision by reading the values from config.ini
             symbol_filters['baseAssetPrecision'] = int(symbol_config_data['base_pt'])
@@ -255,11 +257,14 @@ class SessionManager:
         # once the order have been placed in Binance, it is appended to the list
         self.iom.isolated_orders.append(order)
 
-    def _try_to_get_liquidity_callback(self, symbol: Symbol, side: str, cmp: float):
+    def _try_to_get_liquidity_callback(self, symbol: Symbol, asset: Asset, cmp: float):
         # called from session
-        log.info(f'try to get liquidity callback called with side: {side}')
+        # log.info(f'try to get liquidity callback called with side: {side}')
 
-        order = self.iom.try_to_get_asset_liquidity(cmp=cmp, k_side=side)
+        order = self.iom.try_to_get_asset_liquidity(
+            asset=asset,
+            cmp=cmp,
+            max_loss=self.cm.get_max_allowed_loss_for_liquidity(symbol_name=symbol.name))
 
         if order:
             # place at MARKET price
