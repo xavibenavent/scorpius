@@ -108,11 +108,11 @@ class Order:
         return (cmp - self.price) if self.k_side == k_binance.SIDE_BUY else (self.price - cmp)
 
     def get_price_str(self) -> str:
-        precision = self.symbol.symbol_info.get('quote_precision')  # quote
-        return f'{self.price:0.0{precision}f}'
+        precision = self.symbol.symbol_info.get('quoteAssetPrecision')  # quote
+        return f'{self.price:,.{precision}f}'
 
     def _get_amount(self) -> float:
-        precision = self.symbol.symbol_info.get('base_precision')  # base
+        precision = self.symbol.symbol_info.get('baseAssetPrecision')  # base
         return round(self.amount, precision)
 
     def _get_signed_amount(self) -> float:

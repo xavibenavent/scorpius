@@ -59,34 +59,31 @@ def display_value(value):
 
 
 # ********** buttons *********
-@app.callback(Output('button-btceur', 'color'),
-              Input('button-btceur', 'n_clicks'))
+@app.callback(Output('button-btceur', 'children'),
+              Input('button-btceur', 'n_clicks')
+              )
 def on_button_click(n):
-    if n is None:
-        return ''
-    else:
+    if n is not None:
         dfm.set_dashboard_active_symbol(symbol_name='BTCEUR')
-        return 'success'
+    return 'BTCEUR'
 
 
-@app.callback(Output('button-bnbeur', 'color'),
-              Input('button-bnbeur', 'n_clicks'))
+@app.callback(Output('button-bnbeur', 'children'),
+              Input('button-bnbeur', 'n_clicks')
+              )
 def on_button_click(n):
-    if n is None:
-        return ''
-    else:
+    if n is not None:
         dfm.set_dashboard_active_symbol(symbol_name='BNBEUR')
-        return 'success'
+    return 'BNBEUR'
 
 
-@app.callback(Output('msg', 'children'), Input('button-stop-cmp', 'n_clicks'))
+# @app.callback(Output('msg', 'children'), Input('button-stop-cmp', 'n_clicks'))
+@app.callback(Output('button-stop-cmp', 'children'), Input('button-stop-cmp', 'n_clicks'))
 def on_button_click(n):
-    if n is None:
-        return ''
-    else:
+    if n is not None:
         symbol_name = dfm.dashboard_active_symbol.name
         dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-        return 'cmp stop'
+    return 'Stop at price'
 
 
 @app.callback(Output('stop-price', 'children'), Input('button-stop-price', 'n_clicks'))
@@ -164,7 +161,7 @@ def on_button_click(n):
 # ********** accounts data **********
 
 @app.callback(
-    Output('base-asset-free', 'children'),
+    Output('base-asset-free', 'children'), Output('base-asset-locked', 'children'),
     Input('update', 'n_intervals')
 )
 def display_value(value):
@@ -172,20 +169,7 @@ def display_value(value):
     symbol_name = symbol.name
     bm = dfm.sm.active_sessions[symbol_name].am
     base_account = bm.get_account(symbol.base_asset().name())
-    return f'{base_account.free:,.{symbol.base_asset().pv()}f}', \
-
-
-
-@app.callback(
-    Output('base-asset-locked', 'children'),
-    Input('update', 'n_intervals')
-)
-def display_value(value):
-    symbol = dfm.dashboard_active_symbol
-    symbol_name = symbol.name
-    bm = dfm.sm.active_sessions[symbol_name].am
-    base_account = bm.get_account(symbol.base_asset().name())
-    return f'{base_account.locked:,.{symbol.base_asset().pv()}f}'
+    return f'{base_account.free:,.{symbol.base_asset().pv()}f}', f'{base_account.locked:,.{symbol.base_asset().pv()}f}'
 
 
 @app.callback(

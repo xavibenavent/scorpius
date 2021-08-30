@@ -141,7 +141,7 @@ class DashLayout:
                 # buttons
                 dbc.Row([
                     dbc.Col([
-                        dbc.Button('BTCEUR', id='button-btceur', disabled=False, color='info', block=True, className='sc-button'),
+                        dbc.Button('BTCEUR', id='button-btceur', disabled=False, color='success', block=True, className='sc-button'),
                         html.Br(),
                         dbc.Button('Hot Re-connect', id='button-start', disabled=False, color='primary', block=True, className='sc-button'),
                         html.Br(),
@@ -149,8 +149,7 @@ class DashLayout:
                                    className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('BNBEUR', id='button-bnbeur', color='info', block=True,
-                                   className='sc-button'),
+                        dbc.Button('BNBEUR', id='button-bnbeur', color='success', block=True, className='sc-button'),
                         html.Br(),
                         dbc.Button('New Perfect Trade', id='button-new-pt', color='warning', block=True,
                                    className='sc-button'),
