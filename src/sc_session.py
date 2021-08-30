@@ -13,7 +13,7 @@ from sc_order import Order, OrderStatus
 from sc_account_manager import Account, AccountManager
 from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
-from sc_symbol import Symbol
+from sc_symbol import Symbol, Asset
 
 
 log = logging.getLogger('log')
@@ -34,7 +34,8 @@ class Session:
                  account_manager: AccountManager,
                  check_isolated_callback: Callable[[Symbol, str, float], None],
                  placed_isolated_callback: Callable[[Order], None],
-                 try_to_get_liquidity_callback: Callable[[Symbol, str, float], None]
+                 try_to_get_liquidity_callback: Callable[[Symbol, str, float], None],
+                 get_liquidity_needed_callback: Callable[[Asset], float]
                  ):
 
         self.symbol = symbol
@@ -46,6 +47,9 @@ class Session:
         # isolated manager callbacks
         self.check_isolated_callback = check_isolated_callback
         self.placed_isolated_callback = placed_isolated_callback
+
+        # liquidity needed callback
+        self._get_liquidity_needed_callback = get_liquidity_needed_callback
 
         # method to call when liquidity is needed
         self.try_to_get_liquidity_callback = try_to_get_liquidity_callback
@@ -243,6 +247,11 @@ class Session:
         # if no order found, then check in placed_orders_from_previous_sessions list
         self.check_isolated_callback(self.symbol, uid, order_price)
 
+    def manually_create_new_pt(self, cmp: float, symbol: Symbol):
+        is_allowed, _ = self._allow_new_pt_creation(cmp=cmp, symbol=symbol)
+        if is_allowed:
+            self.ptm.create_new_pt(cmp=cmp, symbol=symbol)
+
     def _allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> (bool, float):
         # 1. liquidity
         is_allowed_by_liquidity, forced_shift = self._is_liquidity_enough(cmp=cmp, symbol=symbol)
@@ -266,7 +275,9 @@ class Session:
         new_pt_quote_asset_liquidity_needed = self.quantity * cmp
 
         # get total quote & needed to trade all alive orders at their own price
-        quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
+        quote_asset_needed = self._get_liquidity_needed_callback(symbol.quote_asset())
+        base_asset_needed = self._get_liquidity_needed_callback(symbol.base_asset())
+        # quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
 
         # check available liquidity (quote & base) vs needed when trading both orders
         # get existing liquidity

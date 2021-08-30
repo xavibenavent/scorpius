@@ -6,6 +6,8 @@ import logging
 import os
 import signal
 
+from binance import enums as k_binance
+
 # import configparser
 from config_manager import ConfigManager
 
@@ -184,7 +186,8 @@ class SessionManager:
             account_manager=self.am,
             check_isolated_callback=self._check_isolated_callback,
             placed_isolated_callback=self._placed_isolated_callback,
-            try_to_get_liquidity_callback=self._try_to_get_liquidity_callback
+            try_to_get_liquidity_callback=self._try_to_get_liquidity_callback,
+            get_liquidity_needed_callback=self._get_liquidity_needed_callback
         )
 
         self.session_count += 1
@@ -207,6 +210,32 @@ class SessionManager:
 
         # exit
         raise Exception("********** SESSION TERMINATED, PRESS CTRL-C ********")
+
+    # ********** session callbacks **********
+
+    def _get_liquidity_needed_callback(self, asset: Asset) -> float:
+        # if BUY => need for quote asset liquidity
+        # if SELL => need for base asset liquidity
+        # get orders
+        liquidity_needed = 0.0
+        pv = asset.pv()
+        print(f'*********** check for asset: {asset.name()} **********')
+        for session in self.active_sessions.values():
+            quote_asset_needed = 0.0
+            base_asset_needed = 0.0
+            # check whether the symbol session includes the asset
+            if session.symbol.quote_asset().name() == asset.name():
+                quote_asset_needed, _ = session.ptm.get_symbol_liquidity_needed()
+                print(f'liquidity needed for [{session.symbol.name}] {asset.name()}: {quote_asset_needed:,.{pv}f}')
+
+            if session.symbol.base_asset().name() == asset.name():
+                _, base_asset_needed = session.ptm.get_symbol_liquidity_needed()
+                print(f'liquidity needed for [{session.symbol.name}] {asset.name()}: {base_asset_needed:,.{pv}f}')
+
+            # get total for this session (only one of the two values will be > 0)
+            liquidity_needed += quote_asset_needed + base_asset_needed
+        print(f'total liquidity needed: {liquidity_needed:,.{pv}f}')
+        return liquidity_needed
 
     def _check_isolated_callback(self, symbol: Symbol, uid: str, order_price: float):
         # check the isolated orders and, in case an order from previous session have been traded,

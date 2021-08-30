@@ -150,9 +150,7 @@ def on_button_click(n):
         symbol = dfm.dashboard_active_symbol
         symbol_name = symbol.name
         cmp = dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0
-        # raise Exception('todo: pass symbol')
-        if dfm.sm.ctive_sessions[symbol_name].allow_new_pt_creation(cmp=cmp, symbol=symbol):
-            dfm.sm.active_sessions[symbol_name].ptm.create_new_pt(cmp=cmp, symbol=symbol)
+        dfm.sm.active_sessions[symbol_name].manually_create_new_pt(cmp=cmp, symbol=symbol)
     return ''
 
 
