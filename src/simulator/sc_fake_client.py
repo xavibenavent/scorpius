@@ -10,12 +10,12 @@ import threading
 # from sc_account_balance import AssetBalance, AccountBalance
 from sc_balance_manager import Account
 from config_manager import ConfigManager
+from thread_cmp_generator import ThreadCmpGenerator
+from sc_fake_simulator_out import FakeSimulatorOut
 
 # from config import SIMULATOR_MODE and parameters
 
 log = logging.getLogger('log')
-
-
 
 
 class FakeCmpMode(Enum):
@@ -41,6 +41,9 @@ class FakeClient:
         self.symbol_ticker_callback = symbol_ticker_callback
         self._placed_orders: List[FakeOrder] = []
         self._placed_orders_count = 0
+
+        # fake simulator out
+        self.fso = FakeSimulatorOut()
 
         # FAKE CMP MODE SETTING
         cm = ConfigManager(config_file='../config_new.ini')
@@ -255,81 +258,13 @@ class FakeClient:
         return {}
 
     def get_symbol_info(self, symbol: str) -> dict:
-        if symbol == 'BTCEUR':
-            return {
-                "symbol": symbol,
-                "status": "TRADING",
-                "baseAsset": "BTC",
-                "baseAssetPrecision": 8,
-                "quoteAsset": "EUR",
-                "quoteAssetPrecision": 8,
-                "orderTypes": ["LIMIT", "MARKET"],
-                "icebergAllowed": True,
-                'filters':
-                    [
-                        {'filterType': 'PRICE_FILTER', 'minPrice': '0.01000000', 'maxPrice': '1000000.00000000',
-                         'tickSize': '0.01000000'},
-                        {'filterType': 'PERCENT_PRICE', 'multiplierUp': '5', 'multiplierDown': '0.2', 'avgPriceMins': 5},
-                        {'filterType': 'LOT_SIZE', 'minQty': '0.00000100', 'maxQty': '9000.00000000',
-                         'stepSize': '0.00000100'},
-                        {'filterType': 'MIN_NOTIONAL', 'minNotional': '10.00000000', 'applyToMarket': True,
-                         'avgPriceMins': 5}, {'filterType': 'ICEBERG_PARTS', 'limit': 10},
-                        {'filterType': 'MARKET_LOT_SIZE', 'minQty': '0.00000000', 'maxQty': '53.77006166',
-                         'stepSize': '0.00000000'}, {'filterType': 'MAX_NUM_ORDERS', 'maxNumOrders': 200},
-                        {'filterType': 'MAX_NUM_ALGO_ORDERS', 'maxNumAlgoOrders': 5}
-                    ],
-                'permissions': ['SPOT', 'MARGIN']
-            }
-        else:
-            log.critical(f'wrong symbol {symbol}')
-            return {}
+        return self.fso.get_symbol_info(symbol=symbol)
 
     def get_account(self):
-        return {
-            "makerCommission": 15,
-            "takerCommission": 15,
-            "buyerCommission": 0,
-            "sellerCommission": 0,
-            "canTrade": True,
-            "canWithdraw": True,
-            "canDeposit": True,
-            "balances": [
-                {
-                    "asset": "BTC",
-                    "free": str(self._accounts[0].free),
-                    "locked": str(self._accounts[0].locked)
-                },
-                {
-                    "asset": "EUR",
-                    "free": str(self._accounts[1].free),
-                    "locked": str(self._accounts[1].locked)
-                },
-                {
-                    "asset": "BNB",
-                    "free": str(self._accounts[2].free),
-                    "locked": str(self._accounts[2].locked)
-                },
-            ]
-        }
+        return self.fso.get_account(accounts=self._accounts)
 
     def get_asset_balance(self, asset: str) -> dict:
-        if asset == 'BTC':
-            free = self._accounts[0].free
-            locked = self._accounts[0].locked
-        elif asset == 'EUR':
-            free = self._accounts[1].free
-            locked = self._accounts[1].locked
-        elif asset == 'BNB':
-            free = self._accounts[2].free
-            locked = self._accounts[2].locked
-        else:
-            log.critical(f'wrong asset')
-            return {}
-        return {
-                "asset": asset,
-                "free": str(free),
-                "locked": str(locked)
-            }
+        return self.fso.get_asset_balance(asset=asset, accounts=self._accounts)
 
     def get_avg_price(self, symbol: str) -> dict:
         if symbol == 'BTCEUR':

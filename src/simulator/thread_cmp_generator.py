@@ -1,6 +1,7 @@
 # thread_cmp_generator.py
 from typing import Callable
 import time
+from random import choice
 
 
 class ThreadCmpGenerator:
