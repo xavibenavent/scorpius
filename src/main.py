@@ -6,6 +6,7 @@ import dash_callbacks  # do not delete
 from sc_session import Session, QuitMode
 from sc_market import ClientMode
 from sc_logger import XBLogger
+from sc_df_manager import DataframeManager
 
 
 XBLogger()
