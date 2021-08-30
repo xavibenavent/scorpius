@@ -1,5 +1,6 @@
 # dash_callbacks.py
 
+import dash
 from dash.dependencies import Input, Output
 from dash_app import app
 from dash_aux import get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
@@ -59,22 +60,37 @@ def display_value(value):
 
 
 # ********** buttons *********
-@app.callback(Output('button-btceur', 'children'),
-              Input('button-btceur', 'n_clicks')
+@app.callback(Output('button-btceur-hidden-msg', 'color'),
+              Input('button-btceur', 'n_clicks'),
               )
 def on_button_click(n):
+    # set BTCEUR as active symbol if button pressed
     if n is not None:
         dfm.set_dashboard_active_symbol(symbol_name='BTCEUR')
-    return 'BTCEUR'
+    return ''
 
 
-@app.callback(Output('button-bnbeur', 'children'),
-              Input('button-bnbeur', 'n_clicks')
+@app.callback(Output('button-bnbeur-hidden-msg', 'children'),
+              Input('button-bnbeur', 'n_clicks'),
               )
 def on_button_click(n):
+    # set BNBEUR as active symbol if button pressed
     if n is not None:
         dfm.set_dashboard_active_symbol(symbol_name='BNBEUR')
-    return 'BNBEUR'
+    return ''
+
+
+@app.callback(Output('button-btceur', 'color'),
+              Output('button-bnbeur', 'color'),
+              Input('update', 'n_intervals'),
+              )
+def on_button_click(n):
+    # identify last button clicked
+    # changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    btceur_color = 'success' if dfm.dashboard_active_symbol.name == 'BTCEUR' else 'light'
+    bnbeur_color = 'success' if dfm.dashboard_active_symbol.name == 'BNBEUR' else 'light'
+    # print(btceur_color, bnbeur_color)
+    return btceur_color, bnbeur_color
 
 
 # @app.callback(Output('msg', 'children'), Input('button-stop-cmp', 'n_clicks'))

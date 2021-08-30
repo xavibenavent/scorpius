@@ -11,7 +11,7 @@ import dash_core_components as dcc
 print('dash_layout.py')
 
 # with lower values the dashboard does not refresh itself correctly
-K_UPDATE_INTERVAL = 1000  # milisecs
+K_UPDATE_INTERVAL = 500  # milisecs
 
 
 class DashLayout:
@@ -141,7 +141,7 @@ class DashLayout:
                 # buttons
                 dbc.Row([
                     dbc.Col([
-                        dbc.Button('BTCEUR', id='button-btceur', disabled=False, color='success', block=True, className='sc-button'),
+                        dbc.Button('BTCEUR', id='button-btceur', disabled=False, color='light', block=True, className='sc-button'),
                         html.Br(),
                         dbc.Button('Hot Re-connect', id='button-start', disabled=False, color='primary', block=True, className='sc-button'),
                         html.Br(),
@@ -149,7 +149,7 @@ class DashLayout:
                                    className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('BNBEUR', id='button-bnbeur', color='success', block=True, className='sc-button'),
+                        dbc.Button('BNBEUR', id='button-bnbeur', color='light', block=True, className='sc-button'),
                         html.Br(),
                         dbc.Button('New Perfect Trade', id='button-new-pt', color='warning', block=True,
                                    className='sc-button'),
@@ -198,7 +198,8 @@ class DashLayout:
                     [
                         # html.H6(id='symbol', children='BTCEUR', className='symbol'),
                         # html.H6(id='cmp', children='', className="card-title-symbol-cmp"),
-                        # html.H6(id='msg', children=''),
+                        html.H6(id='button-btceur-hidden-msg', children=''),
+                        html.H6(id='button-bnbeur-hidden-msg', children=''),
                         # html.H6(id='stop-price', children=''),
                         html.H6(id='stop-cancel', children=''),
                         html.H6(id='stop-global-session', children=''),
