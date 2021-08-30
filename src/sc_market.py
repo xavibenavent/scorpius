@@ -9,7 +9,7 @@ from binance import ThreadedWebsocketManager
 from enum import Enum
 
 from sc_order import Order
-from sc_fake_client import FakeClient
+from simulator.sc_fake_client import FakeClient
 from sc_account_manager import Account
 from config_manager import ConfigManager
 from sc_market_out import MarketOut

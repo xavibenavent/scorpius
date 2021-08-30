@@ -16,24 +16,6 @@ from config_manager import ConfigManager
 log = logging.getLogger('log')
 
 
-class ThreadCmpGenerator:
-    def __init__(self, interval: float, f_callback: Callable[[float], None]):
-        self._running = True
-        self.f_callback = f_callback
-        self._interval = interval
-
-    def terminate(self):
-        print('cmp thread terminated')
-        self._running = False
-
-    def run(self):
-        # generate a new cmp every _interval seconds and send it to update_cmp
-        print('thread started')
-        while self._running:
-            # print(f'cmp thread running: {self._running}')
-            time.sleep(self._interval)
-            new_cmp = choice([-12, -10, -4, 0, 4, 10, 12])
-            self.f_callback(new_cmp)
 
 
 class FakeCmpMode(Enum):
@@ -61,7 +43,7 @@ class FakeClient:
         self._placed_orders_count = 0
 
         # FAKE CMP MODE SETTING
-        cm = ConfigManager(config_file='config_new.ini')
+        cm = ConfigManager(config_file='../config_new.ini')
         sm = cm.get_fake_cmp_mode()
         self._fake_cmp_mode = FakeCmpMode[sm]
         config = cm.get_simulator_data(symbol_name='BTCEUR')
