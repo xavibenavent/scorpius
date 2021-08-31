@@ -10,19 +10,39 @@ class FakeSimulatorOut:
 
     def get_account(self, accounts: List[Account]):
         # return a dictionary with the actual balance of each account in (fake) Binance
+        # return {
+        #     "makerCommission": 15,
+        #     "takerCommission": 15,
+        #     "buyerCommission": 0,
+        #     "sellerCommission": 0,
+        #     "canTrade": True,
+        #     "canWithdraw": True,
+        #     "canDeposit": True,
+        #     "balances": [
+        #         {"asset": "BTC", "free": str(accounts[0].free), "locked": str(accounts[0].locked)},
+        #         {"asset": "EUR", "free": str(accounts[1].free), "locked": str(accounts[1].locked)},
+        #         {"asset": "BNB", "free": str(accounts[2].free), "locked": str(accounts[2].locked)},
+        #     ]
+        # }
+
+        # todo: read initial values from config.ini
         return {
-            "makerCommission": 15,
-            "takerCommission": 15,
-            "buyerCommission": 0,
-            "sellerCommission": 0,
-            "canTrade": True,
-            "canWithdraw": True,
-            "canDeposit": True,
-            "balances": [
-                {"asset": "BTC", "free": str(accounts[0].free), "locked": str(accounts[0].locked)},
-                {"asset": "EUR", "free": str(accounts[1].free), "locked": str(accounts[1].locked)},
-                {"asset": "BNB", "free": str(accounts[2].free), "locked": str(accounts[2].locked)},
-            ]
+            'makerCommission': 10,
+            'takerCommission': 10,
+            'buyerCommission': 0,
+            'sellerCommission': 0,
+            'canTrade': True,
+            'canWithdraw': True,
+            'canDeposit': True,
+            'updateTime': 1630337521166,
+            'accountType': 'SPOT',
+            'balances': [
+                {'asset': 'BTC', 'free': '0.27836777', 'locked': '0.00000000'},
+                {'asset': 'BNB', 'free': '5.0', 'locked': '0.00000000'},
+                {'asset': 'ETH', 'free': '0.00157612', 'locked': '0.00000000'},
+                {'asset': 'EUR', 'free': '8193.19144956',
+            ],
+            'permissions': ['SPOT']
         }
 
     def get_asset_balance(self, asset: str, accounts: List[Account]) -> dict:
@@ -55,7 +75,8 @@ class FakeSimulatorOut:
                     [
                         {'filterType': 'PRICE_FILTER', 'minPrice': '0.01000000', 'maxPrice': '1000000.00000000',
                          'tickSize': '0.01000000'},
-                        {'filterType': 'PERCENT_PRICE', 'multiplierUp': '5', 'multiplierDown': '0.2', 'avgPriceMins': 5},
+                        {'filterType': 'PERCENT_PRICE', 'multiplierUp': '5', 'multiplierDown': '0.2',
+                         'avgPriceMins': 5},
                         {'filterType': 'LOT_SIZE', 'minQty': '0.00000100', 'maxQty': '9000.00000000',
                          'stepSize': '0.00000100'},
                         {'filterType': 'MIN_NOTIONAL', 'minNotional': '10.00000000', 'applyToMarket': True,
@@ -129,5 +150,3 @@ class FakeSimulatorOut:
             }
         else:
             raise Exception(f'wrong symbol {symbol}')
-
-

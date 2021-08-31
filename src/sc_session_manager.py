@@ -26,8 +26,11 @@ class SessionManager:
     def __init__(self):
         print('session manager')
 
-        self.iom = IsolatedOrdersManager()
+        # global sessions info
+        self.session_count = 0
 
+        # MANAGERS
+        self.iom = IsolatedOrdersManager()
         self.cm = ConfigManager(config_file='config_new.ini')
 
         self.market = Market(
@@ -40,19 +43,16 @@ class SessionManager:
         self.active_sessions: Dict[str, Optional[Session]] = {}
         self.terminated_sessions: Dict[str, Dict] = {}
 
+        # DATA: get list of symbols info from config.ini & market
+        self.symbols = self._get_symbols()
+        [pprint.pprint(symbol) for symbol in self.symbols]
+
         # get initial accounts to create the balance manager (all own accounts managed in Binance)
         accounts = self.market.get_account_info()
         self.am = AccountManager(accounts=accounts)
 
         # set up the callback for account updates
         # self.market.account_balance_callback = self.am.update_current_accounts
-
-        # get list of symbols info from config.ini & market
-        self.symbols = self._get_symbols()
-        [pprint.pprint(symbol) for symbol in self.symbols]
-
-        # global sessions info
-        self.session_count = 0
 
         # start user socket, not symbol ticker socket(s)
         self.market.start_sockets()
