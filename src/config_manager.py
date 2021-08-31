@@ -32,6 +32,9 @@ class ConfigManager:
     def get_simulator_update_rate(self) -> float:
         return float(self._config.get('SIMULATOR_GLOBAL_DATA', 'update_rate'))
 
+    def get_simulator_global_data(self) -> Dict:
+        return dict(self._config.items('SIMULATOR_GLOBAL_DATA'))
+
     def get_simulator_choice_values(self, symbol_name: str) -> List[float]:
         # convert [1, 2, 3] from config.ini in list of float
         values_s = self._config.get(symbol_name + '_SIMULATOR_DATA', 'cmp_generator_choice_values')

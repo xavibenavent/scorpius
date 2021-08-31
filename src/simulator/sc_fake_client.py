@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import List, Callable
+from typing import List, Callable, Dict
 from enum import Enum
 from random import choice
 import threading
@@ -38,51 +38,53 @@ class FakeOrder:
 
 
 class FakeClient:
-    def __init__(self, user_socket_callback,
-                 symbol_ticker_callback):
+    def __init__(self,
+                 user_socket_callback,
+                 symbol_ticker_callback
+                 ):
+
         self._user_socket_callback = user_socket_callback
         self.symbol_ticker_callback = symbol_ticker_callback
+
+        # DATA
         self._placed_orders: List[FakeOrder] = []
         self._placed_orders_count = 0
 
-        # fake simulator out
-        self.fso = FakeSimulatorOut()
+        self.generators: List[ThreadCmpGenerator] = []  # cmp generators
+        self.choice_values: Dict[str, List[float]] = {}
+        self.cmp: Dict[str, float] = {}
 
-        # cmp generators
-        self.generators: List[ThreadCmpGenerator] = []
+        # set configuration manager
+        self.cm = ConfigManager(config_file='config_new.ini')
+
+        # set fake simulator out
+        self.fso = FakeSimulatorOut(config_manager=self.cm)
 
         # FAKE CMP MODE SETTING
-        self.cm = ConfigManager(config_file='config_new.ini')  # todo: check path ../config_new.ini
-        sm = self.cm.get_fake_cmp_mode()
-        self._fake_cmp_mode = FakeCmpMode[sm]
-        self.config = self.cm.get_simulator_data(symbol_name='BTCEUR')
+        simulator_mode = self.cm.get_fake_cmp_mode()
+        self._fake_cmp_mode: FakeCmpMode = FakeCmpMode[simulator_mode]
 
-        # accounts
-        self.accounts = self.fso.get_account()
+        # get symbols simulator data dictionary: cmp & choice values
+        symbols_name = self.cm.get_symbol_names()
+        for symbol_name in symbols_name:
+            self.choice_values[symbol_name] = self.cm.get_simulator_choice_values(symbol_name=symbol_name)
+            self.cmp[symbol_name] = float(self.cm.get_simulator_data(symbol_name=symbol_name)['initial_cmp'])
 
-        initial_btc = float(self.config['initial_btc'])
-        initial_eur = float(self.config['initial_eur'])
-        initial_bnb = float(self.config['initial_bnb'])
-
-        self.update_rate = self.cm.get_simulator_update_rate()
-
-        # initial cmp
-        self._cmp = float(self.config['initial_cmp'])
-        # cmp historical list
-        self._cmp_sequence: List[float] = [self._cmp]
-
-        self._FEE = float(self.config['fee'])
-        self._BNBBTC = float(self.config['bnb_btc'])
-        self._BNBEUR = float(self.config['bnb_eur'])
-
-        self.api_key = ''
-        self.api_secret = ''
-
-        self._accounts = [
-            Account(name='BTC', free=initial_btc, locked=0.0),
-            Account(name='EUR', free=initial_eur, locked=0.0),
-            Account(name='BNB', free=initial_bnb, locked=0.0),
+        # set accounts list
+        msg = self.fso.get_account()
+        binance_accounts = msg['balances']
+        self.accounts: List[Account] = [
+            Account(name=account['asset'], free=float(account['free']), locked=float(account['locked']))
+            for account in binance_accounts
+            if float(account['free']) > 0 or float(account['locked']) > 0
         ]
+
+        self.update_rate: float = self.cm.get_simulator_update_rate()
+        self._FEE: float = float(self.cm.get_simulator_global_data()['fee'])
+
+        # self.api_key = ''
+        # self.api_secret = ''
+
     # ********** cmp generator **********
 
     def create_start_generator(self, symbol_name: str):
@@ -101,7 +103,7 @@ class FakeClient:
             # add to list
             self.generators.append(new_generator)
 
-    def stop_cmp_generator(self):  # todo: stop all geberators
+    def stop_cmp_generator(self):
         if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
             # stop all generators
             [generator.terminate() for generator in self.generators]
@@ -113,8 +115,8 @@ class FakeClient:
             log.warning('trying to manually update cmp in GENERATOR MODE')
 
     def _update_cmp(self, step: float, symbol_name: str):
-        # when in MANUAL mode the cmp is update from the dashboard
-        self._cmp += step
+        # when in MANUAL mode the cmp is updated from the dashboard
+        self.cmp[symbol_name] += step
         self._process_cmp_change(symbol_name=symbol_name)
 
     def get_mode(self) -> FakeCmpMode:
@@ -123,12 +125,13 @@ class FakeClient:
     # ********** orders trading **********
 
     def order_market_buy(self, **kwargs) -> dict:
+        symbol_name = kwargs.get('symbol')
         order = FakeOrder(
             uid=kwargs.get('newClientOrderId'),
             side='BUY',
-            price=self._cmp,
+            price=self.cmp[symbol_name],
             quantity=kwargs.get('quantity'),
-            symbol_name=kwargs.get('symbol')
+            symbol_name=symbol_name
         )
         status = 'NEW'
 
@@ -151,7 +154,7 @@ class FakeClient:
         status = 'FILLED'
 
         return {
-            "symbol": kwargs.get('symbol'),
+            "symbol": symbol_name,
             "orderId": self._placed_orders_count,
             "clientOrderId": order.uid,
             "transactTime": 1507725176595,
@@ -165,12 +168,13 @@ class FakeClient:
         }
 
     def order_market_sell(self, **kwargs) -> dict:
+        symbol_name = kwargs.get('symbol')
         order = FakeOrder(
             uid=kwargs.get('newClientOrderId'),
             side='SELL',
-            price=self._cmp,
+            price=self.cmp[symbol_name],
             quantity=kwargs.get('quantity'),
-            symbol_name=kwargs.get('symbol')
+            symbol_name=symbol_name
         )
         status = 'NEW'
 
@@ -191,7 +195,7 @@ class FakeClient:
         status = 'FILLED'
 
         return {
-            "symbol": kwargs.get('symbol'),
+            "symbol": symbol_name,
             "orderId": self._placed_orders_count,
             "clientOrderId": order.uid,
             "transactTime": 1507725176595,
@@ -205,12 +209,13 @@ class FakeClient:
         }
 
     def create_order(self, **kwargs) -> dict:
+        symbol_name = kwargs.get('symbol')
         order = FakeOrder(
             uid=kwargs.get('newClientOrderId'),
             side=kwargs.get('side'),
             price=float(kwargs.get('price').replace(',', '')),
             quantity=kwargs.get('quantity'),
-            symbol_name=kwargs.get('symbol')
+            symbol_name=symbol_name
         )
         status = 'NEW'
 
@@ -245,7 +250,7 @@ class FakeClient:
             status = 'FILLED'
 
         return {
-                "symbol": kwargs.get('symbol'),
+                "symbol": symbol_name,
                 "orderId": self._placed_orders_count,
                 "clientOrderId": order.uid,
                 "transactTime": 1507725176595,

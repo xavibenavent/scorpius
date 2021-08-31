@@ -1,31 +1,21 @@
 # sc_fake_simulator_out.py
 
-from typing import List
+from typing import List, Dict
 from sc_account_manager import Account
+from config_manager import ConfigManager
 
 
 class FakeSimulatorOut:
-    def __init__(self):
-        pass
+    def __init__(self, config_manager: ConfigManager):
+        self.cm = config_manager
 
-    def get_account(self, accounts: List[Account]):
-        # return a dictionary with the actual balance of each account in (fake) Binance
-        # return {
-        #     "makerCommission": 15,
-        #     "takerCommission": 15,
-        #     "buyerCommission": 0,
-        #     "sellerCommission": 0,
-        #     "canTrade": True,
-        #     "canWithdraw": True,
-        #     "canDeposit": True,
-        #     "balances": [
-        #         {"asset": "BTC", "free": str(accounts[0].free), "locked": str(accounts[0].locked)},
-        #         {"asset": "EUR", "free": str(accounts[1].free), "locked": str(accounts[1].locked)},
-        #         {"asset": "BNB", "free": str(accounts[2].free), "locked": str(accounts[2].locked)},
-        #     ]
-        # }
+    def get_account(self) -> Dict:
+        # get values from config.ini
+        simulator_data = self.cm.get_simulator_global_data()
+        initial_btc = float(simulator_data['initial_btc'])
+        initial_eur = float(simulator_data['initial_eur'])
+        initial_bnb = float(simulator_data['initial_bnb'])
 
-        # todo: read initial values from config.ini
         return {
             'makerCommission': 10,
             'takerCommission': 10,
@@ -37,10 +27,10 @@ class FakeSimulatorOut:
             'updateTime': 1630337521166,
             'accountType': 'SPOT',
             'balances': [
-                {'asset': 'BTC', 'free': '0.27836777', 'locked': '0.00000000'},
-                {'asset': 'BNB', 'free': '5.0', 'locked': '0.00000000'},
+                {'asset': 'BTC', 'free': initial_btc, 'locked': '0.00000000'},
+                {'asset': 'BNB', 'free': initial_bnb, 'locked': '0.00000000'},
                 {'asset': 'ETH', 'free': '0.00157612', 'locked': '0.00000000'},
-                {'asset': 'EUR', 'free': '8193.19144956'},
+                {'asset': 'EUR', 'free': initial_eur, 'locked': '0.00000000'},
             ],
             'permissions': ['SPOT']
         }
