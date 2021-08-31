@@ -29,6 +29,15 @@ class ConfigManager:
     def get_simulator_data(self, symbol_name: str) -> Dict:
         return dict(self._config.items(symbol_name + '_SIMULATOR_DATA'))
 
+    def get_initial_cmp(self, symbol_name: str) -> float:
+        return float(self._config.get(symbol_name + '_SIMULATOR_DATA', 'initial_cmp'))
+
+    def get_symbol_for_commission_name(self, symbol_name: str) -> str:
+        return self._config.get(symbol_name + '_SIMULATOR_DATA', 'symbol_for_commission_name')
+
+    def get_symbol_for_commission_rate(self, symbol_name: str) -> float:
+        return float(self._config.get(symbol_name + '_SIMULATOR_DATA', 'symbol_for_commission_rate'))
+
     def get_simulator_update_rate(self) -> float:
         return float(self._config.get('SIMULATOR_GLOBAL_DATA', 'update_rate'))
 

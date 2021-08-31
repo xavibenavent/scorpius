@@ -9,11 +9,11 @@ import threading
 
 # from sc_account_balance import AssetBalance, AccountBalance
 # from sc_balance_manager import Account
-from sc_account_manager import Account
+from sc_account_manager import Account, AccountManager
 from config_manager import ConfigManager
 from thread_cmp_generator import ThreadCmpGenerator
 from sc_fake_simulator_out import FakeSimulatorOut
-from sc_symbol import Symbol
+from sc_symbol import Symbol, Asset
 
 # from config import SIMULATOR_MODE and parameters
 
@@ -50,6 +50,7 @@ class FakeClient:
         self._placed_orders: List[FakeOrder] = []
         self._placed_orders_count = 0
 
+        self.symbols: Dict[str, Symbol] = {}
         self.generators: List[ThreadCmpGenerator] = []  # cmp generators
         self.choice_values: Dict[str, List[float]] = {}
         self.cmp: Dict[str, float] = {}
@@ -68,22 +69,52 @@ class FakeClient:
         symbols_name = self.cm.get_symbol_names()
         for symbol_name in symbols_name:
             self.choice_values[symbol_name] = self.cm.get_simulator_choice_values(symbol_name=symbol_name)
-            self.cmp[symbol_name] = float(self.cm.get_simulator_data(symbol_name=symbol_name)['initial_cmp'])
+            self.cmp[symbol_name] = self.cm.get_initial_cmp(symbol_name=symbol_name)
+            # self.cmp[symbol_name] = float(self.cm.get_simulator_data(symbol_name=symbol_name)['initial_cmp'])
+            self.symbols[symbol_name] = self._get_symbol(symbol_name=symbol_name)
 
         # set accounts list
         msg = self.fso.get_account()
         binance_accounts = msg['balances']
-        self.accounts: List[Account] = [
+        accounts: List[Account] = [
             Account(name=account['asset'], free=float(account['free']), locked=float(account['locked']))
             for account in binance_accounts
             if float(account['free']) > 0 or float(account['locked']) > 0
         ]
+        self.account_manager = AccountManager(accounts=accounts)
 
         self.update_rate: float = self.cm.get_simulator_update_rate()
         self._FEE: float = float(self.cm.get_simulator_global_data()['fee'])
 
         # self.api_key = ''
         # self.api_secret = ''
+
+    def _get_symbol(self, symbol_name: str) -> Symbol:
+        # get filters from Binance API
+        symbol_filters = self.fso.get_symbol_info(symbol_name=symbol_name)
+
+        # get session data from config.ini
+        symbol_config_data = self.cm.get_symbol_data(symbol_name=symbol_name)
+
+        # fix Binance mistake in EUR precision by reading the values from config.ini
+        symbol_filters['baseAssetPrecision'] = int(symbol_config_data['base_pt'])
+        symbol_filters['quoteAssetPrecision'] = int(symbol_config_data['quote_pt'])
+
+        # set symbol to pass at sessions start
+        symbol = Symbol(
+            name=symbol_name,
+            base_asset=Asset(
+                name=symbol_filters.get('baseAsset'),
+                pv=int(symbol_config_data['base_pv'])
+            ),
+            quote_asset=Asset(
+                name=symbol_filters.get('quoteAsset'),
+                pv=int(symbol_config_data['quote_pv'])
+            ),
+            symbol_info=symbol_filters,
+            config_data=symbol_config_data
+        )
+        return symbol
 
     # ********** cmp generator **********
 
@@ -135,15 +166,14 @@ class FakeClient:
         )
         status = 'NEW'
 
+        # get account free value from symbol name
+        base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
+
         # check enough balance
-        if order.side == 'BUY' \
-                and self._accounts[1].free < order.get_total():
-                # and self._account_balance.get_free_price_s2() < order.get_total():
+        if order.side == 'BUY' and quote_account.free < order.get_total():
             log.critical(f'not enough balance to place the order')
             return {}
-        elif order.side == 'SELL' \
-                and self._accounts[0].free < order.quantity:
-                # and self._account_balance.get_free_amount_s1() < order.quantity:
+        elif order.side == 'SELL' and base_account.free < order.quantity:
             log.critical(f'not enough amount to place the order')
             return {}
 
@@ -167,6 +197,16 @@ class FakeClient:
             "side": order.side
         }
 
+    def _get_accounts(self, symbol_name: str) -> (float, float):
+        # 1. get base asset & quote asset from symbols
+        base_asset = self.symbols[symbol_name].base_asset()
+        quote_asset = self.symbols[symbol_name].quote_asset()
+
+        # 2. get accounts from account manager
+        base_account = self.account_manager.get_account(name=base_asset.name())
+        quote_account = self.account_manager.get_account(name=quote_asset.name())
+        return base_account, quote_account
+
     def order_market_sell(self, **kwargs) -> dict:
         symbol_name = kwargs.get('symbol')
         order = FakeOrder(
@@ -178,13 +218,16 @@ class FakeClient:
         )
         status = 'NEW'
 
+        # get account free value from symbol name
+        base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
+
         # check enough balance
         if order.side == 'BUY' \
-                and self._accounts[1].free < order.get_total():
+                and quote_account.free < order.get_total():
             log.critical(f'not enough balance to place the order')
             return {}
         elif order.side == 'SELL' \
-                and self._accounts[0].free < order.quantity:
+                and base_account.free < order.quantity:
             log.critical(f'not enough amount to place the order')
             return {}
 
@@ -225,13 +268,16 @@ class FakeClient:
                 log.critical(f'order with uid {placed_order.uid} has already been placed')
                 return {}
 
+        # get account free value from symbol name
+        base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
+
         # check enough balance
         if order.side == 'BUY' \
-                and self._accounts[1].free < order.get_total():
+                and quote_account.free < order.get_total():
             log.critical(f'not enough balance to place the order')
             return {}
         elif order.side == 'SELL' \
-                and self._accounts[0].free < order.quantity:
+                and base_account.free < order.quantity:
             log.critical(f'not enough amount to place the order')
             return {}
 
@@ -240,11 +286,11 @@ class FakeClient:
         self._place_order(order=order)
 
         # check if the order has to be placed immediately:
-        if order.side == 'BUY' and self._cmp < order.price:
+        if order.side == 'BUY' and self.cmp[symbol_name] < order.price:
             log.info(f'the order has been traded when placing it')
             self._trade_order(order=order)
             status = 'FILLED'
-        elif order.side == 'SELL' and self._cmp > order.price:
+        elif order.side == 'SELL' and self.cmp[symbol_name] > order.price:
             log.info(f'the order has been traded when placing it')
             self._trade_order(order=order)
             status = 'FILLED'
@@ -268,13 +314,17 @@ class FakeClient:
         for order in self._placed_orders:
             if order.uid == origClientOrderId:
                 self._placed_orders.remove(order)
+
+                # get account free value from symbol name
+                base_account, quote_account = self._get_accounts(symbol_name=symbol)
+
                 # update balance
                 if order.side == 'BUY':
-                    self._accounts[1].free += order.get_total()
-                    self._accounts[1].locked -= order.get_total()
+                    quote_account.free += order.get_total()
+                    quote_account.locked -= order.get_total()
                 else:
-                    self._accounts[0].free += order.quantity
-                    self._accounts[0].locked -= order.quantity
+                    base_account.free += order.quantity
+                    base_account.locked -= order.quantity
                 # call user socket callback
                 self._call_user_socket_balance_update()
                 return {
@@ -290,69 +340,77 @@ class FakeClient:
     # ********** symbol, account & balance **********
 
     def get_symbol_info(self, symbol: str) -> dict:
-        return self.fso.get_symbol_info(symbol=symbol)
+        return self.fso.get_symbol_info(symbol_name=symbol)
 
     def get_account(self):
-        return self.fso.get_account(accounts=self._accounts)
+        return self.fso.get_account()
 
     def get_asset_balance(self, asset: str) -> dict:
-        return self.fso.get_asset_balance(asset=asset, accounts=self._accounts)
+        return self.fso.get_asset_balance(asset=asset, account_manager=self.account_manager)
 
     def get_avg_price(self, symbol: str) -> dict:
-        if symbol == 'BTCEUR':
-            price = str(self._cmp)
-        elif symbol == 'BNBBTC':
-            price = str(self._BNBBTC)
-        elif symbol == 'BNBEUR':
-            price = str(self._BNBEUR)
+        if symbol in self.symbols.keys():
+            return {'mins': 5, 'price': str(self.cmp[symbol])}
         else:
             price = str(0.0)
             log.critical(f'symbol not in simulator, returning {price}')
-        return {
-                "mins": 5,
-                "price": price
-            }
+            return {'mins': 5, 'price': str(0.0)}
 
     def _process_cmp_change(self, symbol_name: str):
         self._check_placed_orders_for_trading()
         msg = dict(
             e='24hrTicker',
             s=symbol_name,
-            c=str(self._cmp)
+            c=str(self.cmp[symbol_name])
         )
         self.symbol_ticker_callback(msg)
 
     def _check_placed_orders_for_trading(self):
         for order in self._placed_orders:
-            if order.side == 'BUY' and self._cmp <= order.price:
+            symbol_name = order.symbol_name
+            if order.side == 'BUY' and self.cmp[symbol_name] <= order.price:
                 self._trade_order(order=order)
-            elif order.side == 'SELL' and self._cmp >= order.price:
+            elif order.side == 'SELL' and self.cmp[symbol_name] >= order.price:
                 self._trade_order(order=order)
 
     def _place_order(self, order: FakeOrder):
         self._placed_orders.append(order)
+
+        symbol_name = order.symbol_name
+        base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
+
         if order.side == 'BUY':
-            self._accounts[1].free -= order.get_total()
-            self._accounts[1].locked += order.get_total()
+            quote_account.free -= order.get_total()
+            quote_account.locked += order.get_total()
         else:
-            self._accounts[0].free -= order.quantity
-            self._accounts[0].locked += order.quantity
+            base_account.free -= order.quantity
+            base_account.locked += order.quantity
         # call user socket callback
         self._call_user_socket_balance_update()
 
     def _trade_order(self, order: FakeOrder):
         if order in self._placed_orders:
             self._placed_orders.remove(order)
+
+            symbol_name = order.symbol_name
+            base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
+            bnb_account = self.account_manager.get_account(name='BNB')
+
+            bnb_base_rate = self.get_bnb_base_rate(order=order)
+
             # update account balance
             if order.side == 'BUY':
-                self._accounts[1].locked -= order.get_total()
-                self._accounts[0].free += order.quantity
+                quote_account.locked -= order.get_total()
+                base_account.free += order.quantity
             else:
-                self._accounts[0].locked -= order.quantity
-                self._accounts[1].free += order.get_total()
-            btc_commission = order.quantity * self._FEE  # K_FEE
-            bnb_commission = btc_commission / self._BNBBTC  # K_BNBBTC
-            self._accounts[2].free -= bnb_commission
+                base_account.locked -= order.quantity
+                quote_account.free += order.get_total()
+
+            # set bnb commission
+            base_commission = order.quantity * self._FEE  # K_FEE
+            bnb_commission = base_commission / bnb_base_rate  # K_BNBBTC
+            bnb_account.free -= bnb_commission
+
             # call binance user socket twice
             # call for order traded
             self._call_user_socket_order_traded(order=order)
@@ -362,8 +420,11 @@ class FakeClient:
             log.critical(f'trying to trade an order not placed {order.uid}')
 
     def _call_user_socket_order_traded(self, order: FakeOrder):
-        btc_commission = order.quantity * self._FEE  # K_FEE
-        bnb_commission = btc_commission / self._BNBBTC  # K_BNBBTC
+        bnb_base_rate = self.get_bnb_base_rate(order=order)
+
+        base_commission = order.quantity * self._FEE  # K_FEE
+        bnb_commission = base_commission / bnb_base_rate  # K_BNBBTC
+
         msg = dict(
             e='executionReport',
             s=order.symbol_name,
@@ -375,26 +436,39 @@ class FakeClient:
         )
         self._user_socket_callback(msg)
 
+    def get_bnb_base_rate(self, order: FakeOrder) -> float:
+        bnb_base_rate: float
+        # get symbol for commission name from config.ini
+        symbol_for_commission_name = self.cm.get_symbol_for_commission_name(symbol_name=order.symbol_name)
+
+        # if exist as a symbol, then use the existing cmp generator value, otherwise use the value in config.ini
+        if symbol_for_commission_name in self.symbols.keys():
+            bnb_base_rate = self.cmp[symbol_for_commission_name]
+        else:
+            bnb_base_rate = self.cm.get_symbol_for_commission_rate(symbol_name=order.symbol_name)
+        return bnb_base_rate
+
     def _call_user_socket_balance_update(self):
         # call for balance update
         msg = dict(
             e='outboundAccountPosition',
-            B=[
-                dict(
-                    a='BTC',
-                    f=self._accounts[0].free,
-                    l=self._accounts[0].locked,
-                ),
-                dict(
-                    a='EUR',
-                    f=self._accounts[1].free,
-                    l=self._accounts[1].locked,
-                ),
-                dict(
-                    a='BNB',
-                    f=self._accounts[2].free,
-                    l=self._accounts[2].locked,
-                )
-            ]
+            B=[dict(a=value.name, f=value.free, l=value.locked) for value in self.account_manager.accounts.values()]
+            # B=[
+            #     dict(
+            #         a='BTC',
+            #         f=self._accounts[0].free,
+            #         l=self._accounts[0].locked,
+            #     ),
+            #     dict(
+            #         a='EUR',
+            #         f=self._accounts[1].free,
+            #         l=self._accounts[1].locked,
+            #     ),
+            #     dict(
+            #         a='BNB',
+            #         f=self._accounts[2].free,
+            #         l=self._accounts[2].locked,
+            #     )
+            # ]
         )
         self._user_socket_callback(msg)

@@ -1,7 +1,7 @@
 # sc_fake_simulator_out.py
 
 from typing import List, Dict
-from sc_account_manager import Account
+from sc_account_manager import Account, AccountManager
 from config_manager import ConfigManager
 
 
@@ -35,27 +35,18 @@ class FakeSimulatorOut:
             'permissions': ['SPOT']
         }
 
-    def get_asset_balance(self, asset: str, accounts: List[Account]) -> dict:
-        if asset == 'BTC':
-            free = accounts[0].free
-            locked = accounts[0].locked
-        elif asset == 'EUR':
-            free = accounts[1].free
-            locked = accounts[1].locked
-        elif asset == 'BNB':
-            free = accounts[2].free
-            locked = accounts[2].locked
+    def get_asset_balance(self, asset: str, account_manager: AccountManager) -> dict:
+        account = account_manager.get_account(name=asset)
+        if account:
+            return {"asset": asset, "free": account.free, "locked": account.locked}
         else:
             raise Exception(f'wrong asset: {asset}')
 
-        # asset_balance =
 
-        return {"asset": asset, "free": str(free), "locked": str(locked)}
-
-    def get_symbol_info(self, symbol: str) -> dict:
-        if symbol == 'BTCEUR':
+    def get_symbol_info(self, symbol_name: str) -> dict:
+        if symbol_name == 'BTCEUR':
             return {
-                "symbol": symbol,
+                "symbol": symbol_name,
                 "status": "TRADING",
                 "baseAsset": "BTC",
                 "baseAssetPrecision": 8,
@@ -79,7 +70,7 @@ class FakeSimulatorOut:
                     ],
                 'permissions': ['SPOT', 'MARGIN']
             }
-        elif symbol == 'BNBEUR':
+        elif symbol_name == 'BNBEUR':
             return {
                 'symbol': 'BNBEUR',
                 'status': 'TRADING',
@@ -141,4 +132,4 @@ class FakeSimulatorOut:
                 'permissions': ['SPOT']
             }
         else:
-            raise Exception(f'wrong symbol {symbol}')
+            raise Exception(f'wrong symbol {symbol_name}')
