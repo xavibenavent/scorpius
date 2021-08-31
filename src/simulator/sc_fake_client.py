@@ -57,6 +57,9 @@ class FakeClient:
         self._fake_cmp_mode = FakeCmpMode[sm]
         self.config = self.cm.get_simulator_data(symbol_name='BTCEUR')
 
+        # accounts
+        self.accounts = self.fso.get_account()
+
         initial_btc = float(self.config['initial_btc'])
         initial_eur = float(self.config['initial_eur'])
         initial_bnb = float(self.config['initial_bnb'])

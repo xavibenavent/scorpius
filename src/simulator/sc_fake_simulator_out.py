@@ -40,7 +40,7 @@ class FakeSimulatorOut:
                 {'asset': 'BTC', 'free': '0.27836777', 'locked': '0.00000000'},
                 {'asset': 'BNB', 'free': '5.0', 'locked': '0.00000000'},
                 {'asset': 'ETH', 'free': '0.00157612', 'locked': '0.00000000'},
-                {'asset': 'EUR', 'free': '8193.19144956',
+                {'asset': 'EUR', 'free': '8193.19144956'},
             ],
             'permissions': ['SPOT']
         }
@@ -57,6 +57,8 @@ class FakeSimulatorOut:
             locked = accounts[2].locked
         else:
             raise Exception(f'wrong asset: {asset}')
+
+        # asset_balance =
 
         return {"asset": asset, "free": str(free), "locked": str(locked)}
 
