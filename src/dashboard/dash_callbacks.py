@@ -1,6 +1,5 @@
 # dash_callbacks.py
 
-import dash
 from dash.dependencies import Input, Output
 from dash_app import app
 from dash_aux import get_profit_line_chart, get_cmp_line_chart, get_pending_html_table

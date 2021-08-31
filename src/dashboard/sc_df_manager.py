@@ -12,7 +12,7 @@ from sc_session_manager import SessionManager
 
 class DataframeManager:
     def __init__(self):
-        # init session maanger
+        # init session manager
         self.sm = SessionManager()
 
         # get symbols

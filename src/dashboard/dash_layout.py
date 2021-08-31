@@ -21,7 +21,8 @@ class DashLayout:
                 # app info & session data #1
                 dbc.Row([
                     dbc.Col([
-                        html.Img(src='assets/btc_001.jpg', className='header-image'),
+                        html.Img(src='/assets/btc_001.jpg', className='header-image'),
+                        # html.Img(src='src/assets/btc_001.jpg', className='header-image'),
                         dbc.Row([
                             html.H1(id='current-time', children='', className='app-current-time'),
                             html.H1(id='neb', children='', className='neb'),
