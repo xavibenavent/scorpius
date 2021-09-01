@@ -318,7 +318,7 @@ def display_value(value):
     # called the method in session to check buy_count == sell_count
     consolidated = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_profit']
     expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
-    expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=cmp)
+    expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=cmp, symbol_name=symbol_name)
     return f'{consolidated:,.{qp}f} / ' \
            f'{expected:,.{qp}f} / ' \
            f'{expected_at_cmp:,.{qp}f} {coin_symbol}'
