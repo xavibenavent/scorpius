@@ -1,10 +1,10 @@
 # dash_callbacks.py
 
 from dash.dependencies import Input, Output
-from dash_app import app
-from dash_aux import get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
+from dashboard.dash_app import app
+from dashboard.dash_aux import get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
 from sc_session import QuitMode
-from sc_df_manager import DataframeManager
+from dashboard.sc_df_manager import DataframeManager
 from binance import enums as k_binance
 
 # import dash_bootstrap_components as dbc

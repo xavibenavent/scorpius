@@ -1,10 +1,10 @@
 # main.py
 
 import logging
-from dash_app import app
-from sc_logger import XBLogger
+from dashboard.dash_app import app
+import dashboard.dash_callbacks
 from dashboard.sc_df_manager import DataframeManager
-
+from sc_logger import XBLogger
 
 XBLogger()
 log = logging.getLogger('log')

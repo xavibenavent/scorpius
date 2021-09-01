@@ -11,8 +11,8 @@ import threading
 # from sc_balance_manager import Account
 from sc_account_manager import Account, AccountManager
 from config_manager import ConfigManager
-from thread_cmp_generator import ThreadCmpGenerator
-from sc_fake_simulator_out import FakeSimulatorOut
+from simulator.thread_cmp_generator import ThreadCmpGenerator
+from simulator.sc_fake_simulator_out import FakeSimulatorOut
 from sc_symbol import Symbol, Asset
 
 # from config import SIMULATOR_MODE and parameters

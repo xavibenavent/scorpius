@@ -7,7 +7,7 @@
 import dash
 import dash_auth
 import dash_bootstrap_components as dbc
-from dash_layout import DashLayout
+from dashboard.dash_layout import DashLayout
 
 import logging
 
