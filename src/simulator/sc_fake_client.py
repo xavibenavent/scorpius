@@ -7,15 +7,11 @@ from enum import Enum
 from random import choice
 import threading
 
-# from sc_account_balance import AssetBalance, AccountBalance
-# from sc_balance_manager import Account
 from sc_account_manager import Account, AccountManager
 from config_manager import ConfigManager
 from simulator.thread_cmp_generator import ThreadCmpGenerator
 from simulator.sc_fake_simulator_out import FakeSimulatorOut
 from sc_symbol import Symbol, Asset
-
-# from config import SIMULATOR_MODE and parameters
 
 log = logging.getLogger('log')
 
@@ -70,7 +66,6 @@ class FakeClient:
         for symbol_name in symbols_name:
             self.choice_values[symbol_name] = self.cm.get_simulator_choice_values(symbol_name=symbol_name)
             self.cmp[symbol_name] = self.cm.get_initial_cmp(symbol_name=symbol_name)
-            # self.cmp[symbol_name] = float(self.cm.get_simulator_data(symbol_name=symbol_name)['initial_cmp'])
             self.symbols[symbol_name] = self._get_symbol(symbol_name=symbol_name)
 
         # set accounts list
@@ -454,21 +449,5 @@ class FakeClient:
             e='outboundAccountPosition',
             B=[dict(a=value.name, f=value.free, l=value.locked) for value in self.account_manager.accounts.values()]
             # B=[
-            #     dict(
-            #         a='BTC',
-            #         f=self._accounts[0].free,
-            #         l=self._accounts[0].locked,
-            #     ),
-            #     dict(
-            #         a='EUR',
-            #         f=self._accounts[1].free,
-            #         l=self._accounts[1].locked,
-            #     ),
-            #     dict(
-            #         a='BNB',
-            #         f=self._accounts[2].free,
-            #         l=self._accounts[2].locked,
-            #     )
-            # ]
         )
         self._user_socket_callback(msg)

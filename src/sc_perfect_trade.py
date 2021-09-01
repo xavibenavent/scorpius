@@ -47,12 +47,10 @@ class PerfectTrade:
             for order in self.orders:
 
                 if order.status.name in ['MONITOR', 'ACTIVE', 'TO_BE_TRADED']:
-                # if order.status in [OrderStatus.MONITOR, OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED]:
                     # return the value as traded at current cmp
                     pt_profit += order.get_total_at_cmp(cmp=cmp)
 
                 elif order.status.name == 'TRADED':
-                # elif order.status == OrderStatus.TRADED:
                     # return the value at the price traded
                     pt_profit += order.get_total_at_cmp(cmp=order.price)
 

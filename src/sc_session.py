@@ -245,7 +245,7 @@ class Session:
                 break
 
         # if no order found, then check in placed_orders_from_previous_sessions list
-        self.check_isolated_callback(self.symbol, uid, order_price)
+        # self.check_isolated_callback(self.symbol, uid, order_price)
 
     def manually_create_new_pt(self, cmp: float, symbol: Symbol):
         is_allowed, _ = self._allow_new_pt_creation(cmp=cmp, symbol=symbol)
@@ -292,7 +292,7 @@ class Session:
                 return False, -self.forced_shift  # force SELL
             else:
                 # get quote by selling base
-                # todo: check it works well
+                # todo: check whether it works well
                 # self.try_to_get_liquidity_callback(self.symbol, symbol.quote_asset(), cmp)
                 return False, 0.0
 
@@ -304,7 +304,7 @@ class Session:
                 return False, +self.forced_shift  # force SELL
             else:
                 # get base buying
-                # todo: check it works well
+                # todo: check whether it works well
                 # self.try_to_get_liquidity_callback(self.symbol, symbol.base_asset(), cmp)
                 return False, 0.0
 

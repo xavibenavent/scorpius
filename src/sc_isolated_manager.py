@@ -65,6 +65,7 @@ class IsolatedOrdersManager:
         return is_known_order, consolidated, expected
 
     def get_expected_profit_at_cmp(self, cmp: float) -> float:
+        # todo: the check must be done for orders in the current symbol only
         return sum([order.pt.get_actual_profit_at_cmp(cmp=cmp) for order in self.isolated_orders])
 
     def try_to_get_asset_liquidity(self, asset: Asset, cmp: float, max_loss: float) -> Optional[Order]:
