@@ -1,10 +1,7 @@
 # main.py
 
 import logging
-from dashboard.dash_app import app
-import dashboard.dash_callbacks  # do not delete
-from sc_session import Session, QuitMode
-from sc_market import ClientMode
+from dash_app import app
 from sc_logger import XBLogger
 from dashboard.sc_df_manager import DataframeManager
 
