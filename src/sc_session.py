@@ -292,7 +292,8 @@ class Session:
                 return False, -self.forced_shift  # force SELL
             else:
                 # get quote by selling base
-                self.try_to_get_liquidity_callback(self.symbol, symbol.quote_asset(), cmp)
+                # todo: check it works well
+                # self.try_to_get_liquidity_callback(self.symbol, symbol.quote_asset(), cmp)
                 return False, 0.0
 
         elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for base
@@ -303,7 +304,8 @@ class Session:
                 return False, +self.forced_shift  # force SELL
             else:
                 # get base buying
-                self.try_to_get_liquidity_callback(self.symbol, symbol.base_asset(), cmp)
+                # todo: check it works well
+                # self.try_to_get_liquidity_callback(self.symbol, symbol.base_asset(), cmp)
                 return False, 0.0
 
         else:
