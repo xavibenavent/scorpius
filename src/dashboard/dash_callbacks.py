@@ -319,8 +319,8 @@ def display_value(value):
     consolidated = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_profit']
     expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
     expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=cmp)
-    return f'{consolidated:,.{qp}f} {coin_symbol} / ' \
-           f'{expected:,.{qp}f} {coin_symbol} / ' \
+    return f'{consolidated:,.{qp}f} / ' \
+           f'{expected:,.{qp}f} / ' \
            f'{expected_at_cmp:,.{qp}f} {coin_symbol}'
 
 
