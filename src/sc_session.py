@@ -245,7 +245,7 @@ class Session:
                 break
 
         # if no order found, then check in placed_orders_from_previous_sessions list
-        # self.check_isolated_callback(self.symbol, uid, order_price)
+        self.check_isolated_callback(self.symbol, uid, order_price)
 
     def manually_create_new_pt(self, cmp: float, symbol: Symbol):
         is_allowed, _ = self._allow_new_pt_creation(cmp=cmp, symbol=symbol)

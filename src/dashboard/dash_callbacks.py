@@ -365,8 +365,14 @@ def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
     placed = dfm.sm.terminated_sessions[symbol_name]['global_placed_orders_count_at_price']
     still_isolated = dfm.sm.terminated_sessions[symbol_name]['global_placed_pending_orders_count']
-    sell = len([order for order in dfm.sm.iom.isolated_orders if order.k_side == k_binance.SIDE_SELL])
-    buy = len([order for order in dfm.sm.iom.isolated_orders if order.k_side == k_binance.SIDE_BUY])
+    sell = len(
+        [order for order in dfm.sm.iom.isolated_orders
+         if order.k_side == k_binance.SIDE_SELL and order.symbol.name == symbol_name]
+    )
+    buy = len(
+        [order for order in dfm.sm.iom.isolated_orders
+         if order.k_side == k_binance.SIDE_BUY and order.symbol == symbol_name]
+    )
     return f'p: {placed} / i: {still_isolated} (s: {sell} b: {buy})'
 
 
@@ -377,7 +383,6 @@ def display_value(value):
     consolidated_count = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_session_count']
     expected_count = dfm.sm.terminated_sessions[symbol_name]['global_expected_session_count']
     session_count = consolidated_count + expected_count
-    # session_count = dfm.sm.session_count - 1  # todo: fix it. it must reflect the value per symbol
     return f's: {session_count}  (c:{consolidated_count}  e:{expected_count})'
 
 
