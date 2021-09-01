@@ -293,7 +293,7 @@ class Session:
             else:
                 # get quote by selling base
                 # todo: check whether it works well
-                # self.try_to_get_liquidity_callback(self.symbol, symbol.quote_asset(), cmp)
+                self.try_to_get_liquidity_callback(self.symbol, symbol.quote_asset(), cmp)
                 return False, 0.0
 
         elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for base
@@ -305,7 +305,7 @@ class Session:
             else:
                 # get base buying
                 # todo: check whether it works well
-                # self.try_to_get_liquidity_callback(self.symbol, symbol.base_asset(), cmp)
+                self.try_to_get_liquidity_callback(self.symbol, symbol.base_asset(), cmp)
                 return False, 0.0
 
         else:
