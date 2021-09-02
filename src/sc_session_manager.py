@@ -55,18 +55,18 @@ class SessionManager:
         # self.market.account_balance_callback = self.am.update_current_accounts
 
         # start user socket, not symbol ticker socket(s)
-        self.market.start_sockets()
+        # self.market.start_sockets()
 
         # start first sessions
         for symbol in self.symbols:
             self._init_global_data(symbol=symbol)
             self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
 
-            # start ticker socket(s) for each symbol
-            self.market.start_symbol_ticker_socket(
-                symbol_name=symbol.name,
-                # send the usual callback function
-                callback=self.active_sessions[symbol.name].symbol_ticker_callback)
+            # # start ticker socket(s) for each symbol
+            # self.market.start_symbol_ticker_socket(
+            #     symbol_name=symbol.name,
+            #     # send the usual callback function
+            #     callback=self.active_sessions[symbol.name].symbol_ticker_callback)
 
     def _get_symbols(self) -> List[Symbol]:
         # list to return
@@ -202,7 +202,7 @@ class SessionManager:
 
     def stop_global_session(self):
         # stop market (binance sockets)
-        self.market.stop()
+        self.market.client_manager.stop()
 
         log.critical("********** SESSION TERMINATED FROM BUTTON ********")
 

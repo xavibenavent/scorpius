@@ -89,7 +89,7 @@ class Symbol:
         step_size_condition = round((qty - min_qty) % step_size == 0, 0)
 
         # check the three conditions are matched
-        conditions = min_qty <= qty <= max_qty #  and step_size_condition
+        conditions = min_qty <= qty <= max_qty  # and step_size_condition
         return True if conditions else False
 
     def _is_min_notional_ok(self, notional_value: float) -> bool:  # notional_value = price * qty
