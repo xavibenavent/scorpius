@@ -91,7 +91,7 @@ class Session:
 
         self.logbook: List[str] = []
 
-        print('session object created')
+        log.debug(f'session object created: {self.session_id}')
 
     # ********** Binance socket callback functions **********
     def symbol_ticker_callback(self, cmp: float) -> None:
@@ -276,19 +276,23 @@ class Session:
 
         # get total quote & needed to trade all alive orders at their own price
         quote_asset_needed = self._get_liquidity_needed_callback(symbol.quote_asset())
+        log.debug(f'{symbol.name} quote asset needed: {quote_asset_needed:,.{symbol.quote_asset().pv()}f}')
         base_asset_needed = self._get_liquidity_needed_callback(symbol.base_asset())
+        log.debug(f'{symbol.name} base asset needed: {base_asset_needed:,.{symbol.base_asset().pv()}f}')
         # quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
 
         # check available liquidity (quote & base) vs needed when trading both orders
         # get existing liquidity
         quote_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.quote_asset().name())  # free
+        log.debug(f'{symbol.name} quote asset liquidity: {quote_asset_liquidity:,.{symbol.quote_asset().pv()}f}')
         base_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.base_asset().name())  # free
+        log.debug(f'{symbol.name} base asset liquidity: {base_asset_liquidity:,.{symbol.base_asset().pv()}f}')
 
         if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # need for quote
             # check whether there is enough quote asset to force a pt shifted to SELL
             if base_asset_liquidity > base_asset_needed + new_pt_base_asset_liquidity_needed:  # enough base
                 # force the creation of a shifted pt to SELL base and get quote
-                log.info(f'new pt with forced shift: {-self.forced_shift}')
+                # log.info(f'new pt with forced shift: {-self.forced_shift}')
                 return False, -self.forced_shift  # force SELL
             else:
                 # get quote by selling base
@@ -299,8 +303,8 @@ class Session:
         elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for base
             if quote_asset_liquidity > quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # enough quote
                 # force the creation of a shifted pt to BUY base
-                log.info(f'new pt with forced shift: {+self.forced_shift} '
-                         f'q: {quote_asset_liquidity} b: {base_asset_liquidity}')
+                # log.info(f'new pt with forced shift: {+self.forced_shift} '
+                #          f'q: {quote_asset_liquidity} b: {base_asset_liquidity}')
                 return False, +self.forced_shift  # force SELL
             else:
                 # get base buying

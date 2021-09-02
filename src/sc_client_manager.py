@@ -32,7 +32,7 @@ class ClientManager:
         self._config_manager = ConfigManager(config_file='config_new.ini')
 
         # get symbol names
-        symbols_name = self._config_manager.get_symbol_names()
+        self.symbols_name = self._config_manager.get_symbol_names()
 
         # get app mode
         self._client_mode: ClientMode = ClientMode[self._config_manager.get_app_mode()]
@@ -42,7 +42,7 @@ class ClientManager:
         self._generators: List[Generator] = []  # cmp generators
 
         # set client
-        self.client = self._setup_client(symbols_name=symbols_name)
+        self.client = self._setup_client(symbols_name=self.symbols_name)
 
     def stop(self) -> None:
         if self._client_mode == ClientMode.CLIENT_MODE_BINANCE:
@@ -85,11 +85,11 @@ class ClientManager:
             # init socket manager
             self._twm = ThreadedWebsocketManager(api_key=api['key'], api_secret=api['secret'])
             self._twm.start()
-            # start user socket
-            self._twm.start_user_socket(callback=self._user_socket_callback)
-            # start ticker socket for each symbol
-            for symbol_name in symbols_name:
-                self._twm.start_symbol_ticker_socket(symbol=symbol_name, callback=self._symbol_ticker_socket_callback)
+            # # start user socket
+            # self._twm.start_user_socket(callback=self._user_socket_callback)
+            # # start ticker socket for each symbol
+            # for symbol_name in symbols_name:
+            #     self._twm.start_symbol_ticker_socket(symbol=symbol_name, callback=self._symbol_ticker_socket_callback)
 
         elif self._client_mode in [ClientMode.CLIENT_MODE_SIMULATOR_GENERATOR, ClientMode.CLIENT_MODE_SIMULATOR_MANUAL]:
             client = FakeClient(
@@ -105,6 +105,14 @@ class ClientManager:
         else:
             raise Exception(f'client mode {self._client_mode.name} not accepted')
         return client
+
+    def start_sockets(self):
+        if self._client_mode == ClientMode.CLIENT_MODE_BINANCE:
+            # start user socket
+            self._twm.start_user_socket(callback=self._user_socket_callback)
+            # start ticker socket for each symbol
+            for symbol_name in self.symbols_name:
+                self._twm.start_symbol_ticker_socket(symbol=symbol_name, callback=self._symbol_ticker_socket_callback)
 
     def _create_generator(self, symbol_name: str) -> Generator:
         new_generator = Generator(

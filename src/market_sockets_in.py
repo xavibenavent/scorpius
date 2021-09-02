@@ -30,8 +30,6 @@ class MarketSocketsIn:
         # depending on the event type, it will call the right callback function
         # in session manager
         event_type = msg['e']
-        print(event_type)
-        pprint(msg)
 
         if event_type == 'executionReport':
             if (msg['x'] == 'TRADE') and (msg["X"] == 'FILLED'):
@@ -46,7 +44,6 @@ class MarketSocketsIn:
 
         elif event_type == 'outboundAccountPosition':
             binance_accounts = msg[self.B_BALANCE_ARRAY]
-            print(binance_accounts)
             # convert to list of accounts
             accounts = [
                 Account(name=ba[self.B_ASSET_NAME], free=float(ba[self.B_FREE]), locked=float(ba[self.B_LOCKED]))
@@ -63,6 +60,8 @@ class MarketSocketsIn:
             log.critical(f'symbol ticker socket error: {msg["m"]}')
 
         elif event_type == '24hrTicker':
+            # log.debug(f'symbol ticker with msg: {msg}')
+
             # get symbol & check it
             symbol_name = msg['s']
             if symbol_name not in ['BTCEUR', 'BNBEUR']:

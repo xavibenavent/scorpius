@@ -6,16 +6,12 @@ import logging
 import os
 import signal
 
-# from binance import enums as k_binance
-
-# import configparser
 from config_manager import ConfigManager
 
 from sc_session import Session
 from sc_market import MarketApiOut
 from market_sockets_in import MarketSocketsIn
 from sc_account_manager import Account, AccountManager
-# from sc_balance_manager import BalanceManager, Account
 from sc_isolated_manager import IsolatedOrdersManager
 from sc_order import Order
 from sc_symbol import Symbol, Asset
@@ -53,7 +49,7 @@ class SessionManager:
 
         # DATA: get list of symbols info from config.ini & market
         self.symbols = self._get_symbols()
-        [pprint.pprint(symbol) for symbol in self.symbols]
+        [log.info(symbol.name) for symbol in self.symbols]
 
         # get initial accounts to create the balance manager (all own accounts managed in Binance)
         accounts = self.market_api_out.get_account_info()
@@ -69,6 +65,8 @@ class SessionManager:
         for symbol in self.symbols:
             self._init_global_data(symbol=symbol)
             self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
+
+        self.client_manager.start_sockets()
 
             # # start ticker socket(s) for each symbol
             # self.market.start_symbol_ticker_socket(
@@ -203,15 +201,14 @@ class SessionManager:
         self.session_count += 1
 
         # info
-        print(f'\n\n******** NEW SESSION STARTED: {session_id}********\n')
-        log.info(f'\n\n******** NEW SESSION STARTED: {session_id}********\n')
+        print(f'******** {symbol.name} NEW SESSION STARTED: {session_id}********')
+        log.info(f'******** {symbol.name} NEW SESSION STARTED: {session_id}********')
 
         return session
 
     def stop_global_session(self):
         # stop market (binance sockets)
         self.client_manager.stop()
-
         log.critical("********** SESSION TERMINATED FROM BUTTON ********")
 
         # send SIGINT to own app (identical to CTRL-C)
@@ -229,22 +226,18 @@ class SessionManager:
         # get orders
         liquidity_needed = 0.0
         pv = asset.pv()
-        print(f'*********** check for asset: {asset.name()} **********')
         for session in self.active_sessions.values():
             quote_asset_needed = 0.0
             base_asset_needed = 0.0
             # check whether the symbol session includes the asset
             if session.symbol.quote_asset().name() == asset.name():
                 quote_asset_needed, _ = session.ptm.get_symbol_liquidity_needed()
-                print(f'liquidity needed for [{session.symbol.name}] {asset.name()}: {quote_asset_needed:,.{pv}f}')
 
             if session.symbol.base_asset().name() == asset.name():
                 _, base_asset_needed = session.ptm.get_symbol_liquidity_needed()
-                print(f'liquidity needed for [{session.symbol.name}] {asset.name()}: {base_asset_needed:,.{pv}f}')
 
             # get total for this session (only one of the two values will be > 0)
             liquidity_needed += quote_asset_needed + base_asset_needed
-        print(f'total liquidity needed: {liquidity_needed:,.{pv}f}')
         return liquidity_needed
 
     def _check_isolated_callback(self, symbol: Symbol, uid: str, order_price: float):
@@ -267,7 +260,7 @@ class SessionManager:
 
     def _try_to_get_liquidity_callback(self, symbol: Symbol, asset: Asset, cmp: float):
         # called from session
-        # log.info(f'try to get liquidity callback called with side: {side}')
+        log.debug(f'{symbol.name} {asset.name()} trying to get liquidity')
 
         order = self.iom.try_to_get_asset_liquidity(
             asset=asset,
@@ -286,11 +279,11 @@ class SessionManager:
             # cancel in Binance the previously placed order
             self.market_api_out.cancel_orders([order])
 
-    def _fake_symbol_socket_callback(self, baz: str, foo: float):
-        pass
-
-    def _fake_order_socket_callback(self, foo_1: str, foo_2: float, foo_3: float):
-        pass
-
-    def _fake_account_socket_callback(self, foo: List[Account]):
-        pass
+    # def _fake_symbol_socket_callback(self, baz: str, foo: float):
+    #     pass
+    #
+    # def _fake_order_socket_callback(self, foo_1: str, foo_2: float, foo_3: float):
+    #     pass
+    #
+    # def _fake_account_socket_callback(self, foo: List[Account]):
+    #     pass

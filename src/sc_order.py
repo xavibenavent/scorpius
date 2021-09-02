@@ -171,9 +171,9 @@ class Order:
     def __repr__(self):
         return (
                 # f'{self.k_side:4} - {self.pt.id:5} - {self.name:5}'
-                f'{self.order_id:15} - {self.price:10,.2f} '
+                f'{self.uid:20} - {self.price:10,.2f} '
                 f'- {self.amount:12,.6f} - {self._bnb_commission:12,.6f} - {self.status.name:10}'
-                f'- {self._binance_id} - {self.uid}'
+                f'- {self._binance_id}'
         )
 
     def _is_filter_passed(self) -> bool:

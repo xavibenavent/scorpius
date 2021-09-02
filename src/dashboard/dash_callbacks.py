@@ -130,7 +130,7 @@ def on_button_click(n):
 
 @app.callback(Output('msg-start', 'children'), Input('button-start', 'n_clicks'))
 def on_button_click(n):
-    print('button start')
+    # print('button start')
     if n is None:
         return ''
     else:
