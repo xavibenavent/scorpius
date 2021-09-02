@@ -20,17 +20,9 @@ class MarketApiOut:
     B_LOCKED = 'l'
 
     def __init__(self,
-                 # order_traded_callback: Optional[Callable[[str, str, float, float], None]],
-                 # account_balance_callback: Optional[Callable[[List[Account]], None]],
-                 # symbol_ticker_callback: Callable[[str, float], None]
                  client_manager: ClientManager
                  ):
         self.client_manager = client_manager
-
-        # the three callback functions are in the Session Manager class
-        # self.order_traded_callback: Callable[[str, str, float, float], None] = order_traded_callback
-        # self.account_balance_callback: Callable[[List[Account]], None] = account_balance_callback
-        # self.symbol_ticker_callback: Callable[[str, float], None] = symbol_ticker_callback
 
         # get app parameters from config.ini
         config_manager = ConfigManager(config_file='config_new.ini')
@@ -40,9 +32,6 @@ class MarketApiOut:
             client=self.client_manager.client,
             hot_reconnect_callback=self.client_manager.hot_reconnect
         )
-
-    # ********** callback functions **********
-
 
     # ********** calls to binance api through MarketOut class **********
 

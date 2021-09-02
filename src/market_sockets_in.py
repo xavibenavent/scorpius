@@ -1,4 +1,4 @@
-# sc_market_in.py
+# market_sockets_in.py
 
 from typing import Optional, Callable, List, Dict
 from pprint import pprint
@@ -53,7 +53,7 @@ class MarketSocketsIn:
                 for ba in binance_accounts]
 
             # ********** account balance callback **********
-            # self.account_balance_callback(accounts)
+            self.account_balance_callback(accounts)
 
     def binance_symbol_ticker_callback(self, msg: Dict) -> None:
         # called from Binance API each time the cmp is updated
@@ -73,7 +73,6 @@ class MarketSocketsIn:
 
             # **********  symbol ticker callback **********
             self.symbol_ticker_callback(symbol_name, last_market_price)
-            print(symbol_name, last_market_price)
 
         else:
             log.critical(f'event type not expected: {event_type}')

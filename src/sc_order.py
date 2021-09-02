@@ -51,7 +51,8 @@ class Order:
         self._bnb_commission = 0.0  # bnb_commission
         self._binance_id = binance_id
 
-        self.uid = secrets.token_hex(8)  # set random uid of 16 characters
+        self.uid = order_id
+        # self.uid = secrets.token_hex(8)  # set random uid of 16 characters
 
         # set theoretical quote commission, it will be updated when the order is traded
         self._quote_commission = self.price * self.amount * self.fee
@@ -169,25 +170,11 @@ class Order:
 
     def __repr__(self):
         return (
-                f'{self.k_side:4} - {self.pt.id:5} - '
-                f'{self.name:5} - {self.order_id:5} - {self.price:10,.2f} '
+                # f'{self.k_side:4} - {self.pt.id:5} - {self.name:5}'
+                f'{self.order_id:15} - {self.price:10,.2f} '
                 f'- {self.amount:12,.6f} - {self._bnb_commission:12,.6f} - {self.status.name:10}'
                 f'- {self._binance_id} - {self.uid}'
         )
 
     def _is_filter_passed(self) -> bool:
         return self.symbol.are_filters_ok(price=self.price, qty=self.amount)
-        # filters = self.symbol.symbol_info
-        # if not filters.get('min_qty') <= self.amount <= filters.get('max_qty'):
-        #     log.critical(f'qty out of min/max limits: {self.amount}')
-        #     log.critical(f"min: {filters.get('min_qty')} - max: {filters.get('max_qty')}")
-        #     return False
-        # elif not filters.get('min_price') <= self.price <= filters.get('max_price'):
-        #     log.critical(f'buy price out of min/max limits: {self.price}')
-        #     log.critical(f"min: {filters.get('min_price')} - max: {filters.get('max_price')}")
-        #     return False
-        # elif not (self.amount * self.price) > filters.get('min_notional'):
-        #     log.critical(f'buy total (price * qty) under minimum: {self.amount * self.price}')
-        #     log.critical(f'min notional: {filters.get("min_notional")}')
-        #     return False
-        # return True

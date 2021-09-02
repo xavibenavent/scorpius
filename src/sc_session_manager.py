@@ -13,7 +13,7 @@ from config_manager import ConfigManager
 
 from sc_session import Session
 from sc_market import MarketApiOut
-from sc_market_in import MarketSocketsIn
+from market_sockets_in import MarketSocketsIn
 from sc_account_manager import Account, AccountManager
 # from sc_balance_manager import BalanceManager, Account
 from sc_isolated_manager import IsolatedOrdersManager
@@ -186,7 +186,7 @@ class SessionManager:
         self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] = 0
 
     def start_new_session(self, symbol: Symbol) -> Session:
-        session_id = f'S_{symbol.name}_{datetime.now().strftime("%d_%H%M")}'
+        session_id = f'SES_{self.session_count + 1:03d}_{symbol.name}_{datetime.now().strftime("%m%d%H%M")}'
 
         session = Session(
             symbol=symbol,

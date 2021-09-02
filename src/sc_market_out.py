@@ -1,9 +1,10 @@
 # sc_market_out.py
+import pprint
 
 from binance.client import Client
 from binance import enums as k_binance
 from binance.exceptions import *
-from typing import Callable, Optional, List
+from typing import Callable, Optional, List, Dict
 from requests.exceptions import ConnectionError, ReadTimeout
 from urllib3.exceptions import ProtocolError
 import socket
@@ -157,4 +158,3 @@ class MarketOut:
             except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
                 log.critical(e)
                 self.hot_reconnect_callback()
-
