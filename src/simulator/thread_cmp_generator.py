@@ -1,5 +1,5 @@
 # thread_cmp_generator.py
-from typing import Callable, List
+from typing import Callable, List, Dict
 import time
 from random import choice
 
@@ -8,7 +8,7 @@ class ThreadCmpGenerator:
     def __init__(self,
                  symbol_name: str,
                  interval: float,
-                 f_callback: Callable[[float, str], None],
+                 f_callback: Callable[[Dict], None],
                  choice_values: List[float]):
         self._running = True
         self._symbol_name = symbol_name
@@ -26,5 +26,9 @@ class ThreadCmpGenerator:
         print(f'cmp thread for symbol {self._symbol_name} started')
         while self._running:
             time.sleep(self._interval)
-            new_cmp = choice(self._choice_values)
-            self.f_callback(new_cmp, self._symbol_name)
+            msg = dict(
+                e='24hrTicker',
+                s=self._symbol_name,
+                c=str(choice(self._choice_values))
+            )
+            self.f_callback(msg)

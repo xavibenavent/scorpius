@@ -105,7 +105,7 @@ class Market:
         elif client_mode == ClientMode.CLIENT_MODE_SIMULATOR:  # 'simulated':
             client = FakeClient(
                 user_socket_callback=self.binance_user_socket_callback,
-                symbol_ticker_callback=self.binance_symbol_ticker_callback,
+                symbol_ticker_socket_callback=self.binance_symbol_ticker_callback,
             )
         else:
             log.critical(f'client_mode {client_mode} not accepted')
