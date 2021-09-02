@@ -1,11 +1,7 @@
 # sc_fake_client.py
 
 import logging
-import time
 from typing import List, Callable, Dict
-from enum import Enum
-from random import choice
-import threading
 
 from sc_account_manager import Account, AccountManager
 from config_manager import ConfigManager
@@ -14,11 +10,6 @@ from simulator.sc_fake_simulator_out import FakeSimulatorOut
 from sc_symbol import Symbol, Asset
 
 log = logging.getLogger('log')
-
-
-class FakeCmpMode(Enum):
-    MODE_MANUAL = 0  # in this mode two buttons (+, -) control the market price
-    MODE_GENERATOR = 1  # every K_UPDATE_RATE seconds generates a new cmp
 
 
 class FakeOrder:
@@ -57,10 +48,6 @@ class FakeClient:
         # set fake simulator out
         self.fso = FakeSimulatorOut(config_manager=self.cm)
 
-        # FAKE CMP MODE SETTING
-        simulator_mode = self.cm.get_fake_cmp_mode()
-        self._fake_cmp_mode: FakeCmpMode = FakeCmpMode[simulator_mode]
-
         # get symbols simulator data dictionary: cmp & choice values
         symbols_name = self.cm.get_symbol_names()
         for symbol_name in symbols_name:
@@ -80,9 +67,6 @@ class FakeClient:
 
         self.update_rate: float = self.cm.get_simulator_update_rate()
         self._FEE: float = float(self.cm.get_simulator_global_data()['fee'])
-
-        # self.api_key = ''
-        # self.api_secret = ''
 
     def _get_symbol(self, symbol_name: str) -> Symbol:
         # get filters from Binance API
@@ -111,43 +95,6 @@ class FakeClient:
         )
         return symbol
 
-    # ********** cmp generator **********
-
-    def create_start_generator(self, symbol_name: str):
-        if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
-            # create
-            new_generator = ThreadCmpGenerator(
-                symbol_name=symbol_name,
-                interval=self.update_rate,
-                f_callback=self._update_cmp,
-                choice_values=self.cm.get_simulator_choice_values(symbol_name=symbol_name)
-            )
-            # start
-            x = threading.Thread(target=new_generator.run)
-            x.start()
-
-            # add to list
-            self.generators.append(new_generator)
-
-    def stop_cmp_generator(self):
-        if self._fake_cmp_mode == FakeCmpMode.MODE_GENERATOR:
-            # stop all generators
-            [generator.terminate() for generator in self.generators]
-
-    def update_cmp_from_dashboard(self, step: float, symbol_name: str):
-        if self._fake_cmp_mode == FakeCmpMode.MODE_MANUAL:
-            self._update_cmp(step=step, symbol_name=symbol_name)
-        else:
-            log.warning('trying to manually update cmp in GENERATOR MODE')
-
-    def _update_cmp(self, step: float, symbol_name: str):
-        # when in MANUAL mode the cmp is updated from the dashboard
-        self.cmp[symbol_name] += step
-        self._process_cmp_change(symbol_name=symbol_name)
-
-    def get_mode(self) -> FakeCmpMode:
-        return self._fake_cmp_mode
-
     # ********** orders trading **********
 
     def order_market_buy(self, **kwargs) -> dict:
@@ -159,8 +106,6 @@ class FakeClient:
             quantity=kwargs.get('quantity'),
             symbol_name=symbol_name
         )
-        status = 'NEW'
-
         # get account free value from symbol name
         base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
 
@@ -211,8 +156,6 @@ class FakeClient:
             quantity=kwargs.get('quantity'),
             symbol_name=symbol_name
         )
-        status = 'NEW'
-
         # get account free value from symbol name
         base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
 
@@ -451,4 +394,3 @@ class FakeClient:
             # B=[
         )
         self._user_socket_callback(msg)
-

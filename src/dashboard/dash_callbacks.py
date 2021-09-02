@@ -139,7 +139,7 @@ def on_button_click(n):
         # todo: reconnect when Exception connection error
         # raise Exception("fix it")
         # dfm.sm = dfm.start_session_manager()
-        dfm.sm.market.hot_reconnect()
+        dfm.sm.market_api_out.hot_reconnect()
         return 'cmp start'
 
 

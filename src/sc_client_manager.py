@@ -111,7 +111,8 @@ class ClientManager:
             symbol_name=symbol_name,
             interval=self._config_manager.get_simulator_update_rate(),
             f_callback=self._symbol_ticker_socket_callback,
-            choice_values=self._config_manager.get_simulator_choice_values(symbol_name=symbol_name)
+            choice_values=self._config_manager.get_simulator_choice_values(symbol_name=symbol_name),
+            initial_cmp=self._config_manager.get_initial_cmp(symbol_name=symbol_name)
         )
         # start created generator
         x = threading.Thread(target=new_generator.run)

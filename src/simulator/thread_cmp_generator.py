@@ -9,12 +9,14 @@ class ThreadCmpGenerator:
                  symbol_name: str,
                  interval: float,
                  f_callback: Callable[[Dict], None],
-                 choice_values: List[float]):
+                 choice_values: List[float],
+                 initial_cmp: float):
         self._running = True
         self._symbol_name = symbol_name
         self.f_callback = f_callback
         self._interval = interval
         self._choice_values = choice_values
+        self._cmp = initial_cmp
 
     def terminate(self):
         print(f'cmp thread for symbol {self._symbol_name} terminated')
@@ -26,9 +28,11 @@ class ThreadCmpGenerator:
         print(f'cmp thread for symbol {self._symbol_name} started')
         while self._running:
             time.sleep(self._interval)
+            # update cmp
+            self._cmp += choice(self._choice_values)
             msg = dict(
                 e='24hrTicker',
                 s=self._symbol_name,
-                c=str(choice(self._choice_values))
+                c=str(self._cmp)
             )
             self.f_callback(msg)

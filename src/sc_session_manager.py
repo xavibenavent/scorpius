@@ -12,12 +12,14 @@ import signal
 from config_manager import ConfigManager
 
 from sc_session import Session
-from sc_market import Market
+from sc_market import MarketApiOut
+from sc_market_in import MarketSocketsIn
 from sc_account_manager import Account, AccountManager
 # from sc_balance_manager import BalanceManager, Account
 from sc_isolated_manager import IsolatedOrdersManager
 from sc_order import Order
 from sc_symbol import Symbol, Asset
+from sc_client_manager import ClientManager
 
 log = logging.getLogger('log')
 
@@ -33,11 +35,17 @@ class SessionManager:
         self.iom = IsolatedOrdersManager()
         self.cm = ConfigManager(config_file='config_new.ini')
 
-        self.market = Market(
+        self.market_sockets_in = MarketSocketsIn(
             order_traded_callback=self._order_traded_callback,
             account_balance_callback=self._account_balance_callback,
             symbol_ticker_callback=self._symbol_ticker_callback
         )
+
+        self.client_manager = ClientManager(
+            symbol_ticker_callback=self.market_sockets_in.binance_symbol_ticker_callback,
+            user_callback=self.market_sockets_in.binance_user_socket_callback
+        )
+        self.market_api_out = MarketApiOut(client_manager=self.client_manager)
 
         # session will be started within start_session method
         self.active_sessions: Dict[str, Optional[Session]] = {}
@@ -48,7 +56,7 @@ class SessionManager:
         [pprint.pprint(symbol) for symbol in self.symbols]
 
         # get initial accounts to create the balance manager (all own accounts managed in Binance)
-        accounts = self.market.get_account_info()
+        accounts = self.market_api_out.get_account_info()
         self.am = AccountManager(accounts=accounts)
 
         # set up the callback for account updates
@@ -78,7 +86,7 @@ class SessionManager:
 
         for symbol_name in symbols_name:
             # get filters from Binance API
-            symbol_filters = self.market.get_symbol_info(symbol_name=symbol_name)
+            symbol_filters = self.market_api_out.get_symbol_info(symbol_name=symbol_name)
 
             # get session data from config.ini
             symbol_config_data = self.cm.get_symbol_data(symbol_name=symbol_name)
@@ -184,7 +192,7 @@ class SessionManager:
             symbol=symbol,
             session_id=session_id,
             session_stopped_callback=self._session_stopped_callback,
-            market=self.market,
+            market=self.market_api_out,
             account_manager=self.am,
             check_isolated_callback=self._check_isolated_callback,
             placed_isolated_callback=self._placed_isolated_callback,
@@ -202,7 +210,7 @@ class SessionManager:
 
     def stop_global_session(self):
         # stop market (binance sockets)
-        self.market.client_manager.stop()
+        self.client_manager.stop()
 
         log.critical("********** SESSION TERMINATED FROM BUTTON ********")
 
@@ -276,7 +284,7 @@ class SessionManager:
                 self.active_sessions[symbol.name].place_isolated_order(order=order)
 
             # cancel in Binance the previously placed order
-            self.market.cancel_orders([order])
+            self.market_api_out.cancel_orders([order])
 
     def _fake_symbol_socket_callback(self, baz: str, foo: float):
         pass
