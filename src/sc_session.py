@@ -91,7 +91,7 @@ class Session:
 
         self.logbook: List[str] = []
 
-        log.debug(f'session object created: {self.session_id}')
+        # log.debug(f'session object created: {self.session_id}')
 
     # ********** Binance socket callback functions **********
     def symbol_ticker_callback(self, cmp: float) -> None:
@@ -370,8 +370,8 @@ class Session:
             raise Exception("LIMIT order not placed")
 
     def quit_particular_session(self, quit_mode: QuitMode):
-        log.info(f'********** STOP {quit_mode.name} **********')
-        log.info(f'session {self.session_id} terminated')
+        log.info(f'********** STOP {quit_mode.name} ********** [{self.session_id}] terminated')
+        # log.info(f'session {self.session_id} terminated')
 
         # init used variables
         is_session_fully_consolidated = False
@@ -402,7 +402,7 @@ class Session:
                         placed_orders_at_order_price += 1
                         # add to isolated orders list
                         self.placed_isolated_callback(order)
-                        log.info(f'trading limit order {order.k_side} {order.status} {order.price}')
+                        log.info(f'trading LIMIT order {order}')
                         time.sleep(0.1)
 
         elif quit_mode == QuitMode.TRADE_ALL_PENDING:  # trade diff orders at reference side (BUY or SELL)

@@ -171,9 +171,9 @@ class Order:
     def __repr__(self):
         return (
                 # f'{self.k_side:4} - {self.pt.id:5} - {self.name:5}'
-                f'uid: {self.uid:20} - price: {self.price:10,.2f} '
-                f'- amount: {self.amount:12,.6f} - {self._bnb_commission:12,.6f} - {self.status.name:10}'
-                f'- {self._binance_id}'
+                f'[{self.k_side}/{self.uid}/{self.price:,.2f}/{self.amount:,.6f}/{self.status.name}]'
+                # f' - {self._bnb_commission:12,.6f} - '
+                # f'- {self._binance_id}]'
         )
 
     def _is_filter_passed(self) -> bool:
