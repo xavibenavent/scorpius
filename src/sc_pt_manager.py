@@ -164,7 +164,7 @@ class PTManager:
                   mp: float,
                   ) -> (Optional[Order], Optional[Order]):
 
-        order_id = f'{self.pt_created_count + 1:03d}_' + self.session_id
+        order_id = f'{self.pt_created_count + 1:03d}' + self.session_id
 
         # get perfect trade
         b1_price, s1_price, quantity = get_prices_given_neb(mp=mp, symbol=self.symbol)
@@ -172,7 +172,7 @@ class PTManager:
         # create orders
         b1 = Order(
             symbol=symbol,
-            order_id='B_' + order_id,
+            order_id='B' + order_id,
             k_side=k_binance.SIDE_BUY,
             price=b1_price,
             amount=quantity,
@@ -180,7 +180,7 @@ class PTManager:
         )
         s1 = Order(
             symbol=symbol,
-            order_id='S_' + order_id,
+            order_id='S' + order_id,
             k_side=k_binance.SIDE_SELL,
             price=s1_price,
             amount=quantity,

@@ -110,7 +110,7 @@ class Order:
 
     def get_price_str(self) -> str:
         precision = self.symbol.symbol_info.get('quoteAssetPrecision')  # quote
-        return f'{self.price:,.{precision}f}'
+        return f'{self.price:.{precision}f}'
 
     def _get_amount(self) -> float:
         precision = self.symbol.symbol_info.get('baseAssetPrecision')  # base
