@@ -195,7 +195,7 @@ class Session:
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
         print(f'********** ORDER TRADED:    price: {order_price} [Q] - commission: {bnb_commission} [BNB]')
-        log.info(f'********** ORDER TRADED:    price: {order_price} [Q] - commission: {bnb_commission} [BNB]')
+        # log.info(f'********** ORDER TRADED:    price: {order_price} [Q] - commission: {bnb_commission} [BNB]')
 
         # get candidate orders
         orders_to_be_traded = self.ptm.get_orders_by_request(
@@ -270,27 +270,43 @@ class Session:
         return True, forced_shift
 
     def _is_liquidity_enough(self, cmp: float, symbol: Symbol) -> (bool, float):
+        # precision for visualization
+        bpv = symbol.base_asset().pv()
+        qpv = symbol.quote_asset().pv()
+
         # liquidity needed for new pt orders (b1 & s1)
         new_pt_base_asset_liquidity_needed = self.quantity
         new_pt_quote_asset_liquidity_needed = self.quantity * cmp
 
-        # get total quote & needed to trade all alive orders at their own price
+        # get total quote needed to trade all alive orders at their own price
         quote_asset_needed = self._get_liquidity_needed_callback(symbol.quote_asset())
-        log.debug(f'{symbol.name} quote asset needed: {quote_asset_needed:,.{symbol.quote_asset().pv()}f}')
+        # total quote asset needed
+        total_q_needed = quote_asset_needed + new_pt_quote_asset_liquidity_needed
+
         base_asset_needed = self._get_liquidity_needed_callback(symbol.base_asset())
-        log.debug(f'{symbol.name} base asset needed: {base_asset_needed:,.{symbol.base_asset().pv()}f}')
+        # total base asset needed
+        total_b_needed = base_asset_needed + new_pt_base_asset_liquidity_needed
         # quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
 
         # check available liquidity (quote & base) vs needed when trading both orders
         # get existing liquidity
         quote_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.quote_asset().name())  # free
-        log.debug(f'{symbol.name} quote asset liquidity: {quote_asset_liquidity:,.{symbol.quote_asset().pv()}f}')
         base_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.base_asset().name())  # free
-        log.debug(f'{symbol.name} base asset liquidity: {base_asset_liquidity:,.{symbol.base_asset().pv()}f}')
 
-        if quote_asset_liquidity < quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # need for quote
+        quote_diff = quote_asset_liquidity - total_q_needed
+        base_diff = base_asset_liquidity - total_b_needed
+
+        # log liquidity / needed / diff
+        log.debug(f'{symbol.name} [base] liquidity: {base_asset_liquidity:,.{bpv}f}  -  '
+                  f'needed: {total_b_needed:,.{bpv}f}  -  '
+                  f'diff: {base_diff:,.{qpv}f}')
+        log.debug(f'{symbol.name} [quote] liquidity: {quote_asset_liquidity:,.{qpv}f} -   '
+                  f'needed: {total_q_needed:,.{qpv}f} -   '
+                  f'diff: {quote_diff:,.{qpv}f}')
+
+        if quote_asset_liquidity < total_q_needed:  # need for quote
             # check whether there is enough quote asset to force a pt shifted to SELL
-            if base_asset_liquidity > base_asset_needed + new_pt_base_asset_liquidity_needed:  # enough base
+            if base_asset_liquidity > total_b_needed:  # enough base
                 # force the creation of a shifted pt to SELL base and get quote
                 # log.info(f'new pt with forced shift: {-self.forced_shift}')
                 return False, -self.forced_shift  # force SELL
@@ -300,8 +316,8 @@ class Session:
                 self.try_to_get_liquidity_callback(self.symbol, symbol.quote_asset(), cmp)
                 return False, 0.0
 
-        elif base_asset_liquidity < base_asset_needed + new_pt_base_asset_liquidity_needed:  # need for base
-            if quote_asset_liquidity > quote_asset_needed + new_pt_quote_asset_liquidity_needed:  # enough quote
+        elif base_asset_liquidity < total_b_needed:  # need for base
+            if quote_asset_liquidity > total_q_needed:  # enough quote
                 # force the creation of a shifted pt to BUY base
                 # log.info(f'new pt with forced shift: {+self.forced_shift} '
                 #          f'q: {quote_asset_liquidity} b: {base_asset_liquidity}')
@@ -335,8 +351,8 @@ class Session:
         msg = self.market.place_market_order(order=order)
         if msg:
             order.set_binance_id(new_id=msg.get('binance_id'))
-            log.info(f'********** MARKET ORDER PLACED **********')  # msg: {msg}')
-            log.info(f'order: {order}')
+            log.info(f'********** MARKET ORDER PLACED ********** {order}')  # msg: {msg}')
+            # log.info(f'order: {order}')
         else:
             log.critical(f'market order not place in binance {order}')
             raise Exception("MARKET order not placed")
@@ -347,8 +363,8 @@ class Session:
         msg = self.market.place_limit_order(order=order)
         if msg:
             order.set_binance_id(new_id=msg.get('binance_id'))
-            log.debug(f'********** LIMIT ORDER PLACED **********')  # msg: {msg}')
-            log.info(f'order: {order}')
+            log.debug(f'********** LIMIT ORDER PLACED ********** {order}')  # msg: {msg}')
+            # log.info(f'order: {order}')
         else:
             log.critical(f'error placing order {order}')
             raise Exception("LIMIT order not placed")
