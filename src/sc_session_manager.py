@@ -134,9 +134,9 @@ class SessionManager:
             self.terminated_sessions[symbol.name]['global_expected_profit'] -= expected
 
         # log
-        log.info(f'********** global profit updated for symbol {symbol.name} **********')
-        log.info(f'consolidated: {consolidated:,.2f} expected: {expected:,.2f}')
-        log.info('*****************************************************************************')
+        # log.info(f'********** global profit updated for symbol {symbol.name} **********')
+        # log.info(f'consolidated: {consolidated:,.2f} expected: {expected:,.2f}')
+        # log.info('*****************************************************************************')
 
     def _session_stopped_callback(self,
                                   symbol: Symbol,

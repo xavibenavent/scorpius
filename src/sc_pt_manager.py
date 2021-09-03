@@ -134,7 +134,7 @@ class PTManager:
         # return the quote & base needed to trade all 'alive' orders at its own price
         alive_orders = self.get_all_alive_orders()
         # get total quote needed to trade all alive buy orders
-        quote_asset_needed = sum([order.get_total_at_cmp(cmp=order.price, with_commission=False)
+        quote_asset_needed = sum([order.get_total_at_cmp(cmp=order.price, with_commission=False, signed=False)
                                   for order in alive_orders
                                   if order.k_side == k_binance.SIDE_BUY])
         # get total base needed to trade all alive sell orders
