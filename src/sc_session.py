@@ -206,7 +206,7 @@ class Session:
         for order in orders_to_be_traded:
             # check uid
             if order.uid == uid:
-                log.info(f'confirmation of order traded: {order}')
+                # log.info(f'confirmation of order traded: {order}')
                 self.logbook.append(f'order traded: {order.pt.id} {order.name} {order.k_side}')
                 # reset counter
                 self.cycles_from_last_trade = 0
@@ -303,6 +303,8 @@ class Session:
         log.debug(f'{symbol.name} [quote] liquidity: {quote_asset_liquidity:,.{qpv}f} -   '
                   f'needed: {total_q_needed:,.{qpv}f} -   '
                   f'diff: {quote_diff:,.{qpv}f}')
+        log.debug('[NEW PT ALLOWED]') if quote_diff > 0 and base_diff > 0 \
+            else log.debug('[NOT ENOUGH LIQUIDITY FOR NEW PT]')
 
         if quote_asset_liquidity < total_q_needed:  # need for quote
             # check whether there is enough quote asset to force a pt shifted to SELL
