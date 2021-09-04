@@ -122,6 +122,9 @@ class PTManager:
                     requested_orders.append(order)
         return requested_orders
 
+    def get_pt_by_request(self, pt_status: List[PerfectTradeStatus]) -> List[PerfectTrade]:
+        return [pt for pt in self.perfect_trades if pt.status in pt_status]
+
     def get_all_alive_orders(self) -> List[Order]:
         # 0. get 'alive' buy & sell orders (monitor + active)
         orders_alive = self.get_orders_by_request(

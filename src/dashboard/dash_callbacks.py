@@ -2,15 +2,12 @@
 
 from dash.dependencies import Input, Output
 from dashboard.dash_app import app
-from dashboard.dash_aux import get_profit_line_chart, get_cmp_line_chart, get_pending_html_table
+from dashboard.dash_aux import get_pending_html_table
 from sc_session import QuitMode
 from dashboard.sc_df_manager import DataframeManager
 from binance import enums as k_binance
-
-# import dash_bootstrap_components as dbc
-
-import pandas as pd
 from datetime import datetime, timedelta
+from sc_perfect_trade import PerfectTradeStatus
 
 print('dash_callbacks.py')
 
@@ -18,12 +15,11 @@ dfm = DataframeManager()
 
 
 # first line data
-
 @app.callback(Output('current-time', 'children'),
-              Output('neb', 'children'),
-              Output('qty', 'children'),
-              Output('target', 'children'),
-              Output('max-negative-profit-allowed', 'children'),
+              Output('neb', 'children'),  # perfect trade net profit
+              Output('qty', 'children'),  # orders quantity
+              Output('target', 'children'),  # session target net profit
+              Output('max-negative-profit-allowed', 'children'),  # if reached, session ended at price
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
@@ -38,182 +34,35 @@ def display_value(value):
         f'({dfm.sm.active_sessions[symbol_name].max_negative_profit_allowed:,.2f})'
 
 
-# ********** buttons *********
-@app.callback(Output('button-btceur-hidden-msg', 'color'),
-              Input('button-btceur', 'n_clicks'),
-              )
-def on_button_click(n):
-    # set BTCEUR as active symbol if button pressed
-    if n is not None:
-        dfm.set_dashboard_active_symbol(symbol_name='BTCEUR')
-    return ''
+# **********************************
+# ********** Session data **********
+# **********************************
 
-
-@app.callback(Output('button-bnbeur-hidden-msg', 'children'),
-              Input('button-bnbeur', 'n_clicks'),
-              )
-def on_button_click(n):
-    # set BNBEUR as active symbol if button pressed
-    if n is not None:
-        dfm.set_dashboard_active_symbol(symbol_name='BNBEUR')
-    return ''
-
-
-@app.callback(Output('button-btceur', 'color'),
-              Output('button-bnbeur', 'color'),
-              Input('update', 'n_intervals'),
-              )
-def on_button_click(n):
-    # identify last button clicked
-    # changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    btceur_color = 'success' if dfm.dashboard_active_symbol.name == 'BTCEUR' else 'light'
-    bnbeur_color = 'success' if dfm.dashboard_active_symbol.name == 'BNBEUR' else 'light'
-    # print(btceur_color, bnbeur_color)
-    return btceur_color, bnbeur_color
-
-
-# @app.callback(Output('msg', 'children'), Input('button-stop-cmp', 'n_clicks'))
-@app.callback(Output('button-stop-cmp', 'children'), Input('button-stop-cmp', 'n_clicks'))
-def on_button_click(n):
-    if n is not None:
-        symbol_name = dfm.dashboard_active_symbol.name
-        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-    return 'Stop at cmp'
-
-
-@app.callback(Output('button-stop-price', 'children'), Input('button-stop-price', 'n_clicks'))
-def on_button_click(n):
-    if n is not None:
-        symbol_name = dfm.dashboard_active_symbol.name
-        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
-    return 'Stop at price'
-
-
-@app.callback(Output('stop-cancel', 'children'), Input('button-stop-cancel', 'n_clicks'))
-def on_button_click(n):
-    if n is None:
-        return ''
-    else:
-        symbol_name = dfm.dashboard_active_symbol.name
-        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.CANCEL_ALL)
-        return 'cmp stop'
-
-
-@app.callback(Output('stop-global-session', 'children'), Input('button-stop-global-session', 'n_clicks'))
-def on_button_click(n):
-    if n is None:
-        return ''
-    else:
-        dfm.sm.stop_global_session()
-        return 'cmp stop'
-
-
-@app.callback(Output('msg-start', 'children'), Input('button-start', 'n_clicks'))
-def on_button_click(n):
-    # print('button start')
-    if n is None:
-        return ''
-    else:
-        # dfm.sm.session = dfm.sm.start_new_session()
-        print("trying to restart connection")
-        # todo: reconnect when Exception connection error
-        # raise Exception("fix it")
-        # dfm.sm = dfm.start_session_manager()
-        dfm.sm.market_api_out.hot_reconnect()
-        return 'cmp start'
-
-
-@app.callback(Output('msg-2', 'children'), Input('button-new-pt', 'n_clicks'))
-def on_button_click(n):
-    if n:
-        symbol = dfm.dashboard_active_symbol
-        symbol_name = symbol.name
-        cmp = dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0
-        dfm.sm.active_sessions[symbol_name].manually_create_new_pt(cmp=cmp, symbol=symbol)
-    return ''
-
-
-@app.callback(Output('msg-increase-cmp', 'children'), Input('increase-cmp', 'n_clicks'))
-def on_button_click(n):
-    if n:
-        symbol_name = dfm.dashboard_active_symbol.name
-        # dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=10.0, symbol_name=symbol_name)
-    return ''
-
-
-@app.callback(Output('msg-decrease-cmp', 'children'), Input('decrease-cmp', 'n_clicks'))
-def on_button_click(n):
-    if n:
-        symbol_name = dfm.dashboard_active_symbol.name
-        # dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=-10.0, symbol_name=symbol_name)
-    return ''
-
-
-# ********** symbol & accounts data **********
-
-@app.callback(
-    Output('symbol', 'children'),
-    Output('cmp', 'children'),
-    Output('base-asset', 'children'),
-    Output('base-asset-free', 'children'),
-    Output('base-asset-locked', 'children'),
-    Output('quote-asset', 'children'),
-    Output('quote-asset-free', 'children'),
-    Output('quote-asset-locked', 'children'),
-    Output('bnb-free', 'children'),
-    Output('bnb-locked', 'children'),
-    Input('update', 'n_intervals')
-)
+# elapsed time
+@app.callback(Output('session-cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
-    symbol = dfm.dashboard_active_symbol
-    symbol_name = symbol.name
-    bm = dfm.sm.active_sessions[symbol_name].am
-    base_account = bm.get_account(symbol.base_asset().name())
-    quote_account = bm.get_account(symbol.quote_asset().name())
-    bnb_account = bm.get_account('BNB')
-
-    return \
-        symbol_name, \
-        f'{dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0:,.2f}', \
-        symbol.base_asset().name(),\
-        f'{base_account.free:,.{symbol.base_asset().pv()}f}', \
-        f'{base_account.locked:,.{symbol.base_asset().pv()}f}', \
-        symbol.quote_asset().name(), \
-        f'{quote_account.free:,.{symbol.quote_asset().pv()}f}', \
-        f'{quote_account.locked:,.{symbol.quote_asset().pv()}f}',\
-        f'{bnb_account.free:,.6f}',\
-        f'{bnb_account.locked:,.6f}'
-
-
-# ********** others **********
-
-@app.callback(
-    Output('new-table', 'children'),
-    Input('update', 'n_intervals')
-)
-def update_table(timer):
-    df = dfm.get_all_orders_df_with_cmp()
-    # sort by price
-    df1 = df.sort_values(by=['price'], ascending=False)
-    # filter by status for each table (monitor-placed & traded)
-    df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
-    qp = dfm.dashboard_active_symbol.quote_asset().pv()
-    df_pending['price'] = df_pending['price'].map(f'{{:,.{qp}f}}'.format)  # two {{ }} to escape { in f-string
-    df_pending['total'] = df_pending['total'].map(f'{{:,.{qp}f}}'.format)
-
-    return get_pending_html_table(df=df_pending[['pt_id', 'name', 'price', 'amount', 'total', 'status']])
-
-
-# ********** time [h] **********
-@app.callback(Output('cycle-count', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-
-    # todo: use momentum
-    # print(dfm.sm.session.get_info()['momentum'])
-
-    # return f'{dfm.sm.session.get_info()["cmp_count"] / 3600:,.2f} h'
     symbol_name = dfm.dashboard_active_symbol.name
     return f'{timedelta(seconds=dfm.sm.active_sessions[symbol_name].cmp_count)}'
+
+
+# perfect trade status info
+@app.callback(Output('pt-new', 'children'),
+              Output('pt-buy', 'children'),
+              Output('pt-sell', 'children'),
+              Output('pt-end', 'children'),
+              Input('update', 'n_intervals'))
+def display_value(value):
+    symbol_name = dfm.dashboard_active_symbol.name
+    ptm = dfm.sm.active_sessions[symbol_name].ptm
+    return \
+        len(ptm.get_pt_by_request(pt_status=[PerfectTradeStatus.NEW])),\
+        len(ptm.get_pt_by_request(pt_status=[PerfectTradeStatus.BUY_TRADED])),\
+        len(ptm.get_pt_by_request(pt_status=[PerfectTradeStatus.SELL_TRADED])),\
+        len(ptm.get_pt_by_request(pt_status=[PerfectTradeStatus.COMPLETED]))
+
+
+# span, depth, momentum & TBD data
+
 
 
 # ********** stop at cmp **********
@@ -325,21 +174,155 @@ def display_value(value):
 
 
 
-# @app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
-# def update_profit_line(timer):
-#     symbol_name = dfm.dashboard_active_symbol.name
-#     pls = dfm.sm.active_sessions[symbol_name].total_profit_series
-#     df = pd.DataFrame(data=pls, columns=['cmp'])
-#     df['rate'] = df.index
-#     fig = get_profit_line_chart(df=df, pls=pls)
-#     return fig
-#
-#
-# @app.callback(Output('cmp-line', 'figure'), Input('update', 'n_intervals'))
-# def update_profit_line(timer):
-#     symbol_name = dfm.dashboard_active_symbol.name
-#     cmps = dfm.sm.active_sessions[symbol_name].cmps
-#     df = pd.DataFrame(data=cmps, columns=['cmp'])
-#     df['rate'] = df.index
-#     fig = get_cmp_line_chart(df=df, cmps=cmps)
-#     return fig
+
+
+
+
+# ********** symbol & accounts data **********
+@app.callback(
+    Output('symbol', 'children'),
+    Output('cmp', 'children'),
+    Output('base-asset', 'children'),
+    Output('base-asset-free', 'children'),
+    Output('base-asset-locked', 'children'),
+    Output('quote-asset', 'children'),
+    Output('quote-asset-free', 'children'),
+    Output('quote-asset-locked', 'children'),
+    Output('bnb-free', 'children'),
+    Output('bnb-locked', 'children'),
+    Input('update', 'n_intervals')
+)
+def display_value(value):
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    bm = dfm.sm.active_sessions[symbol_name].am
+    base_account = bm.get_account(symbol.base_asset().name())
+    quote_account = bm.get_account(symbol.quote_asset().name())
+    bnb_account = bm.get_account('BNB')
+
+    return \
+        symbol_name, \
+        f'{dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0:,.2f}', \
+        symbol.base_asset().name(),\
+        f'{base_account.free:,.{symbol.base_asset().pv()}f}', \
+        f'{base_account.locked:,.{symbol.base_asset().pv()}f}', \
+        symbol.quote_asset().name(), \
+        f'{quote_account.free:,.{symbol.quote_asset().pv()}f}', \
+        f'{quote_account.locked:,.{symbol.quote_asset().pv()}f}',\
+        f'{bnb_account.free:,.6f}',\
+        f'{bnb_account.locked:,.6f}'
+
+
+# ********** symbol selection buttons *********
+@app.callback(Output('button-btceur-hidden-msg', 'color'),
+              Input('button-btceur', 'n_clicks'),
+              )
+def on_button_click(n):
+    # set BTCEUR as active symbol if button pressed
+    if n is not None:
+        dfm.set_dashboard_active_symbol(symbol_name='BTCEUR')
+    return ''
+
+
+@app.callback(Output('button-bnbeur-hidden-msg', 'children'),
+              Input('button-bnbeur', 'n_clicks'),
+              )
+def on_button_click(n):
+    # set BNBEUR as active symbol if button pressed
+    if n is not None:
+        dfm.set_dashboard_active_symbol(symbol_name='BNBEUR')
+    return ''
+
+
+# update symbol selection button colors (green/gray)
+@app.callback(Output('button-btceur', 'color'),
+              Output('button-bnbeur', 'color'),
+              Input('update', 'n_intervals'),
+              )
+def on_button_click(n):
+    # identify last button clicked
+    btceur_color = 'success' if dfm.dashboard_active_symbol.name == 'BTCEUR' else 'light'
+    bnbeur_color = 'success' if dfm.dashboard_active_symbol.name == 'BNBEUR' else 'light'
+    return btceur_color, bnbeur_color
+
+
+# Stop buttons
+@app.callback(Output('button-stop-cmp', 'children'), Input('button-stop-cmp', 'n_clicks'))
+def on_button_click(n):
+    if n is not None:
+        symbol_name = dfm.dashboard_active_symbol.name
+        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+    return 'Stop at cmp'
+
+
+@app.callback(Output('button-stop-price', 'children'), Input('button-stop-price', 'n_clicks'))
+def on_button_click(n):
+    if n is not None:
+        symbol_name = dfm.dashboard_active_symbol.name
+        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+    return 'Stop at price'
+
+
+@app.callback(Output('button-stop-cancel', 'children'), Input('button-stop-cancel', 'n_clicks'))
+def on_button_click(n):
+    if n is None:
+        return ''
+    else:
+        symbol_name = dfm.dashboard_active_symbol.name
+        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.CANCEL_ALL)
+        return 'Stop-cancel'
+
+
+@app.callback(Output('button-stop-global-session', 'children'), Input('button-stop-global-session', 'n_clicks'))
+def on_button_click(n):
+    if n is None:
+        return ''
+    else:
+        dfm.sm.stop_global_session()
+        return 'Stop Session'
+
+
+@app.callback(Output('button-new-pt', 'children'), Input('button-new-pt', 'n_clicks'))
+def on_button_click(n):
+    if n:
+        symbol = dfm.dashboard_active_symbol
+        symbol_name = symbol.name
+        cmp = dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0
+        dfm.sm.active_sessions[symbol_name].manually_create_new_pt(cmp=cmp, symbol=symbol)
+    return 'New PT'
+
+
+@app.callback(Output('button-increase-cmp', 'children'), Input('button-increase-cmp', 'n_clicks'))
+def on_button_click(n):
+    if n:
+        symbol_name = dfm.dashboard_active_symbol.name
+        # dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=10.0, symbol_name=symbol_name)
+    return '+ 10.0 €'
+
+
+@app.callback(Output('button-decrease-cmp', 'children'), Input('button-decrease-cmp', 'n_clicks'))
+def on_button_click(n):
+    if n:
+        symbol_name = dfm.dashboard_active_symbol.name
+        # dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=-10.0, symbol_name=symbol_name)
+    return '- 10.0 €'
+
+
+# ********** others **********
+@app.callback(
+    Output('new-table', 'children'),
+    Input('update', 'n_intervals')
+)
+def update_table(timer):
+    df = dfm.get_all_orders_df_with_cmp()
+    # sort by price
+    df1 = df.sort_values(by=['price'], ascending=False)
+    # filter by status for each table (monitor-placed & traded)
+    df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
+    qp = dfm.dashboard_active_symbol.quote_asset().pv()
+    df_pending['price'] = df_pending['price'].map(f'{{:,.{qp}f}}'.format)  # two {{ }} to escape { in f-string
+    df_pending['total'] = df_pending['total'].map(f'{{:,.{qp}f}}'.format)
+
+    return get_pending_html_table(df=df_pending[['pt_id', 'name', 'price', 'amount', 'total', 'status']])
+
+

@@ -4,9 +4,6 @@ import pandas as pd
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
-# import plotly.express as px
-
-# import dash_aux as daux
 
 print('dash_layout.py')
 
@@ -46,7 +43,7 @@ class DashLayout:
                                                 html.H6("Session", className="card-header-session"),
                                             ], align='center'),
                                             dbc.Col([
-                                                html.H6(id='cycle-count', children='0', className='cycle-count'),
+                                                html.H6(id='session-cycle-count', children='0', className='cycle-count'),
                                             ], align='center'),
                                         ]),
                                         html.Br(),
@@ -57,15 +54,15 @@ class DashLayout:
                                             ]),
                                             dbc.Col([
                                                 html.H6('BUY', className='session-info-subtitle-3'),
-                                                html.H6(id='pt-buy-side', children='0', className='pt-info')
+                                                html.H6(id='pt-buy', children='0', className='pt-info')
                                             ]),
                                             dbc.Col([
                                                 html.H6('SELL', className='session-info-subtitle-3'),
-                                                html.H6(id='pt-sell-side', children='0', className='pt-info')
+                                                html.H6(id='pt-sell', children='0', className='pt-info')
                                             ]),
                                             dbc.Col([
                                                 html.H6('END', className='session-info-subtitle-3'),
-                                                html.H6(id='pt-completed', children='0', className='pt-info')
+                                                html.H6(id='pt-end', children='0', className='pt-info')
                                             ]),
                                         ]),
                                         html.Br(),
@@ -103,8 +100,8 @@ class DashLayout:
                                             ]),
                                         ]),
                                         html.Br(),
-                                        html.H6("Perfect Trades / Buy / Sell", className="card-title"),
-                                        html.H6(id='trade-info', children='0', className='pt-info'),
+                                        # html.H6("Perfect Trades / Buy / Sell", className="card-title"),
+                                        # html.H6(id='trade-info', children='0', className='pt-info'),
                                     ]),
                                     # dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True, className='scorpius-card'
@@ -279,18 +276,18 @@ class DashLayout:
                 # buttons
                 dbc.Row([
                     dbc.Col([
-                        dbc.Button('Hot Re-connect', id='button-start', disabled=False, color='primary', block=True, className='sc-button'),
+                        dbc.Button('TBD', id='tbd-010', disabled=False, color='primary', block=True, className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('New Perfect Trade', id='button-new-pt', color='warning', block=True,
+                        dbc.Button('New PT', id='button-new-pt', color='warning', block=True,
                                    className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('+ 10.0 €', id='increase-cmp', disabled=False, color='warning', block=True,
+                        dbc.Button('+ 10.0 €', id='button-increase-cmp', disabled=False, color='warning', block=True,
                                    className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('- 10.0 €', id='decrease-cmp', disabled=False, color='warning', block=True,
+                        dbc.Button('- 10.0 €', id='button-decrease-cmp', disabled=False, color='warning', block=True,
                                    className='sc-button'),
                     ]),
                 ]),
@@ -309,27 +306,14 @@ class DashLayout:
     def get_card(self) -> dbc.Card:
         card = dbc.Card(
             [
-                # dbc.CardImg(src="assets/bitcoin.png", top=True, bottom=False),
                 dbc.CardBody(
                     [
-                        # html.H6(id='symbol', children='BTCEUR', className='symbol'),
-                        # html.H6(id='cmp', children='', className="card-title-symbol-cmp"),
                         html.H6(id='button-btceur-hidden-msg', children=''),
                         html.H6(id='button-bnbeur-hidden-msg', children=''),
-                        # html.H6(id='stop-price', children=''),
-                        html.H6(id='stop-cancel', children=''),
-                        html.H6(id='stop-global-session', children=''),
-                        html.H6(id='msg-2', children=''),
-                        html.H6(id='msg-start', children=''),
-                        html.H6(id='msg-increase-cmp', children=''),
-                        html.H6(id='msg-decrease-cmp', children='')
                     ], style={'text-align': 'center'}
                 ),
             ],
-            # color="dark",  # https://bootswatch.com/default/ for more card colors
-            # inverse=True,  # change color of text (black or white)
             outline=False,  # True = remove the block colors from the background and header
             style={'opacity': 0}
         )
-
         return card
