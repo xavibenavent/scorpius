@@ -79,7 +79,7 @@
 .card-header-session {
     color: DarkSeaGreen;
     font-size: 50px;
-    text-align: right;
+    text-align: left;
 }
 
 .card-header-global {
@@ -93,9 +93,40 @@
     color: DarkGray;
 }
 
+/* the vertical alignment is set in dash_layout in dbc.Col() with align='center' */
+.cycle-count {
+    font-size: 35px;
+    text-align: right;
+    color: DarkSeaGreen;
+}
+
+.session-info-subtitle {
+    font-size: 25px;
+    text-align: left;
+    color: DarkGray;
+}
+
+.session-info-subtitle-2 {
+    font-size: 25px;
+    text-align: center;
+    color: DarkGray;
+}
+
+.session-info-subtitle-3 {
+    font-size: 25px;
+    text-align: center;
+    color: SteelBlue;
+}
+
+.session-info-subtitle-4 {
+    font-size: 25px;
+    text-align: center;
+    color: DarkCyan;
+}
+
 .pt-info {
     font-size: 30px;
-    text-align: right;
+    text-align: center;
     color: DarkSeaGreen;
 }
 
