@@ -95,7 +95,7 @@
 
 /* the vertical alignment is set in dash_layout in dbc.Col() with align='center' */
 .cycle-count {
-    font-size: 35px;
+    font-size: 30px;
     text-align: right;
     color: DarkSeaGreen;
 }
@@ -124,10 +124,23 @@
     color: DarkCyan;
 }
 
+.global-info-subtitle-3 {
+    font-size: 25px;
+    text-align: center;
+    color: Gold;
+}
+
+
 .pt-info {
     font-size: 30px;
     text-align: center;
     color: DarkSeaGreen;
+}
+
+.order-info {
+    font-size: 30px;
+    text-align: center;
+    color: GoldenRock;
 }
 
 .session-info {
@@ -162,6 +175,19 @@
     text-align: right;
     color: Orange;
 }
+
+.cmp-min {
+    font-size: 30px;
+    color: SlateGray;
+    text-align: right;
+}
+
+.cmp-max {
+    font-size: 30px;
+    color: SlateGray;
+    text-align: right;
+}
+
 
 .locked {
     font-size: 30px;

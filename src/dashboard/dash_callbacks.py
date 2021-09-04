@@ -16,46 +16,26 @@ print('dash_callbacks.py')
 
 dfm = DataframeManager()
 
-# SYMBOL = 'BTCEUR'
 
+# first line data
 
-# ********** cmp **********
-@app.callback(Output('cmp', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
-    return f'{dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0:,.2f}'
-
-
-@app.callback(Output('current-time', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    return f'{datetime.now().strftime("%H:%M:%S")}'
-
-
-@app.callback(Output('neb', 'children'), Input('update', 'n_intervals'))
+@app.callback(Output('current-time', 'children'),
+              Output('neb', 'children'),
+              Output('qty', 'children'),
+              Output('target', 'children'),
+              Output('max-negative-profit-allowed', 'children'),
+              Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
     quote_name = dfm.dashboard_active_symbol.quote_asset().name()
-    return f'n: {dfm.sm.active_sessions[symbol_name].net_quote_balance:,.2f} {quote_name}'
-
-
-@app.callback(Output('qty', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
     base_name = dfm.dashboard_active_symbol.base_asset().name()
-    return f'q: {dfm.sm.active_sessions[symbol_name].quantity:,.4f} {base_name}'
 
-
-@app.callback(Output('target', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
-    quote_name = dfm.dashboard_active_symbol.quote_asset().name()
-    return f't: {dfm.sm.active_sessions[symbol_name].target_total_net_profit:,.2f} {quote_name}'
-
-
-@app.callback(Output('max-negative-profit-allowed', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
-    return f'({dfm.sm.active_sessions[symbol_name].max_negative_profit_allowed:,.2f})'
+    return \
+        f'{datetime.now().strftime("%H:%M:%S")}',\
+        f'n: {dfm.sm.active_sessions[symbol_name].net_quote_balance:,.2f} {quote_name}',\
+        f'q: {dfm.sm.active_sessions[symbol_name].quantity:,.4f} {base_name}',\
+        f't: {dfm.sm.active_sessions[symbol_name].target_total_net_profit:,.2f} {quote_name}',\
+        f'({dfm.sm.active_sessions[symbol_name].max_negative_profit_allowed:,.2f})'
 
 
 # ********** buttons *********
@@ -169,58 +149,18 @@ def on_button_click(n):
     return ''
 
 
-# ********** accounts data **********
+# ********** symbol & accounts data **********
 
 @app.callback(
-    Output('base-asset-free', 'children'), Output('base-asset-locked', 'children'),
-    Input('update', 'n_intervals')
-)
-def display_value(value):
-    symbol = dfm.dashboard_active_symbol
-    symbol_name = symbol.name
-    bm = dfm.sm.active_sessions[symbol_name].am
-    base_account = bm.get_account(symbol.base_asset().name())
-    return f'{base_account.free:,.{symbol.base_asset().pv()}f}', f'{base_account.locked:,.{symbol.base_asset().pv()}f}'
-
-
-@app.callback(
+    Output('symbol', 'children'),
+    Output('cmp', 'children'),
+    Output('base-asset', 'children'),
+    Output('base-asset-free', 'children'),
+    Output('base-asset-locked', 'children'),
+    Output('quote-asset', 'children'),
     Output('quote-asset-free', 'children'),
-    Input('update', 'n_intervals')
-)
-def display_value(value):
-    symbol = dfm.dashboard_active_symbol
-    symbol_name = symbol.name
-    bm = dfm.sm.active_sessions[symbol_name].am
-    quote_account = bm.get_account(symbol.quote_asset().name())
-    return f'{quote_account.free:,.{symbol.quote_asset().pv()}f}'
-
-
-
-@app.callback(
     Output('quote-asset-locked', 'children'),
-    Input('update', 'n_intervals')
-)
-def display_value(value):
-    symbol = dfm.dashboard_active_symbol
-    symbol_name = symbol.name
-    bm = dfm.sm.active_sessions[symbol_name].am
-    quote_account = bm.get_account(symbol.quote_asset().name())
-    return f'{quote_account.locked:,.{symbol.quote_asset().pv()}f}'
-
-
-@app.callback(
     Output('bnb-free', 'children'),
-    Input('update', 'n_intervals')
-)
-def display_value(value):
-    symbol = dfm.dashboard_active_symbol
-    symbol_name = symbol.name
-    bm = dfm.sm.active_sessions[symbol_name].am
-    bnb_account = bm.get_account('BNB')
-    return f'{bnb_account.free:,.6f}'
-
-
-@app.callback(
     Output('bnb-locked', 'children'),
     Input('update', 'n_intervals')
 )
@@ -228,26 +168,24 @@ def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
     bm = dfm.sm.active_sessions[symbol_name].am
+    base_account = bm.get_account(symbol.base_asset().name())
+    quote_account = bm.get_account(symbol.quote_asset().name())
     bnb_account = bm.get_account('BNB')
-    return f'{bnb_account.locked:,.6f}'
+
+    return \
+        symbol_name, \
+        f'{dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0:,.2f}', \
+        symbol.base_asset().name(),\
+        f'{base_account.free:,.{symbol.base_asset().pv()}f}', \
+        f'{base_account.locked:,.{symbol.base_asset().pv()}f}', \
+        symbol.quote_asset().name(), \
+        f'{quote_account.free:,.{symbol.quote_asset().pv()}f}', \
+        f'{quote_account.locked:,.{symbol.quote_asset().pv()}f}',\
+        f'{bnb_account.free:,.6f}',\
+        f'{bnb_account.locked:,.6f}'
 
 
 # ********** others **********
-
-@app.callback(Output('symbol', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    return dfm.dashboard_active_symbol.name
-
-
-@app.callback(Output('base-asset', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    return dfm.dashboard_active_symbol.base_asset().name()
-
-
-@app.callback(Output('quote-asset', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    return dfm.dashboard_active_symbol.quote_asset().name()
-
 
 @app.callback(
     Output('new-table', 'children'),
@@ -386,59 +324,22 @@ def display_value(value):
     return f's: {session_count}  (c:{consolidated_count}  e:{expected_count})'
 
 
-# # ********** actual profit **********
-# @app.callback(Output('btc-needed', 'children'), Input('update', 'n_intervals'))
-# def display_value(value):
-#     _, btc_needed = dfm.sm.session.ptm.get_total_eur_btc_needed()
-#     return f'{btc_needed:,.4f}'
 
-
-# ********** actual profit **********
-@app.callback(Output('equivalent-price', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    return f'***'
-
-
-# ********** actual profit **********
-@app.callback(Output('equivalent-qty', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    return f'***'
-
-
-@app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
-def update_profit_line(timer):
-    symbol_name = dfm.dashboard_active_symbol.name
-    pls = dfm.sm.active_sessions[symbol_name].total_profit_series
-    df = pd.DataFrame(data=pls, columns=['cmp'])
-    df['rate'] = df.index
-    fig = get_profit_line_chart(df=df, pls=pls)
-    return fig
-
-
-@app.callback(Output('cmp-line', 'figure'), Input('update', 'n_intervals'))
-def update_profit_line(timer):
-    symbol_name = dfm.dashboard_active_symbol.name
-    cmps = dfm.sm.active_sessions[symbol_name].cmps
-    df = pd.DataFrame(data=cmps, columns=['cmp'])
-    df['rate'] = df.index
-    fig = get_cmp_line_chart(df=df, cmps=cmps)
-    return fig
-
-
-# @app.callback([Output('modal', 'is_open'), Output('modal-body', 'children')],
-#               [Input('update', 'n_intervals')],
-#               [State('modal', 'is_open')])
-# def toggle_modal(timer, is_open: bool):
-#     if not is_open:
-#         if len(dfm.sm.session.modal_alert_messages) > 0:
-#             return  True, dfm.sm.session.modal_alert_messages
-#         else:
-#             return False, ''
-#     else:
-#         if close_tapped_count == dfm.sm.session.buy_count + dfm.sm.session.sell_count:
-#             button_click = close_tapped_count
-#             if len(dfm.sm.session.modal_alert_messages) > 0:
-#                 dfm.sm.session.modal_alert_messages.pop(0)
-#             return False, ''
-#         else:
-#             return  True, dfm.sm.session.modal_alert_messages
+# @app.callback(Output('profit-line', 'figure'), Input('update', 'n_intervals'))
+# def update_profit_line(timer):
+#     symbol_name = dfm.dashboard_active_symbol.name
+#     pls = dfm.sm.active_sessions[symbol_name].total_profit_series
+#     df = pd.DataFrame(data=pls, columns=['cmp'])
+#     df['rate'] = df.index
+#     fig = get_profit_line_chart(df=df, pls=pls)
+#     return fig
+#
+#
+# @app.callback(Output('cmp-line', 'figure'), Input('update', 'n_intervals'))
+# def update_profit_line(timer):
+#     symbol_name = dfm.dashboard_active_symbol.name
+#     cmps = dfm.sm.active_sessions[symbol_name].cmps
+#     df = pd.DataFrame(data=cmps, columns=['cmp'])
+#     df['rate'] = df.index
+#     fig = get_cmp_line_chart(df=df, cmps=cmps)
+#     return fig
