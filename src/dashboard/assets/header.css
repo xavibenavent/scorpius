@@ -137,6 +137,18 @@
     color: SkyBlue;
 }
 
+.pt-info-buy {
+    font-size: 30px;
+    text-align: center;
+    color: LightGreen;
+}
+
+.pt-info-sell {
+    font-size: 30px;
+    text-align: center;
+    color: LightSalmon;
+}
+
 .order-info {
     font-size: 30px;
     text-align: center;

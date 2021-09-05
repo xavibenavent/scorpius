@@ -80,6 +80,9 @@ class Session:
 
         # used in dashboard in the cmp line chart. initiated with current cmp
         self.cmps = [self.market.get_cmp(self.symbol.name)]
+        self.cmp = self.market.get_cmp(self.symbol.name)
+        self.min_cmp = self.cmp
+        self.max_cmp = self.cmp
 
         self.total_profit_series = [0.0]
 
@@ -111,6 +114,13 @@ class Session:
 
                 # these two lists will be used to plot
                 self.cmps.append(cmp)
+
+                # update cmp, min_cmp & max_cmp
+                if cmp < self.min_cmp:
+                    self.min_cmp = cmp
+                if cmp > self.max_cmp:
+                    self.max_cmp = cmp
+                self.cmp = cmp
 
                 # counter used to detect inactivity
                 self.cycles_from_last_trade += 1

@@ -62,7 +62,22 @@ def display_value(value):
 
 
 # span, depth, momentum & TBD data
-
+@app.callback(Output('pt-span', 'children'),
+              Output('pt-span-buy', 'children'),
+              Output('pt-span-sell', 'children'),
+              Output('pt-depth', 'children'),
+              Output('pt-depth-buy', 'children'),
+              Output('pt-depth-sell', 'children'),
+              Input('update', 'n_intervals'))
+def display_value(value):
+    data = dfm.get_span_depth_momentum()
+    return \
+        data.get('buy_span') + data.get('sell_span'),\
+        data.get('buy_span'),\
+        data.get('sell_span'), \
+        data.get('buy_depth') + data.get('sell_depth'), \
+        data.get('buy_depth'), \
+        data.get('sell_depth')
 
 
 # ********** stop at cmp **********
@@ -181,7 +196,9 @@ def display_value(value):
 # ********** symbol & accounts data **********
 @app.callback(
     Output('symbol', 'children'),
+    Output('cmp-max', 'children'),
     Output('cmp', 'children'),
+    Output('cmp-min', 'children'),
     Output('base-asset', 'children'),
     Output('base-asset-free', 'children'),
     Output('base-asset-locked', 'children'),
@@ -199,10 +216,13 @@ def display_value(value):
     base_account = bm.get_account(symbol.base_asset().name())
     quote_account = bm.get_account(symbol.quote_asset().name())
     bnb_account = bm.get_account('BNB')
+    quote_pv = symbol.quote_asset().pv()
 
     return \
         symbol_name, \
-        f'{dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0:,.2f}', \
+        f'{dfm.sm.active_sessions[symbol_name].max_cmp:,.{quote_pv}f}', \
+        f'{dfm.sm.active_sessions[symbol_name].cmp:,.{quote_pv}f}', \
+        f'{dfm.sm.active_sessions[symbol_name].min_cmp:,.{quote_pv}f}', \
         symbol.base_asset().name(),\
         f'{base_account.free:,.{symbol.base_asset().pv()}f}', \
         f'{base_account.locked:,.{symbol.base_asset().pv()}f}', \

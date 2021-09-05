@@ -1,6 +1,8 @@
 # sc_df_manager.py
 
 import pandas as pd
+from typing import Dict
+from binance import enums as k_binance
 
 from sc_order import OrderStatus
 from sc_perfect_trade import PerfectTradeStatus
@@ -56,9 +58,7 @@ class DataframeManager:
     def get_all_orders_df_with_cmp(self) -> pd.DataFrame:
         df = self.get_all_orders_df()
         symbol_name = self.dashboard_active_symbol.name
-        price = self.sm.active_sessions[symbol_name].cmps[-1] \
-            if self.sm.active_sessions[symbol_name].cmps \
-            else 0
+        price = self.sm.active_sessions[symbol_name].cmp
 
         # create cmp order-like and add to dataframe
         cmp_order = dict(
@@ -71,3 +71,21 @@ class DataframeManager:
         )
         df1 = df.append(other=cmp_order, ignore_index=True)
         return df1
+
+    def get_span_depth_momentum(self) -> Dict[str, int]:
+        symbol_name = self.dashboard_active_symbol.name
+        orders = self.sm.active_sessions[symbol_name].ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED])
+        buy_orders_values = [order.price for order in orders if order.k_side == k_binance.SIDE_BUY]
+        sell_orders_values = [order.price for order in orders if order.k_side == k_binance.SIDE_SELL]
+        cmp = self.sm.active_sessions[symbol_name].cmp
+        # min_buy = int(min(buy_orders_values)) if len(buy_orders_values) > 0 else 0
+        # max_buy = int(max(buy_orders_values)) if len(buy_orders_values) > 0 else 0
+
+        return dict(
+            buy_span=int(cmp - min(buy_orders_values)) if len(buy_orders_values) > 0 else 0,
+            buy_depth=int(cmp - max(buy_orders_values)) if len(buy_orders_values) > 0 else 0,
+            sell_span=int(max(sell_orders_values) - cmp) if len(sell_orders_values) > 0 else 0,
+            sell_depth=int(min(sell_orders_values) - cmp) if len(sell_orders_values) > 0 else 0,
+        )
