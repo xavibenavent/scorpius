@@ -22,11 +22,14 @@ class IsolatedOrdersManager:
         consolidated = 0.0
         expected = 0.0
 
-        log.info(f'check isolated order with uid {uid}')
+        log.info(f'checking isolated order with uid {uid}')
+        log.info('********** isolated orders:')
+        for order in self.isolated_orders:
+            log.info(f'isolated order: {order}')
 
         for order in self.isolated_orders:
             if order.uid == uid:
-                log.info(f'traded order from previous sessions {order}')
+                log.info(f'traded isolated order from previous sessions {order}')
 
                 is_known_order = True
                 original_price = order.price
@@ -95,3 +98,7 @@ class IsolatedOrdersManager:
                     log.debug(f'found a good order with loss {loss:,.2f} for getting liquidity: {candidate_order}')
                     return candidate_order
         return None
+
+    def log(self):
+        for order in self.isolated_orders:
+            log.info(f'isolated order: {order}')

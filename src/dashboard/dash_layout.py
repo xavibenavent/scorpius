@@ -292,11 +292,11 @@ class DashLayout:
                                    className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('+ 10.0 €', id='button-increase-cmp', disabled=False, color='warning', block=True,
+                        dbc.Button('+ 10.0 €', id='button-increase-cmp', color='warning', block=True,
                                    className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('- 10.0 €', id='button-decrease-cmp', disabled=False, color='warning', block=True,
+                        dbc.Button('- 10.0 €', id='button-decrease-cmp', color='warning', block=True,
                                    className='sc-button'),
                     ]),
                 ]),

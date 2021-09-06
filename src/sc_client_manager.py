@@ -57,13 +57,18 @@ class ClientManager:
         self._setup_client(symbols_name=self._config_manager.get_symbol_names())
 
     def on_button_step(self, symbol_name: str, step: float):
-        # todo: implement on_button_step() method
-        pass
+        if self._client_mode == ClientMode.CLIENT_MODE_SIMULATOR_MANUAL:
+            self.client.update_cmp_from_button(symbol_name=symbol_name, step=step)
 
     def _symbol_ticker_socket_callback(self, msg: Dict):
         # check it is a valid reference
         if self._symbol_ticker_callback:
             self._symbol_ticker_callback(msg)
+
+            # update fake client cmp
+            symbol_name = msg['s']
+            new_cmp = float(msg['c'])
+            self.client.cmp[symbol_name] = new_cmp
 
     def _user_socket_callback(self, msg: Dict):
         # check it is a valid reference

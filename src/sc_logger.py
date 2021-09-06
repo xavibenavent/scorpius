@@ -14,7 +14,7 @@ class XBLogger:
         # setup output string
         # format_s = '%(levelname)-8s %(message)s'
         # format_s = '%(levelname)-8s %(asctime)s %(filename)-20s %(funcName)-25s %(message)s'
-        format_s = '%(levelname)-8s %(funcName)-25s %(message)s'
+        format_s = '%(asctime)s %(levelname)-8s %(funcName)-25s %(message)s'
 
         formatter = logging.Formatter(format_s)
         ch.setFormatter(formatter)

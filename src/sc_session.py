@@ -79,8 +79,9 @@ class Session:
         )
 
         # used in dashboard in the cmp line chart. initiated with current cmp
-        self.cmps = [self.market.get_cmp(self.symbol.name)]
+        # self.cmps = [self.market.get_cmp(self.symbol.name)]
         self.cmp = self.market.get_cmp(self.symbol.name)
+        print(f'initial cmp: {self.cmp}')
         self.min_cmp = self.cmp
         self.max_cmp = self.cmp
 
@@ -117,7 +118,7 @@ class Session:
                 self.cmp_count += 1
 
                 # these two lists will be used to plot
-                self.cmps.append(cmp)
+                # self.cmps.append(cmp)
 
                 # update cmp, min_cmp & max_cmp
                 if cmp < self.min_cmp:
@@ -209,7 +210,7 @@ class Session:
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
         print(f'********** ORDER TRADED:    price: {order_price} [Q] - commission: {bnb_commission} [BNB]')
-        # log.info(f'********** ORDER TRADED:    price: {order_price} [Q] - commission: {bnb_commission} [BNB]')
+        log.info(f'********** ORDER TRADED:    {uid}')
 
         # get candidate orders
         orders_to_be_traded = self.ptm.get_orders_by_request(
@@ -217,9 +218,13 @@ class Session:
             pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
         )
 
+        order_found = False
+
         for order in orders_to_be_traded:
             # check uid
             if order.uid == uid:
+                order_found = True
+
                 # log.info(f'confirmation of order traded: {order}')
                 self.logbook.append(f'order traded: {order.pt.id} {order.name} {order.k_side}')
                 # reset counter
@@ -248,7 +253,7 @@ class Session:
                 # check condition for new pt:
                 if order.pt.status == PerfectTradeStatus.COMPLETED:
                     # check liquidity:
-                    is_allowed, forced_shift = self._allow_new_pt_creation(cmp=self.cmps[-1], symbol=self.symbol)
+                    is_allowed, forced_shift = self._allow_new_pt_creation(cmp=self.cmp, symbol=self.symbol)
                     if is_allowed:
                         shifted_cmp = order_price + forced_shift
                         # create pt
@@ -257,11 +262,13 @@ class Session:
 
                 # since the traded orders has been identified, do not check more orders
                 # break
-                return None
+                # return None
 
         # if no order found, then check in placed_orders_from_previous_sessions list
-        raise Exception()
-        # self.check_isolated_callback(self.symbol, uid, order_price)
+        # raise Exception()
+        if not order_found:
+            self.check_isolated_callback(self.symbol, uid, order_price)
+            raise Exception()
 
     def manually_create_new_pt(self, cmp: float, symbol: Symbol):
         is_allowed, _ = self._allow_new_pt_creation(cmp=cmp, symbol=symbol)
@@ -389,7 +396,6 @@ class Session:
 
     def quit_particular_session(self, quit_mode: QuitMode):
         log.info(f'********** STOP {quit_mode.name} ********** [{self.session_id}] terminated')
-        # log.info(f'session {self.session_id} terminated')
 
         # init used variables
         is_session_fully_consolidated = False
@@ -399,6 +405,7 @@ class Session:
         placed_orders_at_order_price = 0
 
         if quit_mode == QuitMode.PLACE_ALL_PENDING:  # place all monitor orders
+            log.info('quit placing isolated orders')
             # set session terminating status
             is_session_fully_consolidated = False
 
@@ -416,19 +423,21 @@ class Session:
                 for order in pt.orders:
                     # place only MONITOR orders
                     if order.status == OrderStatus.MONITOR:
+                        log.info(f'** isolated order to be appended to list: {order}')
+                        self.placed_isolated_callback(order)
                         self._place_limit_order(order=order)
+
                         placed_orders_at_order_price += 1
                         # add to isolated orders list
-                        self.placed_isolated_callback(order)
                         log.info(f'trading LIMIT order {order}')
-                        time.sleep(0.1)
+                        # time.sleep(0.1)
 
         elif quit_mode == QuitMode.TRADE_ALL_PENDING:  # trade diff orders at reference side (BUY or SELL)
             # set session terminating status
             is_session_fully_consolidated = True
 
             # get consolidated profit (expected is zero)
-            consolidated_profit += self.ptm.get_total_actual_profit_at_cmp(cmp=self.cmps[-1])
+            consolidated_profit += self.ptm.get_total_actual_profit_at_cmp(cmp=self.cmp)
 
             # place orders
             # get MONITOR orders in non completed pt
@@ -457,15 +466,15 @@ class Session:
                 for i in range(diff):
                     order = buy_orders[i]
                     self._place_market_order(order=order)
-                    log.info(f'trading reference market order {order.k_side} {order.status}')
-                    time.sleep(0.1)
+                    log.info(f'trading reference market order {order}')
+                    # time.sleep(0.1)
             elif diff < 0:  # SELL SIDE
                 log.info('SELL SIDE')
                 for i in range(-diff):
                     order = sell_orders[i]
                     self._place_market_order(order=order)
-                    log.info(f'trading reference market order {order.k_side} {order.status}')
-                    time.sleep(0.1)
+                    log.info(f'trading reference market order {order}')
+                    # time.sleep(0.1)
 
         # log final info
         self.ptm.log_perfect_trades_info()

@@ -35,6 +35,7 @@ class FakeClient:
 
         # DATA
         self._placed_orders: List[FakeOrder] = []
+        # only used to ser the orderId
         self._placed_orders_count = 0
 
         self.symbols: Dict[str, Symbol] = {}
@@ -98,7 +99,19 @@ class FakeClient:
     # ********** orders trading **********
 
     def order_market_buy(self, **kwargs) -> dict:
+        """
+        from MarketOut in place_market_order()
+        :param kwargs:
+            symbol=order.symbol.name,
+            quantity=order.get_amount(signed=False),
+            newClientOrderId=order.uid
+        :return:
+            msg {}
+        """
+
         symbol_name = kwargs.get('symbol')
+
+        # 1. create the fake order from params
         order = FakeOrder(
             uid=kwargs.get('newClientOrderId'),
             side='BUY',
@@ -106,18 +119,12 @@ class FakeClient:
             quantity=kwargs.get('quantity'),
             symbol_name=symbol_name
         )
-        # get account free value from symbol name
-        base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
+        # 2. check enough balance and raise exception if not enough
+        _, quote_account = self._get_accounts(symbol_name=symbol_name)
+        if quote_account.free < order.get_total():
+            raise Exception(f'not enough balance to place MARKET {order}')
 
-        # check enough balance
-        if order.side == 'BUY' and quote_account.free < order.get_total():
-            log.critical(f'not enough balance to place the order')
-            return {}
-        elif order.side == 'SELL' and base_account.free < order.quantity:
-            log.critical(f'not enough amount to place the order')
-            return {}
-
-        # place
+        # 3. place & trade the order
         self._placed_orders_count += 1
         self._place_order(order=order)
         self._trade_order(order=order)
@@ -133,19 +140,9 @@ class FakeClient:
             "executedQty": '0.0',
             "status": status,
             "timeInForce": "GTC",
-            "type": "LIMIT",
+            "type": "MARKET",
             "side": order.side
         }
-
-    def _get_accounts(self, symbol_name: str) -> (float, float):
-        # 1. get base asset & quote asset from symbols
-        base_asset = self.symbols[symbol_name].base_asset()
-        quote_asset = self.symbols[symbol_name].quote_asset()
-
-        # 2. get accounts from account manager
-        base_account = self.account_manager.get_account(name=base_asset.name())
-        quote_account = self.account_manager.get_account(name=quote_asset.name())
-        return base_account, quote_account
 
     def order_market_sell(self, **kwargs) -> dict:
         symbol_name = kwargs.get('symbol')
@@ -157,17 +154,11 @@ class FakeClient:
             symbol_name=symbol_name
         )
         # get account free value from symbol name
-        base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
+        base_account, _ = self._get_accounts(symbol_name=symbol_name)
 
         # check enough balance
-        if order.side == 'BUY' \
-                and quote_account.free < order.get_total():
-            log.critical(f'not enough balance to place the order')
-            return {}
-        elif order.side == 'SELL' \
-                and base_account.free < order.quantity:
-            log.critical(f'not enough amount to place the order')
-            return {}
+        if base_account.free < order.quantity:
+            raise Exception(f'not enough balance to place MARKET {order}')
 
         # place
         self._placed_orders_count += 1
@@ -185,9 +176,19 @@ class FakeClient:
             "executedQty": '0.0',
             "status": status,
             "timeInForce": "GTC",
-            "type": "LIMIT",
+            "type": "MARKET",
             "side": order.side
         }
+
+    def _get_accounts(self, symbol_name: str) -> (Account, Account):
+        # 1. get base asset & quote asset from symbols
+        base_asset = self.symbols[symbol_name].base_asset()
+        quote_asset = self.symbols[symbol_name].quote_asset()
+
+        # 2. get accounts from account manager
+        base_account = self.account_manager.get_account(name=base_asset.name())
+        quote_account = self.account_manager.get_account(name=quote_asset.name())
+        return base_account, quote_account
 
     def create_order(self, **kwargs) -> dict:
         symbol_name = kwargs.get('symbol')
@@ -203,21 +204,16 @@ class FakeClient:
         # check whether it has already been placed
         for placed_order in self._placed_orders:
             if placed_order.uid == order.uid:
-                log.critical(f'order with uid {placed_order.uid} has already been placed')
-                return {}
+                raise Exception(f'order {order} has already been placed')
 
         # get account free value from symbol name
         base_account, quote_account = self._get_accounts(symbol_name=symbol_name)
 
-        # check enough balance
-        if order.side == 'BUY' \
-                and quote_account.free < order.get_total():
-            log.critical(f'not enough balance to place the order')
-            return {}
-        elif order.side == 'SELL' \
-                and base_account.free < order.quantity:
-            log.critical(f'not enough amount to place the order')
-            return {}
+        # check enough balance and raise exception if not enough
+        if order.side == 'BUY' and quote_account.free < order.get_total():
+            raise Exception(f'not enough balance to place the LIMIT order {order}')
+        elif order.side == 'SELL' and base_account.free < order.quantity:
+            raise Exception(f'not enough balance to place the LIMIT order {order}')
 
         # place
         self._placed_orders_count += 1
@@ -289,10 +285,20 @@ class FakeClient:
     def get_avg_price(self, symbol: str) -> dict:
         if symbol in self.symbols.keys():
             return {'mins': 5, 'price': str(self.cmp[symbol])}
+        elif symbol == 'BNBEUR':
+            return {'mins': 5, 'price': '400.0'}
         else:
             price = str(0.0)
-            log.critical(f'symbol not in simulator, returning {price}')
-            return {'mins': 5, 'price': str(0.0)}
+            log.critical(f'symbol {symbol} not in simulator, returning {price}')
+            raise Exception()
+            # return {'mins': 5, 'price': str(0.0)}
+
+    def update_cmp_from_button(self, symbol_name: str, step: float) -> None:
+        self.cmp[symbol_name] += step
+        self._process_cmp_change(symbol_name=symbol_name)
+
+    def update_cmp_from_generator(self, msg: Dict):
+
 
     def _process_cmp_change(self, symbol_name: str):
         self._check_placed_orders_for_trading()

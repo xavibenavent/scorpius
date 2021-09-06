@@ -180,7 +180,7 @@ def display_value(value):
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
-    cmp = dfm.sm.active_sessions[symbol_name].cmps[-1]
+    cmp = dfm.sm.active_sessions[symbol_name].cmp  # s[-1]
     qp = symbol.quote_asset().pv()
     coin_symbol = symbol.quote_asset().name()
     # called the method in session to check buy_count == sell_count
@@ -350,7 +350,7 @@ def on_button_click(n):
     if n:
         symbol = dfm.dashboard_active_symbol
         symbol_name = symbol.name
-        cmp = dfm.sm.active_sessions[symbol_name].cmps[-1] if dfm.sm.active_sessions[symbol_name].cmps else 0
+        cmp = dfm.sm.active_sessions[symbol_name].cmp  # if dfm.sm.active_sessions[symbol_name].cmps else 0
         dfm.sm.active_sessions[symbol_name].manually_create_new_pt(cmp=cmp, symbol=symbol)
     return 'New PT'
 
@@ -360,6 +360,8 @@ def on_button_click(n):
     if n:
         symbol_name = dfm.dashboard_active_symbol.name
         # dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=10.0, symbol_name=symbol_name)
+        dfm.sm.client_manager.on_button_step(symbol_name=symbol_name, step=10.0)
+        print('button')
     return '+ 10.0 €'
 
 
@@ -368,6 +370,7 @@ def on_button_click(n):
     if n:
         symbol_name = dfm.dashboard_active_symbol.name
         # dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=-10.0, symbol_name=symbol_name)
+        dfm.sm.client_manager.on_button_step(symbol_name=symbol_name, step=-10.0)
     return '- 10.0 €'
 
 
