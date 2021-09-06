@@ -153,8 +153,8 @@ class Order:
         else:
             return cmp * self.amount * self.fee
 
-    def get_momentum(self, cmp: float):
-        return abs(self.amount * (cmp - self.price))
+    # def get_momentum(self, cmp: float):
+    #     return abs(self.amount * (cmp - self.price))
 
     def set_bnb_commission(self, commission: float, bnb_quote_rate: float) -> None:
         self._bnb_commission = commission
@@ -178,3 +178,9 @@ class Order:
 
     def _is_filter_passed(self) -> bool:
         return self.symbol.are_filters_ok(price=self.price, qty=self.amount)
+
+    def momentum(self, cmp: float) -> float:
+        return abs(self.amount * self.distance(cmp=cmp))
+
+    def distance(self, cmp: float) -> float:
+        return abs(cmp - self.price)

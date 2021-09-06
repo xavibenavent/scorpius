@@ -68,16 +68,25 @@ def display_value(value):
               Output('pt-depth', 'children'),
               Output('pt-depth-buy', 'children'),
               Output('pt-depth-sell', 'children'),
+              Output('pt-mtm', 'children'),
+              Output('pt-mtm-buy', 'children'),
+              Output('pt-mtm-sell', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
     data = dfm.get_span_depth_momentum()
+    total_span = data.get("buy_span") + data.get("sell_span")
+    total_depth = data.get('buy_depth') + data.get('sell_depth')
+    total_momentum = data.get('buy_momentum') + data.get('sell_momentum')
     return \
-        data.get('buy_span') + data.get('sell_span'),\
-        data.get('buy_span'),\
-        data.get('sell_span'), \
-        data.get('buy_depth') + data.get('sell_depth'), \
-        data.get('buy_depth'), \
-        data.get('sell_depth')
+        f'{total_span:.2f}',\
+        f'{data.get("buy_span"):.2f}',\
+        f'{data.get("sell_span"):.2f}', \
+        f'{total_depth:.2f}', \
+        f'{data.get("buy_depth"):.2f}', \
+        f'{data.get("sell_depth"):.2f}', \
+        f'{total_momentum:.2f}', \
+        f'{data.get("buy_momentum"):.2f}', \
+        f'{data.get("sell_momentum"):.2f}'
 
 
 # ********** stop at cmp **********

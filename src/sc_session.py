@@ -4,7 +4,7 @@ import logging
 import time
 from enum import Enum
 
-from typing import Callable, List, Any
+from typing import Callable, List, Any, Union
 from binance import enums as k_binance
 
 from sc_market import MarketApiOut
@@ -84,6 +84,8 @@ class Session:
         self.min_cmp = self.cmp
         self.max_cmp = self.cmp
 
+        self.gap = 0.0
+
         self.total_profit_series = [0.0]
 
         self.pt_created_count = 0
@@ -106,6 +108,8 @@ class Session:
                     if is_allowed:
                         shifted_cmp = cmp + forced_shift
                         self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+                        # set gap
+                        self.gap = self.ptm.get_first_gap()
                     else:
                         log.critical("initial pt not allowed, it will be tried again after inactivity period")
 
@@ -484,3 +488,47 @@ class Session:
             market_orders_count_at_cmp,  # number of orders placed at its own price
             placed_orders_at_order_price
         )
+
+    def get_momentum(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+        return sum([
+            order.momentum(cmp=self.cmp)
+            for order in self.ptm.get_orders_by_request(
+                orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+                pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+            )
+            if order.k_side == side
+        ])
+
+    def get_gap_momentum(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+        return self.get_momentum(side=side) / self.gap if self.gap != 0 else 0.0
+
+    def get_span(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+        distances = [
+            order.distance(cmp=self.cmp)
+            for order in self.ptm.get_orders_by_request(
+                orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+                pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+            )
+            if order.k_side == side
+        ]
+        return max(distances) if len(distances) > 0 else 0
+
+    def get_gap_span(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+        return self.get_span(side=side) / self.gap if self.gap != 0 else 0.0
+
+    def get_depth(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+        distances = [
+            order.distance(cmp=self.cmp)
+            for order in self.ptm.get_orders_by_request(
+                orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+                pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+            )
+            if order.k_side == side
+        ]
+        return min(distances) if len(distances) > 0 else 0
+
+    def get_gap_depth(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+        return self.get_depth(side=side) / self.gap if self.gap != 0 else 0.0
+
+
+

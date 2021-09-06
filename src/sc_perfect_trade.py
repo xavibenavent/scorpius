@@ -67,6 +67,9 @@ class PerfectTrade:
                         for order in self.orders])
         return 0.0
 
+    def get_gap(self) -> float:
+        return abs(self.orders[1].price - self.orders[0].price)
+
 
 
 

@@ -44,6 +44,12 @@ class PTManager:
         else:
             raise Exception('********** CRITICAL ERROR CREATING PT **********')
 
+    def get_first_gap(self) -> float:
+        if len(self.perfect_trades) > 0:
+            return self.perfect_trades[0].get_gap()
+        else:
+            return 0.0
+
     def order_traded(self, order: Order) -> None:
         # update status of the appropriate perfect trade depending on order side
         pt = order.pt
@@ -158,8 +164,8 @@ class PTManager:
             pt_status=[PerfectTradeStatus.BUY_TRADED]
         )
         # calculate momentum
-        buy_momentum = sum([order.get_momentum(cmp=cmp) for order in buy_momentum_orders])
-        sell_momentum = sum([order.get_momentum(cmp=cmp) for order in sell_momentum_orders])
+        buy_momentum = sum([order.momentum(cmp=cmp) for order in buy_momentum_orders])
+        sell_momentum = sum([order.momentum(cmp=cmp) for order in sell_momentum_orders])
         return sell_momentum - buy_momentum, buy_momentum, sell_momentum
 
     def _get_b1s1(self,

@@ -72,20 +72,24 @@ class DataframeManager:
         df1 = df.append(other=cmp_order, ignore_index=True)
         return df1
 
-    def get_span_depth_momentum(self) -> Dict[str, int]:
+    def get_span_depth_momentum(self) -> Dict[str, float]:
+        # return span, depth & momentum relative to the first gap
         symbol_name = self.dashboard_active_symbol.name
-        orders = self.sm.active_sessions[symbol_name].ptm.get_orders_by_request(
-            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
-            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED])
-        buy_orders_values = [order.price for order in orders if order.k_side == k_binance.SIDE_BUY]
-        sell_orders_values = [order.price for order in orders if order.k_side == k_binance.SIDE_SELL]
-        cmp = self.sm.active_sessions[symbol_name].cmp
-        # min_buy = int(min(buy_orders_values)) if len(buy_orders_values) > 0 else 0
-        # max_buy = int(max(buy_orders_values)) if len(buy_orders_values) > 0 else 0
+        # orders = self.sm.active_sessions[symbol_name].ptm.get_orders_by_request(
+        #     orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+        #     pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED])
+        # buy_orders_values = [order.price for order in orders if order.k_side == k_binance.SIDE_BUY]
+        # sell_orders_values = [order.price for order in orders if order.k_side == k_binance.SIDE_SELL]
+        # cmp = self.sm.active_sessions[symbol_name].cmp
+        # # min_buy = int(min(buy_orders_values)) if len(buy_orders_values) > 0 else 0
+        # # max_buy = int(max(buy_orders_values)) if len(buy_orders_values) > 0 else 0
+        # gap = self.sm.active_sessions[symbol_name].gap
 
         return dict(
-            buy_span=int(cmp - min(buy_orders_values)) if len(buy_orders_values) > 0 else 0,
-            buy_depth=int(cmp - max(buy_orders_values)) if len(buy_orders_values) > 0 else 0,
-            sell_span=int(max(sell_orders_values) - cmp) if len(sell_orders_values) > 0 else 0,
-            sell_depth=int(min(sell_orders_values) - cmp) if len(sell_orders_values) > 0 else 0,
+            buy_span=self.sm.active_sessions[symbol_name].get_span(side=k_binance.SIDE_BUY),
+            sell_span=self.sm.active_sessions[symbol_name].get_span(side=k_binance.SIDE_SELL),
+            buy_depth=self.sm.active_sessions[symbol_name].get_depth(side=k_binance.SIDE_BUY),
+            sell_depth=self.sm.active_sessions[symbol_name].get_depth(side=k_binance.SIDE_SELL),
+            buy_momentum=self.sm.active_sessions[symbol_name].get_gap_momentum(side=k_binance.SIDE_BUY),
+            sell_momentum=self.sm.active_sessions[symbol_name].get_gap_momentum(side=k_binance.SIDE_SELL)
         )
