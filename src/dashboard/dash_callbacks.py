@@ -93,8 +93,9 @@ def display_value(value):
 @app.callback(Output('actual-profit', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
-    cmp = dfm.sm.active_sessions[symbol_name].cmps[-1]
-    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.2f} €'
+    quote_asset_name = dfm.dashboard_active_symbol.quote_asset().name()
+    cmp = dfm.sm.active_sessions[symbol_name].cmp
+    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.2f}'  # {quote_asset_name}'
 
 
 # ********** stop at price **********
@@ -105,7 +106,7 @@ def display_value(value):
     cmp = dfm.sm.active_sessions[symbol_name].cmps[-1]
     qp = symbol.quote_asset().pv()
     coin_symbol = symbol.quote_asset().name()
-    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f} {coin_symbol}'
+    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f}'  # {coin_symbol}'
 
 
 # ********** completed profit **********

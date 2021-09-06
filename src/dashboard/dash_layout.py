@@ -49,58 +49,58 @@ class DashLayout:
                                         html.Br(),
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6('NEW ', className='session-info-subtitle-3'),
-                                                html.H6(id='pt-new', children='0', className='pt-info')
+                                                html.H6('NEW ', className='session-info-subtitle'),
+                                                html.H6(id='pt-new', children='0', className='pt-info-1')
                                             ]),
                                             dbc.Col([
-                                                html.H6('BUY', className='session-info-subtitle-3'),
-                                                html.H6(id='pt-buy', children='0', className='pt-info')
+                                                html.H6('BUY', className='session-info-subtitle'),
+                                                html.H6(id='pt-buy', children='0', className='pt-info-1')
                                             ]),
                                             dbc.Col([
-                                                html.H6('SELL', className='session-info-subtitle-3'),
-                                                html.H6(id='pt-sell', children='0', className='pt-info')
+                                                html.H6('SELL', className='session-info-subtitle'),
+                                                html.H6(id='pt-sell', children='0', className='pt-info-1')
                                             ]),
                                             dbc.Col([
-                                                html.H6('END', className='session-info-subtitle-3'),
-                                                html.H6(id='pt-end', children='0', className='pt-info')
+                                                html.H6('END', className='session-info-subtitle'),
+                                                html.H6(id='pt-end', children='0', className='pt-info-1')
                                             ]),
                                         ]),
                                         html.Br(),
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6('SPAN ', className='session-info-subtitle-4'),
+                                                html.H6('SPAN ', className='session-info-subtitle'),
                                                 html.H6(id='pt-span', children='0', className='pt-info'),
                                                 html.H6(id='pt-span-sell', children='0', className='pt-info-sell'),
                                                 html.H6(id='pt-span-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
-                                                html.H6('DEPTH', className='session-info-subtitle-4'),
+                                                html.H6('DEPTH', className='session-info-subtitle'),
                                                 html.H6(id='pt-depth', children='0', className='pt-info'),
                                                 html.H6(id='pt-depth-sell', children='0', className='pt-info-sell'),
                                                 html.H6(id='pt-depth-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
-                                                html.H6('MTM', className='session-info-subtitle-4'),
+                                                html.H6('MTM', className='session-info-subtitle'),
                                                 html.H6(id='pt-mtm', children='0', className='pt-info'),
-                                                html.H6(id='pt-mtm-sell', children='0', className='pt-info'),
-                                                html.H6(id='pt-mtm-buy', children='0', className='pt-info')
+                                                html.H6(id='pt-mtm-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='pt-mtm-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
-                                                html.H6('TBD', className='session-info-subtitle-4'),
+                                                html.H6('TBD', className='session-info-subtitle'),
                                                 html.H6(id='pt-btd', children='0', className='pt-info'),
-                                                html.H6(id='pt-btd-sell', children='0', className='pt-info'),
-                                                html.H6(id='pt-btd-buy', children='0', className='pt-info')
+                                                html.H6(id='pt-btd-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='pt-btd-buy', children='0', className='pt-info-buy')
                                             ]),
                                         ]),
                                         html.Br(),
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6('Stop at price ', className='session-info-subtitle-2'),
-                                                html.H6(id='stop-price-profit', children='0', className='pt-info')
+                                                html.H6('STOP-PRICE ', className='session-info-subtitle-2'),
+                                                html.H6(id='stop-price-profit', children='0', className='pt-info-1')
                                             ]),
                                             dbc.Col([
-                                                html.H6('Stop at cmp', className='session-info-subtitle-2'),
-                                                html.H6(id='actual-profit', children='0', className='pt-info')
+                                                html.H6('STOP-CMP', className='session-info-subtitle-2'),
+                                                html.H6(id='actual-profit', children='0', className='pt-info-1')
                                             ]),
                                         ]),
                                         html.Br(),
@@ -144,40 +144,59 @@ class DashLayout:
                                         html.Br(),
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6('CONS ', className='global-info-subtitle-4'),
-                                                html.H6(id='consolidated-session', children='0', className='pt-info'),
-                                                html.H6(id='consolidated-profit', children='0', className='pt-info')
+                                                html.H6('SPAN ', className='session-info-subtitle'),
+                                                html.H6(id='is-span', children='0', className='pt-info'),
+                                                html.H6(id='is-span-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='is-span-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
-                                                html.H6('EXPE', className='global-info-subtitle-4'),
-                                                html.H6(id='expected-session', children='0', className='pt-info'),
-                                                html.H6(id='expected-profit', children='0', className='pt-info')
+                                                html.H6('DEPTH', className='session-info-subtitle'),
+                                                html.H6(id='is-depth', children='0', className='pt-info'),
+                                                html.H6(id='is-depth-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='is-depth-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
-                                                html.H6('CMP', className='global-info-subtitle-4'),
-                                                html.H6(id='expected-session-at-cmp', children='0', className='pt-info'),
-                                                html.H6(id='expected-profit-at-cmp', children='0', className='pt-info')
+                                                html.H6('MTM', className='session-info-subtitle'),
+                                                html.H6(id='is-mtm', children='0', className='pt-info'),
+                                                html.H6(id='is-mtm-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='is-mtm-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
-                                                html.H6('TBD', className='global-info-subtitle-4'),
-                                                html.H6(id='xpt-btd-buy', children='0', className='pt-info'),
-                                                html.H6(id='xpt-btd-sell', children='0', className='pt-info')
+                                                html.H6('TBD', className='session-info-subtitle'),
+                                                html.H6(id='is-btd', children='0', className='pt-info'),
+                                                html.H6(id='is-btd-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='is-btd-buy', children='0', className='pt-info-buy')
                                             ]),
                                         ]),
                                         html.Br(),
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6('Stop at price ', className='global-info-subtitle-2'),
-                                                html.H6(id='xstop-price-profit', children='0', className='pt-info')
+                                                html.H6('DONE', className='global-info-subtitle-2'),
+                                                html.H6(id='consolidated-profit', children='0', className='order-info-1')
                                             ]),
                                             dbc.Col([
-                                                html.H6('Stop at cmp', className='global-info-subtitle-2'),
-                                                html.H6(id='xactual-profit', children='0', className='pt-info')
+                                                html.H6('EXPECT', className='global-info-subtitle-2'),
+                                                html.H6(id='expected-profit', children='0', className='order-info-1')
+                                            ]),
+                                            dbc.Col([
+                                                html.H6('ACTUAL', className='global-info-subtitle-2'),
+                                                html.H6(id='expected-profit-at-cmp', children='0', className='order-info-1')
                                             ]),
                                         ]),
-                                        html.Br(),
-                                        html.H6("Perfect Trades / Buy / Sell", className="card-title"),
-                                        html.H6(id='xtrade-info', children='0', className='pt-info'),
+                                        # html.Br(),
+                                        # dbc.Row([
+                                        #     dbc.Col([
+                                        #         html.H6('Stop at price ', className='global-info-subtitle-2'),
+                                        #         html.H6(id='xstop-price-profit', children='0', className='pt-info')
+                                        #     ]),
+                                        #     dbc.Col([
+                                        #         html.H6('Stop at cmp', className='global-info-subtitle-2'),
+                                        #         html.H6(id='xactual-profit', children='0', className='pt-info')
+                                        #     ]),
+                                        # ]),
+                                        # html.Br(),
+                                        # html.H6("Perfect Trades / Buy / Sell", className="card-title"),
+                                        # html.H6(id='xtrade-info', children='0', className='pt-info'),
                                     ]),
                                     # dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True, className='scorpius-card'

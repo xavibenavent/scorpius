@@ -500,7 +500,7 @@ class Session:
         ])
 
     def get_gap_momentum(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-        return self.get_momentum(side=side) / self.gap if self.gap != 0 else 0.0
+        return self.get_momentum(side=side) / (self.gap * self.quantity) if self.gap != 0 else 0.0
 
     def get_span(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
         distances = [
