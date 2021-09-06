@@ -89,38 +89,93 @@ def display_value(value):
         f'{data.get("sell_momentum"):.2f}'
 
 
-# ********** stop at cmp **********
-@app.callback(Output('actual-profit', 'children'), Input('update', 'n_intervals'))
+# ********** Session STOP profits **********
+@app.callback(Output('actual-profit', 'children'),
+              Output('stop-price-profit', 'children'),
+              Input('update', 'n_intervals'))
+def display_value(value):
+    symbol = dfm.dashboard_active_symbol
+    symbol_name = symbol.name
+    cmp = dfm.sm.active_sessions[symbol_name].cmp
+    qp = symbol.quote_asset().pv()
+    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.{qp}f}',\
+           f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f}'
+
+
+# **********************************
+# ********** Global data **********
+# **********************************
+
+
+# ********** Global elapsed time **********
+@app.callback(Output('global-cycle-count', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
-    quote_asset_name = dfm.dashboard_active_symbol.quote_asset().name()
-    cmp = dfm.sm.active_sessions[symbol_name].cmp
-    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.2f}'  # {quote_asset_name}'
+    global_cmp = dfm.sm.terminated_sessions[symbol_name]["global_cmp_count"]
+    session_cmp = dfm.sm.active_sessions[symbol_name].cmp_count
+    return f'{timedelta(seconds=global_cmp + session_cmp)}'
 
 
-# ********** stop at price **********
-@app.callback(Output('stop-price-profit', 'children'), Input('update', 'n_intervals'))
+# isolated orders info
+@app.callback(
+    Output('isol-orders-placed', 'children'),
+    Output('isol-orders-pending', 'children'),
+    Output('isol-orders-pending-buy', 'children'),
+    Output('isol-orders-pending-sell', 'children'),
+    Input('update', 'n_intervals'))
 def display_value(value):
-    symbol = dfm.dashboard_active_symbol
-    symbol_name = symbol.name
-    cmp = dfm.sm.active_sessions[symbol_name].cmps[-1]
-    qp = symbol.quote_asset().pv()
-    coin_symbol = symbol.quote_asset().name()
-    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f}'  # {coin_symbol}'
+    # todo: fix data gathering
+    symbol_name = dfm.dashboard_active_symbol.name
+    placed = dfm.sm.terminated_sessions[symbol_name]['global_placed_orders_count_at_price']
+    # still_isolated = dfm.sm.terminated_sessions[symbol_name]['global_placed_pending_orders_count']
+    still_isolated = len([order for order in dfm.sm.iom.isolated_orders])
+    sell = len(
+        [order for order in dfm.sm.iom.isolated_orders
+         if order.k_side == k_binance.SIDE_SELL and order.symbol.name == symbol_name]
+    )
+    buy = len(
+        [order for order in dfm.sm.iom.isolated_orders
+         if order.k_side == k_binance.SIDE_BUY and order.symbol == symbol_name]
+    )
+    return placed, still_isolated, buy, sell
 
 
-# ********** completed profit **********
-@app.callback(Output('pt-completed-profit', 'children'), Input('update', 'n_intervals'))
+# Global span, depth, momentum & TBD data
+@app.callback(Output('is-span', 'children'),
+              Output('is-span-buy', 'children'),
+              Output('is-span-sell', 'children'),
+              Output('is-depth', 'children'),
+              Output('is-depth-buy', 'children'),
+              Output('is-depth-sell', 'children'),
+              Output('is-mtm', 'children'),
+              Output('is-mtm-buy', 'children'),
+              Output('is-mtm-sell', 'children'),
+              Input('update', 'n_intervals'))
 def display_value(value):
-    symbol = dfm.dashboard_active_symbol
-    symbol_name = symbol.name
-    qp = symbol.quote_asset().pv()
-    coin_symbol = symbol.quote_asset().name()
-    return f'{dfm.sm.active_sessions[symbol_name].ptm.get_consolidated_profit():,.{qp}f} {coin_symbol}'
+    # todo: implement methods to get span, depth and momentum of isolated orders
+    # todo: assess moving isolated manager to session
+    # todo. assess modifying Orders to get span, depth and momentum from passed orders list
+    data = dfm.get_span_depth_momentum()
+    total_span = data.get("buy_span") + data.get("sell_span")
+    total_depth = data.get('buy_depth') + data.get('sell_depth')
+    total_momentum = data.get('buy_momentum') + data.get('sell_momentum')
+    return \
+        f'{total_span:.2f}',\
+        f'{data.get("buy_span"):.2f}',\
+        f'{data.get("sell_span"):.2f}', \
+        f'{total_depth:.2f}', \
+        f'{data.get("buy_depth"):.2f}', \
+        f'{data.get("sell_depth"):.2f}', \
+        f'{total_momentum:.2f}', \
+        f'{data.get("buy_momentum"):.2f}', \
+        f'{data.get("sell_momentum"):.2f}'
 
 
-# ********** traded orders profit **********
-@app.callback(Output('global-partial-profit', 'children'), Input('update', 'n_intervals'))
+# ********** Global STOP profits **********
+@app.callback(Output('consolidated-profit', 'children'),
+              Output('expected-profit', 'children'),
+              Output('expected-profit-at-cmp', 'children'),
+              Input('update', 'n_intervals'))
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
@@ -131,9 +186,11 @@ def display_value(value):
     consolidated = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_profit']
     expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
     expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=cmp, symbol_name=symbol_name)
-    return f'{consolidated:,.{qp}f} / ' \
-           f'{expected:,.{qp}f} / ' \
-           f'{expected_at_cmp:,.{qp}f} {coin_symbol}'
+    return f'{consolidated:,.{qp}f}', \
+           f'{expected:,.{qp}f}', \
+           f'{expected_at_cmp:,.{qp}f}'
+
+
 
 
 # ********** PT count / traded orders count **********
@@ -161,31 +218,6 @@ def display_value(value):
     accounts_info_s = ' '.join(map(str, accounts_info))
     return accounts_info_s
 
-
-# ********** session cycle count **********
-@app.callback(Output('global-cycle-count', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
-    global_cmp = dfm.sm.terminated_sessions[symbol_name]["global_cmp_count"]
-    session_cmp = dfm.sm.active_sessions[symbol_name].cmp_count
-    return f'{timedelta(seconds=global_cmp + session_cmp)}'
-
-
-# ********** session cycle count **********
-@app.callback(Output('global-placed-orders', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
-    placed = dfm.sm.terminated_sessions[symbol_name]['global_placed_orders_count_at_price']
-    still_isolated = dfm.sm.terminated_sessions[symbol_name]['global_placed_pending_orders_count']
-    sell = len(
-        [order for order in dfm.sm.iom.isolated_orders
-         if order.k_side == k_binance.SIDE_SELL and order.symbol.name == symbol_name]
-    )
-    buy = len(
-        [order for order in dfm.sm.iom.isolated_orders
-         if order.k_side == k_binance.SIDE_BUY and order.symbol == symbol_name]
-    )
-    return f'p: {placed} / i: {still_isolated} (s: {sell} b: {buy})'
 
 
 # ********** session count **********

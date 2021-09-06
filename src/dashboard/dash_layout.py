@@ -125,20 +125,20 @@ class DashLayout:
                                         html.Br(),
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6('PLAC ', className='global-info-subtitle-3'),
-                                                html.H6(id='orders-placed', children='0', className='order-info')
+                                                html.H6('PLCD ', className='global-info-subtitle-3'),
+                                                html.H6(id='isol-orders-placed', children='0', className='order-info')
                                             ]),
                                             dbc.Col([
                                                 html.H6('PEND', className='global-info-subtitle-3'),
-                                                html.H6(id='orders-pending', children='0', className='order-info')
+                                                html.H6(id='isol-orders-pending', children='0', className='order-info')
                                             ]),
                                             dbc.Col([
                                                 html.H6('BUY', className='global-info-subtitle-3'),
-                                                html.H6(id='orders-pending-buy', children='0', className='order-info')
+                                                html.H6(id='isol-orders-pending-buy', children='0', className='order-info')
                                             ]),
                                             dbc.Col([
                                                 html.H6('SELL', className='global-info-subtitle-3'),
-                                                html.H6(id='orders-pending-sell', children='0', className='order-info')
+                                                html.H6(id='isol-orders-pending-sell', children='0', className='order-info')
                                             ]),
                                         ]),
                                         html.Br(),
@@ -183,20 +183,6 @@ class DashLayout:
                                                 html.H6(id='expected-profit-at-cmp', children='0', className='order-info-1')
                                             ]),
                                         ]),
-                                        # html.Br(),
-                                        # dbc.Row([
-                                        #     dbc.Col([
-                                        #         html.H6('Stop at price ', className='global-info-subtitle-2'),
-                                        #         html.H6(id='xstop-price-profit', children='0', className='pt-info')
-                                        #     ]),
-                                        #     dbc.Col([
-                                        #         html.H6('Stop at cmp', className='global-info-subtitle-2'),
-                                        #         html.H6(id='xactual-profit', children='0', className='pt-info')
-                                        #     ]),
-                                        # ]),
-                                        # html.Br(),
-                                        # html.H6("Perfect Trades / Buy / Sell", className="card-title"),
-                                        # html.H6(id='xtrade-info', children='0', className='pt-info'),
                                     ]),
                                     # dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True, className='scorpius-card'
