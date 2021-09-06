@@ -22,6 +22,8 @@ class IsolatedOrdersManager:
         consolidated = 0.0
         expected = 0.0
 
+        log.info(f'check isolated order with uid {uid}')
+
         for order in self.isolated_orders:
             if order.uid == uid:
                 log.info(f'traded order from previous sessions {order}')
@@ -38,7 +40,7 @@ class IsolatedOrdersManager:
                 diff = abs(original_price - traded_price) * qty
 
                 if order.k_side == k_binance.SIDE_BUY:
-                    if order.price > traded_price:
+                    if original_price > traded_price:
                         # bought at a lower price (GOOD)
                         consolidated = expected + diff
                     else:
@@ -46,7 +48,7 @@ class IsolatedOrdersManager:
                         consolidated = expected - diff
 
                 elif order.k_side == k_binance.SIDE_SELL:
-                    if order.price < traded_price:
+                    if original_price < traded_price:
                         # sold at a higher price (GOOD)
                         consolidated = expected + diff
                     else:

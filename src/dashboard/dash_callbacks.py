@@ -128,7 +128,8 @@ def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
     placed = dfm.sm.terminated_sessions[symbol_name]['global_placed_orders_count_at_price']
     # still_isolated = dfm.sm.terminated_sessions[symbol_name]['global_placed_pending_orders_count']
-    still_isolated = len([order for order in dfm.sm.iom.isolated_orders])
+    still_isolated = len([order for order in dfm.sm.iom.isolated_orders
+                          if order.symbol.name == symbol_name])
     sell = len(
         [order for order in dfm.sm.iom.isolated_orders
          if order.k_side == k_binance.SIDE_SELL and order.symbol.name == symbol_name]
