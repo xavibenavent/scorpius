@@ -246,12 +246,14 @@
 }
 
 /* ********** orders table ********** */
+/*
 th, td, tr {
   border: none;
 }
+*/
 
 table {
-    border-collapse: collapse;
+    /* border-collapse: collapse; */
 }
 
 th {
@@ -263,7 +265,6 @@ th {
 
 tr {
     font-size: 30px;
-    /* height: 50px; */
     /* border-upper: none; */
 }
 
@@ -289,7 +290,6 @@ tr.cmp-order {
 
 td {
     text-align: center;
-    border: none;
 }
 
 

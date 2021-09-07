@@ -2,7 +2,7 @@
 
 from typing import List
 import dash_bootstrap_components as dbc
-from dash_html_components import Th, Tr, Td, Thead, Tbody, H6
+from dash_html_components import Th, Tr, Td, Thead, Tbody
 
 import pandas as pd
 
