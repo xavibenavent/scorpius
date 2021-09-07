@@ -1,4 +1,4 @@
-# sc_market_out.py
+# sc_market_api_out.py
 import pprint
 
 from binance.client import Client
@@ -17,7 +17,7 @@ from sc_account_manager import Account
 log = logging.getLogger('log')
 
 
-class MarketOut:
+class MarketAPIOut:
     def __init__(self,
                  client: Client,
                  hot_reconnect_callback: Callable[[], None]

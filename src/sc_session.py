@@ -8,7 +8,7 @@ from typing import Callable, List, Any, Union
 from binance import enums as k_binance
 
 # from sc_market import MarketApiOut
-from sc_market_out import MarketOut
+from sc_market_api_out import MarketAPIOut
 from sc_order import Order, OrderStatus
 # from sc_balance_manager import BalanceManager, Account
 from sc_account_manager import Account, AccountManager
@@ -31,7 +31,7 @@ class Session:
                  symbol: Symbol,
                  session_id: str,
                  session_stopped_callback: Callable[[Symbol, str, bool, float, float, int, int, int], None],
-                 market: MarketOut,
+                 market: MarketAPIOut,
                  account_manager: AccountManager,
                  check_isolated_callback: Callable[[Symbol, str, float], None],
                  placed_isolated_callback: Callable[[Order], None],
