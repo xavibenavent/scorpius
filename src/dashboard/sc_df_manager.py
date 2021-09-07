@@ -45,10 +45,14 @@ class DataframeManager:
         # get list with all orders:
         symbol_name = self.dashboard_active_symbol.name
         if self.sm.active_sessions[symbol_name]:
-            all_orders = self.sm.active_sessions[symbol_name].ptm.get_orders_by_request(
+            # all_orders = self.sm.active_sessions[symbol_name].ptm.get_orders_by_request(
+            session_orders = self.sm.active_sessions[symbol_name].ptm.get_orders_by_request(
                 orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
                 pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
                            PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
+            isolated_orders = [order for order in self.sm.iom.isolated_orders if order.symbol.name == symbol_name]
+            all_orders = session_orders + isolated_orders
+
             # create dataframe
             df = pd.DataFrame([order.to_dict_for_df() for order in all_orders])
             return df

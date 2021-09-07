@@ -311,7 +311,7 @@ def on_button_click(n):
     if n is not None:
         symbol_name = dfm.dashboard_active_symbol.name
         dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-    return 'Stop at cmp'
+    return 'STOP-CMP'
 
 
 @app.callback(Output('button-stop-price', 'children'), Input('button-stop-price', 'n_clicks'))
@@ -319,26 +319,22 @@ def on_button_click(n):
     if n is not None:
         symbol_name = dfm.dashboard_active_symbol.name
         dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
-    return 'Stop at price'
+    return 'STOP-PRICE'
 
 
 @app.callback(Output('button-stop-cancel', 'children'), Input('button-stop-cancel', 'n_clicks'))
 def on_button_click(n):
-    if n is None:
-        return ''
-    else:
+    if n is not None:
         symbol_name = dfm.dashboard_active_symbol.name
         dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.CANCEL_ALL)
-        return 'Stop-cancel'
+    return 'STOP-CANCEL'
 
 
 @app.callback(Output('button-stop-global-session', 'children'), Input('button-stop-global-session', 'n_clicks'))
 def on_button_click(n):
-    if n is None:
-        return ''
-    else:
+    if n is not None:
         dfm.sm.stop_global_session()
-        return 'Stop Session'
+    return 'STOP-SESSION'
 
 
 @app.callback(Output('button-new-pt', 'children'), Input('button-new-pt', 'n_clicks'))
@@ -348,7 +344,7 @@ def on_button_click(n):
         symbol_name = symbol.name
         cmp = dfm.sm.active_sessions[symbol_name].cmp  # if dfm.sm.active_sessions[symbol_name].cmps else 0
         dfm.sm.active_sessions[symbol_name].manually_create_new_pt(cmp=cmp, symbol=symbol)
-    return 'New PT'
+    return 'NEW-PT'
 
 
 @app.callback(Output('button-increase-cmp', 'children'), Input('button-increase-cmp', 'n_clicks'))
@@ -377,7 +373,7 @@ def update_table(timer):
     # sort by price
     df1 = df.sort_values(by=['price'], ascending=False)
     # filter by status for each table (monitor-placed & traded)
-    df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp'])]
+    df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp', 'to_be_traded'])]
     qp = dfm.dashboard_active_symbol.quote_asset().pv()
     df_pending['price'] = df_pending['price'].map(f'{{:,.{qp}f}}'.format)  # two {{ }} to escape { in f-string
     df_pending['total'] = df_pending['total'].map(f'{{:,.{qp}f}}'.format)

@@ -16,10 +16,19 @@ def get_pending_html_table(df: pd.DataFrame) -> dbc.Table:
     row_values: List[Td] = []
     for index, row in df.iterrows():
         class_name: str
+
         if row['name'] == 'b1':
-            class_name = 'buy-order'
+            if row['status'] == 'to_be_traded':
+                class_name = 'buy-to-be-traded'
+            else:
+                class_name = 'buy-order'
+
         elif row['name'] == 's1':
-            class_name = 'sell-order'
+            if row['status'] == 'to_be_traded':
+                class_name = 'sell-to-be-traded'
+            else:
+                class_name = 'sell-order'
+
         else:
             class_name = 'cmp-order'
 

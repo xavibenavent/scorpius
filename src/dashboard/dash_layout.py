@@ -249,28 +249,20 @@ class DashLayout:
                         dbc.Button('BTCEUR', id='button-btceur', disabled=False, color='light', block=True,
                                    className='sc-button'),
                         html.Br(),
-                        dbc.Button("Stop at cmp", id='button-stop-cmp', color='danger', block=True,
-                                   className='sc-button'),
                     ]),
                     dbc.Col([
                         dbc.Button('BNBEUR', id='button-bnbeur', color='light', block=True, className='sc-button'),
                         html.Br(),
-                        dbc.Button("Stop-cancel", id='button-stop-cancel', color='danger', block=True,
-                                   className='sc-button'),
                     ]),
                     dbc.Col([
                         dbc.Button('TBD-01', id='button-tbd-01', disabled=False, color='light', block=True,
                                    className='sc-button'),
                         html.Br(),
-                        dbc.Button("Stop at price", id='button-stop-price', color='danger', block=True,
-                                   className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('TBD-02', id='button-tbd-02', disabled=False, color='light', block=True,
+                        dbc.Button("STOP-PRICE", id='button-stop-price', color='danger', block=True,
                                    className='sc-button'),
                         html.Br(),
-                        dbc.Button('Stop session', id='button-stop-global-session', color='success', block=True,
-                                   className='sc-button'),
                     ]),
                 ]),
 
@@ -285,17 +277,26 @@ class DashLayout:
                 # buttons
                 dbc.Row([
                     dbc.Col([
-                        dbc.Button('TBD', id='tbd-010', disabled=False, color='primary', block=True, className='sc-button'),
-                    ]),
-                    dbc.Col([
-                        dbc.Button('New PT', id='button-new-pt', color='warning', block=True,
+                        dbc.Button("STOP-CMP", id='button-stop-cmp', color='danger', block=True,
+                                   className='sc-button'),
+                        dbc.Button('TBD', id='tbd-010', disabled=False, color='warning', block=True,
                                    className='sc-button'),
                     ]),
                     dbc.Col([
+                        dbc.Button("STOP-CANCEL", id='button-stop-cancel', color='danger', block=True,
+                                   className='sc-button'),
+                        dbc.Button('NEW-PT', id='button-new-pt', color='warning', block=True,
+                                   className='sc-button'),
+                    ]),
+                    dbc.Col([
+                        dbc.Button('TBD-02', id='button-tbd-02', disabled=False, color='danger', block=True,
+                                   className='sc-button'),
                         dbc.Button('+ 10.0 €', id='button-increase-cmp', color='warning', block=True,
                                    className='sc-button'),
                     ]),
                     dbc.Col([
+                        dbc.Button('STOP-SESSION', id='button-stop-global-session', color='danger', block=True,
+                                   className='sc-button'),
                         dbc.Button('- 10.0 €', id='button-decrease-cmp', color='warning', block=True,
                                    className='sc-button'),
                     ]),

@@ -6,8 +6,8 @@
 
 .app-current-time {
     padding: 20px;
-    font-size: 24px;
-    color: Wheat;
+    font-size: 25px;
+    color: DarkSeaGreen;
 }
 
 .app-title {
@@ -29,19 +29,19 @@
 .target {
     padding: 20px;
     font-size: 24px;
-    color: YellowGreen;
+    color: DarkGray;
 }
 
 .cycles-to-new-pt {
     padding: 20px;
-    font-size: 24px;
-    color: DarkGray;
+    font-size: 25px;
+    color: DarkseaGreen;
 }
 
 .accounts-info {
     padding: 20px;
     font-size: 24px;
-    color: SteelBlue;
+    color: Gray;
 }
 
 
@@ -247,7 +247,7 @@
 
 /* ********** orders table ********** */
 th, td, tr {
-  /* border: 2px solid yellow; */
+  border: none;
 }
 
 table {
@@ -262,7 +262,8 @@ th {
 }
 
 tr {
-    font-size: 35px;
+    font-size: 30px;
+    /* height: 50px; */
     /* border-upper: none; */
 }
 
@@ -272,6 +273,14 @@ tr.buy-order {
 
 tr.sell-order {
     color: OrangeRed;
+}
+
+tr.buy-to-be-traded {
+    color: OliveDrab;
+}
+
+tr.sell-to-be-traded {
+    color: IndianRed;
 }
 
 tr.cmp-order {
