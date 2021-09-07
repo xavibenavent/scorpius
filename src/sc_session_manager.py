@@ -9,7 +9,8 @@ import signal
 from config_manager import ConfigManager
 
 from sc_session import Session
-from sc_market import MarketApiOut
+# from sc_market import MarketApiOut
+from sc_market_out import MarketOut
 from market_sockets_in import MarketSocketsIn
 from sc_account_manager import Account, AccountManager
 from sc_isolated_manager import IsolatedOrdersManager
@@ -41,7 +42,9 @@ class SessionManager:
             symbol_ticker_callback=self.market_sockets_in.binance_symbol_ticker_callback,
             user_callback=self.market_sockets_in.binance_user_socket_callback
         )
-        self.market_api_out = MarketApiOut(client_manager=self.client_manager)
+        # self.market_api_out = MarketApiOut(client_manager=self.client_manager)
+        self.market_api_out = MarketOut(client=self.client_manager.client,
+                                        hot_reconnect_callback=self.client_manager.hot_reconnect)
 
         # session will be started within start_session method
         self.active_sessions: Dict[str, Optional[Session]] = {}
@@ -72,7 +75,8 @@ class SessionManager:
 
         for symbol_name in symbols_name:
             # get filters from Binance API
-            symbol_filters = self.market_api_out.get_symbol_info(symbol_name=symbol_name)
+            symbol_filters = self.market_api_out.get_all_symbol_info(symbol_name=symbol_name)
+            # symbol_filters = self.market_api_out.get_symbol_info(symbol_name=symbol_name)
 
             # get session data from config.ini
             symbol_config_data = self.cm.get_symbol_data(symbol_name=symbol_name)

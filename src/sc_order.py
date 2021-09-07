@@ -171,7 +171,8 @@ class Order:
     def __repr__(self):
         return (
                 # f'{self.k_side:4} - {self.pt.id:5} - {self.name:5}'
-                f'[{self.k_side}/{self.uid}/{self.price:,.2f}/{self.amount:,.6f}/{self.status.name}]'
+                f'/{self.uid[:4]}_{self.uid[4:7]}-{self.uid[7:14]}_{self.uid[14:17]}-{self.uid[17:23]}_{self.uid[23:]}/'
+                f'{self.price:,.2f}/{self.amount:,.6f}/{self.status.name}]'
                 # f' - {self._bnb_commission:12,.6f} - '
                 # f'- {self._binance_id}]'
         )
