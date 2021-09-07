@@ -11,7 +11,7 @@ from config_manager import ConfigManager
 from sc_session import Session
 # from sc_market import MarketApiOut
 from sc_market_api_out import MarketAPIOut
-from market_sockets_in import MarketSocketsIn
+from sc_market_sockets_in import MarketSocketsIn
 from sc_account_manager import Account, AccountManager
 from sc_isolated_manager import IsolatedOrdersManager
 from sc_order import Order
