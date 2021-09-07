@@ -501,46 +501,50 @@ class Session:
             placed_orders_at_order_price
         )
 
-    def get_momentum(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-        return sum([
-            order.momentum(cmp=self.cmp)
-            for order in self.ptm.get_orders_by_request(
-                orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
-                pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-            )
-            if order.k_side == side
-        ])
+    def get_side_span_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+        distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
+        return max(distances) if len(distances) > 0 else 0.0
 
-    def get_gap_momentum(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-        return self.get_momentum(side=side) / (self.gap * self.quantity) if self.gap != 0 else 0.0
+    def get_span_from_list(self, orders: List[Order]) -> (float, float):
+        buy_span = self.get_side_span_from_list(orders=orders, side=k_binance.SIDE_BUY)
+        sell_span = self.get_side_span_from_list(orders=orders, side=k_binance.SIDE_SELL)
+        return buy_span, sell_span
 
-    def get_span(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-        distances = [
-            order.distance(cmp=self.cmp)
-            for order in self.ptm.get_orders_by_request(
-                orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
-                pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-            )
-            if order.k_side == side
-        ]
-        return max(distances) if len(distances) > 0 else 0
+    def get_gap_span_from_list(self, orders: List[Order]) -> (float, float):
+        buy_span, sell_span = self.get_span_from_list(orders=orders)
+        if self.gap != 0.0:
+            return buy_span / self.gap, sell_span / self.gap
+        else:
+            return 0.0, 0.0
 
-    def get_gap_span(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-        return self.get_span(side=side) / self.gap if self.gap != 0 else 0.0
+    def get_side_depth_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+        distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
+        return min(distances) if len(distances) > 0 else 0.0
 
-    def get_depth(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-        distances = [
-            order.distance(cmp=self.cmp)
-            for order in self.ptm.get_orders_by_request(
-                orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
-                pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-            )
-            if order.k_side == side
-        ]
-        return min(distances) if len(distances) > 0 else 0
+    def get_depth_from_list(self, orders: List[Order]) -> (float, float):
+        buy_depth = self.get_side_depth_from_list(orders=orders, side=k_binance.SIDE_BUY)
+        sell_depth = self.get_side_depth_from_list(orders=orders, side=k_binance.SIDE_SELL)
+        return buy_depth, sell_depth
 
-    def get_gap_depth(self, side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-        return self.get_depth(side=side) / self.gap if self.gap != 0 else 0.0
+    def get_gap_depth_from_list(self, orders: List[Order]) -> (float, float):
+        buy_depth, sell_depth = self.get_depth_from_list(orders=orders)
+        if self.gap != 0.0:
+            return buy_depth / self.gap, sell_depth / self.gap
+        else:
+            return 0.0, 0.0
 
+    def get_side_momentum_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+        distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
+        return sum(distances) if len(distances) > 0 else 0.0
 
+    def get_momentum_from_list(self, orders: List[Order]) -> (float, float):
+        buy_mtm = self.get_side_momentum_from_list(orders=orders, side=k_binance.SIDE_BUY)
+        sell_mtm = self.get_side_momentum_from_list(orders=orders, side=k_binance.SIDE_SELL)
+        return buy_mtm, sell_mtm
 
+    def get_gap_momentum_from_list(self, orders: List[Order]) -> (float, float):
+        buy_mtm, sell_mtm = self.get_momentum_from_list(orders=orders)
+        if self.gap != 0.0:
+            return buy_mtm / self.gap, sell_mtm / self.gap
+        else:
+            return 0.0, 0.0

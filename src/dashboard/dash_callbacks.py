@@ -73,20 +73,27 @@ def display_value(value):
               Output('pt-mtm-sell', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
-    data = dfm.get_span_depth_momentum()
-    total_span = data.get("buy_span") + data.get("sell_span")
-    total_depth = data.get('buy_depth') + data.get('sell_depth')
-    total_momentum = data.get('buy_momentum') + data.get('sell_momentum')
+    session_orders = dfm.get_session_orders()
+
+    symbol_name = dfm.dashboard_active_symbol.name
+    active_session = dfm.sm.active_sessions[symbol_name]
+
+    buy_gap_span, sell_gap_span = active_session.get_gap_span_from_list(orders=session_orders)
+    total_gap_span = buy_gap_span + sell_gap_span
+    buy_gap_depth, sell_gap_depth = active_session.get_gap_depth_from_list(orders=session_orders)
+    total_gap_depth = buy_gap_depth + sell_gap_depth
+    buy_gap_momentum, sell_gap_momentum = active_session.get_gap_momentum_from_list(orders=session_orders)
+    total_gap_momentum = buy_gap_momentum + sell_gap_momentum
     return \
-        f'{total_span:.2f}',\
-        f'{data.get("buy_span"):.2f}',\
-        f'{data.get("sell_span"):.2f}', \
-        f'{total_depth:.2f}', \
-        f'{data.get("buy_depth"):.2f}', \
-        f'{data.get("sell_depth"):.2f}', \
-        f'{total_momentum:.2f}', \
-        f'{data.get("buy_momentum"):.2f}', \
-        f'{data.get("sell_momentum"):.2f}'
+        f'{total_gap_span:.2f}', \
+        f'{buy_gap_span:.2f}', \
+        f'{sell_gap_span:.2f}', \
+        f'{total_gap_depth:.2f}', \
+        f'{buy_gap_depth:.2f}', \
+        f'{sell_gap_depth:.2f}', \
+        f'{total_gap_momentum:.2f}', \
+        f'{buy_gap_momentum:.2f}', \
+        f'{sell_gap_momentum:.2f}'
 
 
 # ********** Session STOP profits **********
@@ -149,23 +156,27 @@ def display_value(value):
               Output('is-mtm-sell', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
-    # todo: implement methods to get span, depth and momentum of isolated orders
-    # todo: assess moving isolated manager to session
-    # todo. assess modifying Orders to get span, depth and momentum from passed orders list
-    data = dfm.get_span_depth_momentum()
-    total_span = data.get("buy_span") + data.get("sell_span")
-    total_depth = data.get('buy_depth') + data.get('sell_depth')
-    total_momentum = data.get('buy_momentum') + data.get('sell_momentum')
+    all_orders = dfm.get_all_orders()
+
+    symbol_name = dfm.dashboard_active_symbol.name
+    active_session = dfm.sm.active_sessions[symbol_name]
+
+    buy_gap_span, sell_gap_span = active_session.get_gap_span_from_list(orders=all_orders)
+    total_gap_span = buy_gap_span + sell_gap_span
+    buy_gap_depth, sell_gap_depth = active_session.get_gap_depth_from_list(orders=all_orders)
+    total_gap_depth = buy_gap_depth + sell_gap_depth
+    buy_gap_momentum, sell_gap_momentum = active_session.get_gap_momentum_from_list(orders=all_orders)
+    total_gap_momentum = buy_gap_momentum + sell_gap_momentum
     return \
-        f'{total_span:.2f}',\
-        f'{data.get("buy_span"):.2f}',\
-        f'{data.get("sell_span"):.2f}', \
-        f'{total_depth:.2f}', \
-        f'{data.get("buy_depth"):.2f}', \
-        f'{data.get("sell_depth"):.2f}', \
-        f'{total_momentum:.2f}', \
-        f'{data.get("buy_momentum"):.2f}', \
-        f'{data.get("sell_momentum"):.2f}'
+        f'{total_gap_span:.2f}',\
+        f'{buy_gap_span:.2f}',\
+        f'{sell_gap_span:.2f}', \
+        f'{total_gap_depth:.2f}', \
+        f'{buy_gap_depth:.2f}', \
+        f'{sell_gap_depth:.2f}', \
+        f'{total_gap_momentum:.2f}', \
+        f'{buy_gap_momentum:.2f}', \
+        f'{sell_gap_momentum:.2f}'
 
 
 # ********** Global STOP profits **********

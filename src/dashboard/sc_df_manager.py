@@ -1,10 +1,10 @@
 # sc_df_manager.py
 
 import pandas as pd
-from typing import Dict
+from typing import Dict, List
 from binance import enums as k_binance
 
-from sc_order import OrderStatus
+from sc_order import OrderStatus, Order
 from sc_perfect_trade import PerfectTradeStatus
 from sc_session_manager import SessionManager
 
@@ -41,17 +41,27 @@ class DataframeManager:
         # set the passed symbol as the one active in dashboard
         self.dashboard_active_symbol = self.available_symbols[position_in_list]
 
+    def get_session_orders(self) -> List[Order]:
+        symbol_name = self.dashboard_active_symbol.name
+        session_orders = self.sm.active_sessions[symbol_name].ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
+                       PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
+        return session_orders
+
+    def get_isolated_orders(self) -> List[Order]:
+        symbol_name = self.dashboard_active_symbol.name
+        isolated_orders = [order for order in self.sm.iom.isolated_orders if order.symbol.name == symbol_name]
+        return isolated_orders
+
+    def get_all_orders(self) -> List[Order]:
+        return self.get_session_orders() + self.get_isolated_orders()
+
     def get_all_orders_df(self) -> pd.DataFrame:
         # get list with all orders:
         symbol_name = self.dashboard_active_symbol.name
         if self.sm.active_sessions[symbol_name]:
-            # all_orders = self.sm.active_sessions[symbol_name].ptm.get_orders_by_request(
-            session_orders = self.sm.active_sessions[symbol_name].ptm.get_orders_by_request(
-                orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
-                pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
-                           PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
-            isolated_orders = [order for order in self.sm.iom.isolated_orders if order.symbol.name == symbol_name]
-            all_orders = session_orders + isolated_orders
+            all_orders = self.get_all_orders()
 
             # create dataframe
             df = pd.DataFrame([order.to_dict_for_df() for order in all_orders])
@@ -76,13 +86,13 @@ class DataframeManager:
         df1 = df.append(other=cmp_order, ignore_index=True)
         return df1
 
-    def get_span_depth_momentum(self) -> Dict[str, float]:
-        symbol_name = self.dashboard_active_symbol.name
-        return dict(
-            buy_span=self.sm.active_sessions[symbol_name].get_gap_span(side=k_binance.SIDE_BUY),
-            sell_span=self.sm.active_sessions[symbol_name].get_gap_span(side=k_binance.SIDE_SELL),
-            buy_depth=self.sm.active_sessions[symbol_name].get_gap_depth(side=k_binance.SIDE_BUY),
-            sell_depth=self.sm.active_sessions[symbol_name].get_gap_depth(side=k_binance.SIDE_SELL),
-            buy_momentum=self.sm.active_sessions[symbol_name].get_gap_momentum(side=k_binance.SIDE_BUY),
-            sell_momentum=self.sm.active_sessions[symbol_name].get_gap_momentum(side=k_binance.SIDE_SELL)
-        )
+    # def get_span_depth_momentum(self) -> Dict[str, float]:
+    #     symbol_name = self.dashboard_active_symbol.name
+    #     return dict(
+    #         buy_span=self.sm.active_sessions[symbol_name].get_gap_span(side=k_binance.SIDE_BUY),
+    #         sell_span=self.sm.active_sessions[symbol_name].get_gap_span(side=k_binance.SIDE_SELL),
+    #         buy_depth=self.sm.active_sessions[symbol_name].get_gap_depth(side=k_binance.SIDE_BUY),
+    #         sell_depth=self.sm.active_sessions[symbol_name].get_gap_depth(side=k_binance.SIDE_SELL),
+    #         buy_momentum=self.sm.active_sessions[symbol_name].get_gap_momentum(side=k_binance.SIDE_BUY),
+    #         sell_momentum=self.sm.active_sessions[symbol_name].get_gap_momentum(side=k_binance.SIDE_SELL)
+    #     )

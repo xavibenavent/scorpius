@@ -4,7 +4,7 @@ import logging
 import secrets
 from enum import Enum
 from binance import enums as k_binance
-from typing import Optional
+from typing import Optional, List
 
 from sc_symbol import Symbol
 
