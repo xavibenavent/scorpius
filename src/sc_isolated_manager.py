@@ -23,9 +23,9 @@ class IsolatedOrdersManager:
         expected = 0.0
 
         log.info(f'checking isolated order with uid {uid}')
-        log.info('********** isolated orders:')
+        log.info('********** existing isolated orders:')
         for order in self.isolated_orders:
-            log.info(f'isolated order: {order}')
+            log.info(f'isolated order: {order} [{order.symbol.name}]')
 
         for order in self.isolated_orders:
             if order.uid == uid:
@@ -60,7 +60,7 @@ class IsolatedOrdersManager:
 
                 # update global profit values
                 log.info(f'total to add to consolidate: {consolidated:,.2f}')
-                log.info(f'total to add to expected: {expected:,.2f}')
+                log.info(f'total to subtract from expected: {expected:,.2f}')
 
                 # remove order from list
                 self.isolated_orders.remove(order)

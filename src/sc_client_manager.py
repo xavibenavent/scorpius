@@ -61,14 +61,19 @@ class ClientManager:
             self.client.update_cmp_from_button(symbol_name=symbol_name, step=step)
 
     def _symbol_ticker_socket_callback(self, msg: Dict):
+        # coming from:
+        #  - Binance socket in BINANCE MODE
+        #  - Generator in SIMULATOR GENERATOR MODE
+
+        # update fake client cmp
+        if self._client_mode == ClientMode.CLIENT_MODE_SIMULATOR_GENERATOR:
+            symbol_name = msg['s']
+            new_cmp = float(msg['c'])
+            self.client.update_cmp_from_generator(symbol_name=symbol_name, new_cmp=new_cmp)
+
         # check it is a valid reference
         if self._symbol_ticker_callback:
             self._symbol_ticker_callback(msg)
-
-            # update fake client cmp
-            symbol_name = msg['s']
-            new_cmp = float(msg['c'])
-            self.client.cmp[symbol_name] = new_cmp
 
     def _user_socket_callback(self, msg: Dict):
         # check it is a valid reference

@@ -268,7 +268,7 @@ class Session:
         # raise Exception()
         if not order_found:
             self.check_isolated_callback(self.symbol, uid, order_price)
-            raise Exception()
+            # raise Exception()
 
     def manually_create_new_pt(self, cmp: float, symbol: Symbol):
         is_allowed, _ = self._allow_new_pt_creation(cmp=cmp, symbol=symbol)

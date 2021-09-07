@@ -173,7 +173,6 @@ class SessionManager:
 
     def start_new_session(self, symbol: Symbol) -> Session:
         session_id = f'SES{self.session_count + 1:03d}{symbol.name}{datetime.now().strftime("%m%d%H%M")}'
-        self.iom.log()
         session = Session(
             symbol=symbol,
             session_id=session_id,

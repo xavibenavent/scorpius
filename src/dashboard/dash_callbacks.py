@@ -127,9 +127,6 @@ def display_value(value):
     # todo: fix data gathering
     symbol_name = dfm.dashboard_active_symbol.name
     placed = dfm.sm.terminated_sessions[symbol_name]['global_placed_orders_count_at_price']
-    # still_isolated = dfm.sm.terminated_sessions[symbol_name]['global_placed_pending_orders_count']
-    still_isolated = len([order for order in dfm.sm.iom.isolated_orders
-                          if order.symbol.name == symbol_name])
     sell = len(
         [order for order in dfm.sm.iom.isolated_orders
          if order.k_side == k_binance.SIDE_SELL and order.symbol.name == symbol_name]
@@ -138,7 +135,8 @@ def display_value(value):
         [order for order in dfm.sm.iom.isolated_orders
          if order.k_side == k_binance.SIDE_BUY and order.symbol == symbol_name]
     )
-    return placed, still_isolated, buy, sell
+    pending = buy + sell
+    return placed, pending, buy, sell
 
 
 # Global span, depth, momentum & TBD data
@@ -359,9 +357,7 @@ def on_button_click(n):
 def on_button_click(n):
     if n:
         symbol_name = dfm.dashboard_active_symbol.name
-        # dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=10.0, symbol_name=symbol_name)
         dfm.sm.client_manager.on_button_step(symbol_name=symbol_name, step=10.0)
-        print('button')
     return '+ 10.0 €'
 
 
@@ -369,7 +365,6 @@ def on_button_click(n):
 def on_button_click(n):
     if n:
         symbol_name = dfm.dashboard_active_symbol.name
-        # dfm.sm.active_sessions[symbol_name].market.update_fake_client_cmp(step=-10.0, symbol_name=symbol_name)
         dfm.sm.client_manager.on_button_step(symbol_name=symbol_name, step=-10.0)
     return '- 10.0 €'
 
