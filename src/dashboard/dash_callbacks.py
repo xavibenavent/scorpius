@@ -39,10 +39,13 @@ def display_value(value):
 # **********************************
 
 # elapsed time
-@app.callback(Output('session-cycle-count', 'children'), Input('update', 'n_intervals'))
+@app.callback(Output('session-count', 'children'),
+              Output('session-cycle-count', 'children'),
+              Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
-    return f'{timedelta(seconds=dfm.sm.active_sessions[symbol_name].cmp_count)}'
+    return f'#{dfm.sm.session_count + 1:03d}', \
+           f'{timedelta(seconds=dfm.sm.active_sessions[symbol_name].cmp_count)}'
 
 
 # perfect trade status info
@@ -229,13 +232,13 @@ def display_value(value):
 
 
 # ********** session count **********
-@app.callback(Output('session-count', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
-    consolidated_count = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_session_count']
-    expected_count = dfm.sm.terminated_sessions[symbol_name]['global_expected_session_count']
-    session_count = consolidated_count + expected_count
-    return f's: {session_count}  (c:{consolidated_count}  e:{expected_count})'
+# @app.callback(Output('session-count', 'children'), Input('update', 'n_intervals'))
+# def display_value(value):
+#     symbol_name = dfm.dashboard_active_symbol.name
+#     consolidated_count = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_session_count']
+#     expected_count = dfm.sm.terminated_sessions[symbol_name]['global_expected_session_count']
+#     session_count = consolidated_count + expected_count
+#     return f's: {session_count}  (c:{consolidated_count}  e:{expected_count})'
 
 
 

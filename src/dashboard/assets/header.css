@@ -78,7 +78,7 @@
 
 .card-header-session {
     color: DarkSeaGreen;
-    font-size: 50px;
+    font-size: 40px;
     text-align: left;
 }
 
@@ -91,6 +91,12 @@
 .card-title {
     font-size: 25px;
     color: DarkGray;
+}
+
+.session-count {
+    color: DarkSeaGreen;
+    font-size: 40px;
+    text-align: center;
 }
 
 /* the vertical alignment is set in dash_layout in dbc.Col() with align='center' */

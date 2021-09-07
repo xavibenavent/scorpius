@@ -43,6 +43,9 @@ class DashLayout:
                                                 html.H6("Session", className="card-header-session"),
                                             ], align='center'),
                                             dbc.Col([
+                                                html.H6(id='session-count', className="session-count")
+                                            ], align='center'),
+                                            dbc.Col([
                                                 html.H6(id='session-cycle-count', children='0', className='cycle-count'),
                                             ], align='center'),
                                         ]),
