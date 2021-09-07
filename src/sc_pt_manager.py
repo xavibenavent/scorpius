@@ -181,7 +181,7 @@ class PTManager:
         # create orders
         b1 = Order(
             symbol=symbol,
-            order_id='B' + order_id,
+            order_id='BUYY' + order_id,
             k_side=k_binance.SIDE_BUY,
             price=b1_price,
             amount=quantity,
@@ -189,7 +189,7 @@ class PTManager:
         )
         s1 = Order(
             symbol=symbol,
-            order_id='S' + order_id,
+            order_id='SELL' + order_id,
             k_side=k_binance.SIDE_SELL,
             price=s1_price,
             amount=quantity,

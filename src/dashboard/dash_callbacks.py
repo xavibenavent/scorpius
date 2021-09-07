@@ -124,17 +124,15 @@ def display_value(value):
     Output('isol-orders-pending-sell', 'children'),
     Input('update', 'n_intervals'))
 def display_value(value):
-    # todo: fix data gathering
     symbol_name = dfm.dashboard_active_symbol.name
+
     placed = dfm.sm.terminated_sessions[symbol_name]['global_placed_orders_count_at_price']
     sell = len(
         [order for order in dfm.sm.iom.isolated_orders
-         if order.k_side == k_binance.SIDE_SELL and order.symbol.name == symbol_name]
-    )
+         if order.k_side == k_binance.SIDE_SELL and order.symbol.name == symbol_name])
     buy = len(
         [order for order in dfm.sm.iom.isolated_orders
-         if order.k_side == k_binance.SIDE_BUY and order.symbol == symbol_name]
-    )
+         if order.k_side == k_binance.SIDE_BUY and order.symbol.name == symbol_name])
     pending = buy + sell
     return placed, pending, buy, sell
 

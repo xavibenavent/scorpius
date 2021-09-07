@@ -65,11 +65,11 @@ class ClientManager:
         #  - Binance socket in BINANCE MODE
         #  - Generator in SIMULATOR GENERATOR MODE
 
-        # update fake client cmp
-        if self._client_mode == ClientMode.CLIENT_MODE_SIMULATOR_GENERATOR:
-            symbol_name = msg['s']
-            new_cmp = float(msg['c'])
-            self.client.update_cmp_from_generator(symbol_name=symbol_name, new_cmp=new_cmp)
+        # # update fake client cmp
+        # if self._client_mode == ClientMode.CLIENT_MODE_SIMULATOR_GENERATOR:
+        #     symbol_name = msg['s']
+        #     new_cmp = float(msg['c'])
+        #     self.client.update_cmp_from_generator(symbol_name=symbol_name, new_cmp=new_cmp)
 
         # check it is a valid reference
         if self._symbol_ticker_callback:
@@ -109,7 +109,8 @@ class ClientManager:
             if self._client_mode == ClientMode.CLIENT_MODE_SIMULATOR_GENERATOR:
                 # start ticker generator for each symbol and add to generators list
                 for symbol_name in symbols_name:
-                    new_generator = self._create_generator(symbol_name)
+                    new_generator = self._create_generator(symbol_name=symbol_name,
+                                                           f_callback=client.update_cmp_from_generator)
                     self._generators.append(new_generator)
 
         else:
@@ -124,11 +125,12 @@ class ClientManager:
             for symbol_name in self.symbols_name:
                 self._twm.start_symbol_ticker_socket(symbol=symbol_name, callback=self._symbol_ticker_socket_callback)
 
-    def _create_generator(self, symbol_name: str) -> Generator:
+    def _create_generator(self, symbol_name: str, f_callback: Callable[[Dict], None]) -> Generator:
         new_generator = Generator(
             symbol_name=symbol_name,
             interval=self._config_manager.get_simulator_update_rate(),
-            f_callback=self._symbol_ticker_socket_callback,
+            f_callback=f_callback,
+            # f_callback=self._symbol_ticker_socket_callback,
             choice_values=self._config_manager.get_simulator_choice_values(symbol_name=symbol_name),
             initial_cmp=self._config_manager.get_initial_cmp(symbol_name=symbol_name)
         )

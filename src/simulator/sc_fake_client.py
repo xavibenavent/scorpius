@@ -297,9 +297,13 @@ class FakeClient:
         self.cmp[symbol_name] += step
         self._process_cmp_change(symbol_name=symbol_name)
 
-    def update_cmp_from_generator(self, symbol_name: str, new_cmp: float):
+    def update_cmp_from_generator(self, msg: Dict):
+        # update fake simulator cmp
+        symbol_name = msg['s']
+        new_cmp = float(msg['c'])
         self.cmp[symbol_name] = new_cmp
-        self._check_placed_orders_for_trading()
+
+        self._process_cmp_change(symbol_name=symbol_name)
 
     def _process_cmp_change(self, symbol_name: str):
         self._check_placed_orders_for_trading()
