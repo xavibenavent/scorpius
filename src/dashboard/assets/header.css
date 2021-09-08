@@ -290,7 +290,7 @@ tr.buy-order {
 }
 
 tr.sell-order {
-    color: #DD0000;
+    color: #FF6347;
 }
 
 tr.buy-to-be-traded {
@@ -298,7 +298,7 @@ tr.buy-to-be-traded {
 }
 
 tr.sell-to-be-traded {
-    color: #BB0000;
+    color: #bf4a35;
 }
 
 tr.cmp-order {
