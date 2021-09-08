@@ -252,6 +252,11 @@
 
 /* ********** session info ********** */
 
+.alert-msg {
+    font-size: 30px;
+    color: FireBrick;
+    text-align: center;
+}
 
 /* profit info */
 .card-main-title {

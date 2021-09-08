@@ -36,7 +36,8 @@ class Session:
                  check_isolated_callback: Callable[[Symbol, str, float], None],
                  placed_isolated_callback: Callable[[Order], None],
                  try_to_get_liquidity_callback: Callable[[Symbol, Asset, float], None],
-                 get_liquidity_needed_callback: Callable[[Asset], float]
+                 get_liquidity_needed_callback: Callable[[Asset], float],
+                 get_isolated_orders_callback: Callable[[str], List[Order]]
                  ):
 
         self.symbol = symbol
@@ -48,6 +49,7 @@ class Session:
         # isolated manager callbacks
         self.check_isolated_callback = check_isolated_callback
         self.placed_isolated_callback = placed_isolated_callback
+        self.get_isolated_orders_callback = get_isolated_orders_callback
 
         # liquidity needed callback
         self._get_liquidity_needed_callback = get_liquidity_needed_callback
@@ -62,6 +64,7 @@ class Session:
         self.commission_rate_symbol = config['commission_rate_symbol']
         self.target_total_net_profit = float(config['target_total_net_profit'])
         self.cycles_count_for_inactivity = int(config['cycles_count_for_inactivity'])
+        self.ref_cycles_inactivity = self.cycles_count_for_inactivity
         self.new_pt_shift = float(config['new_pt_shift'])
         self.isolated_distance = float(config['isolated_distance'])
         self.compensation_distance = float(config['compensation_distance'])
@@ -97,6 +100,8 @@ class Session:
         self.cycles_from_last_trade = 0
 
         self.logbook: List[str] = []
+
+        self.alert_msg = ''
 
         # log.debug(f'session object created: {self.session_id}')
 
@@ -203,7 +208,14 @@ class Session:
             if is_allowed:
                 shifted_cmp = cmp + forced_shift
                 self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol, pt_type='FROM_INACTIVITY')
-                self.cycles_from_last_trade = 0  # equivalent to trading but without a trade
+
+                # check imbalance and add time proportional to it
+                diff = abs(self.buy_count - self.sell_count)
+                if diff > 1:
+                    self.cycles_count_for_inactivity = self.ref_cycles_inactivity * diff
+                else:  # 0 or 1
+                    self.cycles_count_for_inactivity = self.ref_cycles_inactivity
+                self.cycles_from_last_trade = 0
             else:
                 log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
                 # update inactivity counter to try again after 60 cycles if inactivity continues
@@ -284,15 +296,35 @@ class Session:
             return False, 0.0
 
         # 2. minimize span
+        isolated_orders = self.get_isolated_orders_callback(self.symbol.name)
+        session_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
+                       PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
+        all_orders = isolated_orders + session_orders
 
+        buy_span, sell_span = self.get_span_from_list(all_orders)
+        ref_gap = self.gap / 2
 
+        if buy_span == 0.0 and sell_span == 0.0:
+            return True, 0.0
+        elif buy_span == 0.0:
+            return True, ref_gap
+        elif sell_span == 0.0:
+            return True, -ref_gap
+        else:
+            buy_mtm, sell_mtm = self.get_momentum_from_list(all_orders)
+            if buy_mtm > sell_mtm:
+                return True, self.gap
+            else:
+                return True, -self.gap
         # 3. balance buy & sell momentum
         # dynamic parameters:
         #   - inactivity time
         #   - neb/amount
 
         # if all conditions passed
-        return True, forced_shift
+        # return True, forced_shift
 
     def _is_liquidity_enough(self, cmp: float, symbol: Symbol) -> (bool, float):
         # precision for visualization

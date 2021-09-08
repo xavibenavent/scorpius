@@ -271,6 +271,20 @@ def display_value(value):
         f'{bnb_account.locked:,.6f}'
 
 
+# ********** alert message **********
+@app.callback(Output('alert-msg', 'children'),
+              Input('update', 'n_intervals'))
+def display_value(value):
+    symbol = dfm.dashboard_active_symbol
+
+    # check bnb liquidity and raise ALERT
+    bnb_liquidity = dfm.sm.active_sessions[symbol.name].am.get_account('BNB').free
+    if bnb_liquidity < 1.0:
+        return f'BNB LIQUIDITY ALERT {bnb_liquidity:,.6f}'
+    else:
+        return ''
+
+
 # ********** symbol selection buttons *********
 @app.callback(Output('button-symbols', 'children'),
               Input('button-symbols', 'n_clicks'),

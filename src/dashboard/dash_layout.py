@@ -262,7 +262,13 @@ class DashLayout:
                         ], className='liquidity-card'),
                     ], xs=3, sm=3, md=3, lg=3, xl=3),
                 ]),
-                html.Br(), html.Br(),
+                html.Br(),
+                dbc.Row([
+                    dbc.Col([
+                        html.H6(id='alert-msg', children='N/A', className='alert-msg'),
+                    ])
+                ]),
+                html.Br(),
                 dbc.Row([
                     dbc.Col([
                         dbc.Button('SYMBOL', id='button-symbols', color='success', block=True, className='sc-button'),
@@ -282,7 +288,6 @@ class DashLayout:
                         html.Br(),
                     ]),
                 ]),
-
                 html.Br(),
                 # orders table
                 dbc.Row([

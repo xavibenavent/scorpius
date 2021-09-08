@@ -188,7 +188,8 @@ class SessionManager:
             check_isolated_callback=self._check_isolated_callback,
             placed_isolated_callback=self._placed_isolated_callback,
             try_to_get_liquidity_callback=self._try_to_get_liquidity_callback,
-            get_liquidity_needed_callback=self._get_liquidity_needed_callback
+            get_liquidity_needed_callback=self._get_liquidity_needed_callback,
+            get_isolated_orders_callback=self._get_isolated_orders_callback
         )
 
         # update counter for all symbols
@@ -275,3 +276,6 @@ class SessionManager:
 
             # cancel in Binance the previously placed order
             self.market_api_out.cancel_orders([order])
+
+    def _get_isolated_orders_callback(self, symbol_name: str) -> List[Order]:
+        return [order for order in self.iom.isolated_orders if order.symbol.name == symbol_name]
