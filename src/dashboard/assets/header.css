@@ -146,6 +146,7 @@
 
 .pt-info {
     font-size: 30px;
+    font-style: italic;
     text-align: center;
     color: Gray;
 }
@@ -158,12 +159,14 @@
 
 .pt-info-buy {
     font-size: 30px;
+    font-style: italic;
     text-align: center;
     color: DarkSeaGreen;
 }
 
 .pt-info-sell {
     font-size: 30px;
+    font-style: italic;
     text-align: center;
     color: Salmon;
 }

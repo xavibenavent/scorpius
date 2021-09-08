@@ -26,7 +26,7 @@ class SessionManager:
         print('session manager')
 
         # global sessions info
-        self.session_count = 0
+        self.all_symbols_session_count = 0
 
         # MANAGERS
         self.iom = IsolatedOrdersManager()
@@ -49,6 +49,7 @@ class SessionManager:
         # session will be started within start_session method
         self.active_sessions: Dict[str, Optional[Session]] = {}
         self.terminated_sessions: Dict[str, Dict] = {}
+        self.session_count: Dict[str, int] = {}
 
         # DATA: get list of symbols info from config.ini & market
         self.symbols = self._get_symbols()
@@ -61,6 +62,7 @@ class SessionManager:
         # start first sessions
         for symbol in self.symbols:
             self._init_global_data(symbol=symbol)
+            self.session_count[symbol.name] = 0
             self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
 
         self.client_manager.start_sockets()
@@ -157,7 +159,7 @@ class SessionManager:
             raise Exception(f'global data for {symbol.name} should already exist')
 
         # check for session manager end
-        if self.session_count < 1000:
+        if self.all_symbols_session_count < 1000:
             self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
         else:
             self.stop_global_session()
@@ -176,7 +178,7 @@ class SessionManager:
         self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] = 0
 
     def start_new_session(self, symbol: Symbol) -> Session:
-        session_id = f'SESSION{self.session_count + 1:03d}{symbol.name}{datetime.now().strftime("%m%d%H%M")}'
+        session_id = f'SESSION{self.all_symbols_session_count + 1:03d}{symbol.name}{datetime.now().strftime("%m%d%H%M")}'
         session = Session(
             symbol=symbol,
             session_id=session_id,
@@ -189,7 +191,11 @@ class SessionManager:
             get_liquidity_needed_callback=self._get_liquidity_needed_callback
         )
 
-        self.session_count += 1
+        # update counter for all symbols
+        self.all_symbols_session_count += 1
+
+        # update counter for current symbol
+        self.session_count[symbol.name] += 1
 
         # info
         print(f'******** {symbol.name} NEW SESSION STARTED: {session_id}********')

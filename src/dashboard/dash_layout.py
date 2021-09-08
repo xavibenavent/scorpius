@@ -72,26 +72,26 @@ class DashLayout:
                                         dbc.Row([
                                             dbc.Col([
                                                 html.H6('SPAN ', className='session-info-subtitle'),
-                                                html.H6(id='pt-span', children='0', className='pt-info'),
                                                 html.H6(id='pt-span-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='pt-span', children='0', className='pt-info'),
                                                 html.H6(id='pt-span-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
                                                 html.H6('DEPTH', className='session-info-subtitle'),
-                                                html.H6(id='pt-depth', children='0', className='pt-info'),
                                                 html.H6(id='pt-depth-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='pt-depth', children='0', className='pt-info'),
                                                 html.H6(id='pt-depth-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
                                                 html.H6('MTM', className='session-info-subtitle'),
-                                                html.H6(id='pt-mtm', children='0', className='pt-info'),
                                                 html.H6(id='pt-mtm-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='pt-mtm', children='0', className='pt-info'),
                                                 html.H6(id='pt-mtm-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
                                                 html.H6('TBD', className='session-info-subtitle'),
-                                                html.H6(id='pt-btd', children='0', className='pt-info'),
                                                 html.H6(id='pt-btd-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='pt-btd', children='0', className='pt-info'),
                                                 html.H6(id='pt-btd-buy', children='0', className='pt-info-buy')
                                             ]),
                                         ]),
@@ -148,26 +148,26 @@ class DashLayout:
                                         dbc.Row([
                                             dbc.Col([
                                                 html.H6('SPAN ', className='session-info-subtitle'),
-                                                html.H6(id='is-span', children='0', className='pt-info'),
                                                 html.H6(id='is-span-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='is-span', children='0', className='pt-info'),
                                                 html.H6(id='is-span-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
                                                 html.H6('DEPTH', className='session-info-subtitle'),
-                                                html.H6(id='is-depth', children='0', className='pt-info'),
                                                 html.H6(id='is-depth-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='is-depth', children='0', className='pt-info'),
                                                 html.H6(id='is-depth-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
                                                 html.H6('MTM', className='session-info-subtitle'),
-                                                html.H6(id='is-mtm', children='0', className='pt-info'),
                                                 html.H6(id='is-mtm-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='is-mtm', children='0', className='pt-info'),
                                                 html.H6(id='is-mtm-buy', children='0', className='pt-info-buy')
                                             ]),
                                             dbc.Col([
                                                 html.H6('TBD', className='session-info-subtitle'),
-                                                html.H6(id='is-btd', children='0', className='pt-info'),
                                                 html.H6(id='is-btd-sell', children='0', className='pt-info-sell'),
+                                                html.H6(id='is-btd', children='0', className='pt-info'),
                                                 html.H6(id='is-btd-buy', children='0', className='pt-info-buy')
                                             ]),
                                         ]),
