@@ -284,7 +284,8 @@ class Session:
             # raise Exception()
 
     def manually_create_new_pt(self, cmp: float, symbol: Symbol):
-        is_allowed, _ = self._allow_new_pt_creation(cmp=cmp, symbol=symbol)
+        # called from the button in the dashboard
+        is_allowed, _ = self._allow_new_pt_creation(cmp=cmp, symbol=symbol)  # no shift
         if is_allowed:
             self.ptm.create_new_pt(cmp=cmp, symbol=symbol)
 
