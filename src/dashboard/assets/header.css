@@ -7,7 +7,7 @@
 .app-current-time {
     padding: 20px;
     font-size: 25px;
-    color: DarkSeaGreen;
+    color: DarkGray;
 }
 
 .app-title {
@@ -70,22 +70,24 @@
 
 .card-header {
     font-size: 50px;
-    color: DarkSeaGreen;
+    /* color: DarkSeaGreen ;*/
+    color: Gold;
     border-radius: 30px;
 
 }
 
 
 .card-header-session {
-    color: DarkSeaGreen;
+    color: LightSeaGreen;
     font-size: 40px;
     text-align: left;
 }
 
 .card-header-global {
-    color: DarkSeaGreen;
-    font-size: 50px;
-    text-align: right;
+    /* color: DarkSeaGreen ;*/
+    color: GoldenRod;
+    font-size: 40px;
+    text-align: left;
 }
 
 .card-title {
@@ -94,16 +96,22 @@
 }
 
 .session-count {
-    color: DarkSeaGreen;
+    color: LightSeaGreen;
     font-size: 40px;
     text-align: center;
 }
 
 /* the vertical alignment is set in dash_layout in dbc.Col() with align='center' */
-.cycle-count {
+.session-cycle-count {
     font-size: 30px;
     text-align: right;
-    color: Gray;
+    color: LightSeaGreen;
+}
+
+.global-cycle-count {
+    font-size: 30px;
+    text-align: right;
+    color: GoldenRod;
 }
 
 .session-info-subtitle {
@@ -154,33 +162,33 @@
 .pt-info-1 {
     font-size: 40px;
     text-align: center;
-    color: Teal;
+    color: LightSeaGreen;
 }
 
 .pt-info-buy {
     font-size: 30px;
     font-style: italic;
     text-align: center;
-    color: DarkSeaGreen;
+    color: #5ca385;
 }
 
 .pt-info-sell {
     font-size: 30px;
     font-style: italic;
     text-align: center;
-    color: Salmon;
+    color: #ab5454;  /* Salmon */
 }
 
 .order-info {
     font-size: 40px;
     text-align: center;
-    color: Teal;
+    color: GoldenRod;  /* Teal */
 }
 
 .order-info-1 {
     font-size: 40px;
     text-align: center;
-    color: Teal;
+    color: GoldenRod;
 }
 
 
@@ -208,13 +216,13 @@
 }
 .symbol-card-title {
     font-size: 35px;
-    color: Orange;
+    color: #80cc4c;
 }
 
 .symbol-cmp {
     font-size: 35px;
     text-align: right;
-    color: Orange;
+    color: #80cc4c;
 }
 
 .cmp-min {
@@ -278,23 +286,24 @@ tr {
 }
 
 tr.buy-order {
-    color: YellowGreen;
+    color: #008000;
 }
 
 tr.sell-order {
-    color: OrangeRed;
+    color: #DD0000;
 }
 
 tr.buy-to-be-traded {
-    color: OliveDrab;
+    color: #196619;
 }
 
 tr.sell-to-be-traded {
-    color: IndianRed;
+    color: #BB0000;
 }
 
 tr.cmp-order {
     color: DarkGray;
+    background-color: #262626;
 }
 
 td {

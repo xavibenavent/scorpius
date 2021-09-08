@@ -46,7 +46,7 @@ class DashLayout:
                                                 html.H6(id='session-count', className="session-count")
                                             ], align='center'),
                                             dbc.Col([
-                                                html.H6(id='session-cycle-count', children='0', className='cycle-count'),
+                                                html.H6(id='session-cycle-count', children='0', className='session-cycle-count'),
                                             ], align='center'),
                                         ]),
                                         html.Br(),
@@ -119,10 +119,10 @@ class DashLayout:
                                     dbc.CardBody([
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6("Global", className="card-header-session"),
+                                                html.H6("Global", className="card-header-global"),
                                             ], align='center'),
                                             dbc.Col([
-                                                html.H6(id='global-cycle-count', children='0', className='cycle-count'),
+                                                html.H6(id='global-cycle-count', children='0', className='global-cycle-count'),
                                             ], align='center'),
                                         ]),
                                         html.Br(),
