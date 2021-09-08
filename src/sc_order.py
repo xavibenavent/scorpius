@@ -137,7 +137,8 @@ class Order:
         else:
             raise Exception(f'wrong k_side: {self.k_side}')
 
-    def get_total_at_cmp(self, cmp: float, signed=True, with_commission=True, precision=2):
+    # def get_total_at_cmp(self, cmp: float, signed=True, with_commission=True, precision=6):
+    def get_total_at_cmp(self, cmp: float, signed=True, with_commission=True, precision=8):
         # set commission depending on net total or gross total request
         commission = self.get_quote_commission(cmp=cmp) if with_commission else 0.0
         if signed:

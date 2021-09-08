@@ -159,7 +159,7 @@ class SessionManager:
             raise Exception(f'global data for {symbol.name} should already exist')
 
         # check for session manager end
-        if self.all_symbols_session_count < 1000:
+        if self.all_symbols_session_count < 100_000:
             self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
         else:
             self.stop_global_session()

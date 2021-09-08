@@ -15,6 +15,7 @@ class FakeSimulatorOut:
         initial_btc = float(simulator_data['initial_btc'])
         initial_eur = float(simulator_data['initial_eur'])
         initial_bnb = float(simulator_data['initial_bnb'])
+        initial_eth = float(simulator_data['initial_eth'])
 
         return {
             'makerCommission': 10,
@@ -29,7 +30,7 @@ class FakeSimulatorOut:
             'balances': [
                 {'asset': 'BTC', 'free': initial_btc, 'locked': '0.00000000'},
                 {'asset': 'BNB', 'free': initial_bnb, 'locked': '0.00000000'},
-                {'asset': 'ETH', 'free': '0.00157612', 'locked': '0.00000000'},
+                {'asset': 'ETH', 'free': initial_eth, 'locked': '0.00000000'},
                 {'asset': 'EUR', 'free': initial_eur, 'locked': '0.00000000'},
             ],
             'permissions': ['SPOT']
@@ -130,6 +131,33 @@ class FakeSimulatorOut:
                     }
                 ],
                 'permissions': ['SPOT']
+            }
+        elif symbol_name == 'ETHBTC':
+            return {
+                'symbol': 'ETHBTC',
+                'status': 'TRADING',
+                'baseAsset': 'ETH', 'baseAssetPrecision': 8,
+                'quoteAsset': 'BTC', 'quotePrecision': 8,
+                'quoteAssetPrecision': 8,
+                'baseCommissionPrecision': 8,
+                'quoteCommissionPrecision': 8,
+                'orderTypes': ['LIMIT', 'LIMIT_MAKER', 'MARKET', 'STOP_LOSS_LIMIT', 'TAKE_PROFIT_LIMIT'],
+                'icebergAllowed': True,
+                'ocoAllowed': True,
+                'quoteOrderQtyMarketAllowed': True,
+                'isSpotTradingAllowed': True,
+                'isMarginTradingAllowed': True,
+                'filters': [
+                    {'filterType': 'PRICE_FILTER', 'minPrice': '0.00000100', 'maxPrice': '922327.00000000', 'tickSize': '0.00000100'},
+                    {'filterType': 'PERCENT_PRICE', 'multiplierUp': '5', 'multiplierDown': '0.2', 'avgPriceMins': 5},
+                    {'filterType': 'LOT_SIZE', 'minQty': '0.00010000', 'maxQty': '100000.00000000', 'stepSize': '0.00010000'},
+                    {'filterType': 'MIN_NOTIONAL', 'minNotional': '0.00010000', 'applyToMarket': True, 'avgPriceMins': 5},
+                    {'filterType': 'ICEBERG_PARTS', 'limit': 10},
+                    {'filterType': 'MARKET_LOT_SIZE', 'minQty': '0.00000000', 'maxQty': '746.43672750', 'stepSize': '0.00000000'},
+                    {'filterType': 'MAX_NUM_ORDERS', 'maxNumOrders': 200},
+                    {'filterType': 'MAX_NUM_ALGO_ORDERS', 'maxNumAlgoOrders': 5}
+                ],
+                'permissions': ['SPOT', 'MARGIN']
             }
         else:
             raise Exception(f'wrong symbol {symbol_name}')

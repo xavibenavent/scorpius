@@ -64,7 +64,7 @@ class MarketSocketsIn:
 
             # get symbol & check it
             symbol_name = msg['s']
-            if symbol_name not in ['BTCEUR', 'BNBEUR']:
+            if symbol_name not in ['BTCEUR', 'BNBEUR', 'ETHBTC']:
                 raise Exception(f'wrong symbol name {symbol_name}')
 
             # get last market price

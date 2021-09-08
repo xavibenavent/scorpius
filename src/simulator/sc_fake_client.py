@@ -287,6 +287,8 @@ class FakeClient:
             return {'mins': 5, 'price': str(self.cmp[symbol])}
         elif symbol == 'BNBEUR':
             return {'mins': 5, 'price': '400.0'}
+        elif symbol == 'BNBBTC':
+            return {'mins': 5, 'price': '0.009'}
         else:
             price = str(0.0)
             log.critical(f'symbol {symbol} not in simulator, returning {price}')
