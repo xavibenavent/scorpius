@@ -283,9 +283,10 @@ class Session:
         if not is_allowed_by_liquidity:
             return False, 0.0
 
-        # 2. monitor + active count
-        # 3. span / depth
-        # 2. momentum
+        # 2. minimize span
+
+
+        # 3. balance buy & sell momentum
         # dynamic parameters:
         #   - inactivity time
         #   - neb/amount

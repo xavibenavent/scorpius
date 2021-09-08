@@ -184,8 +184,8 @@ def display_value(value):
 
 # ********** Global STOP profits **********
 @app.callback(Output('consolidated-profit', 'children'),
-              Output('expected-profit', 'children'),
               Output('expected-profit-at-cmp', 'children'),
+              Output('expected-profit', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
@@ -197,9 +197,10 @@ def display_value(value):
     consolidated = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_profit']
     expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
     expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=cmp, symbol_name=symbol_name)
-    return f'{consolidated:,.{qp}f}', \
+    return f'{consolidated:,.{qp}f}',\
+           f'{expected_at_cmp:,.{qp}f}',\
            f'{expected:,.{qp}f}', \
-           f'{expected_at_cmp:,.{qp}f}'
+
 
 
 
@@ -228,22 +229,6 @@ def display_value(value):
     accounts_info = [f'{account.name}: {account.free:,.2f} ' for account in dfm.sm.am.accounts.values()]
     accounts_info_s = ' '.join(map(str, accounts_info))
     return accounts_info_s
-
-
-
-# ********** session count **********
-# @app.callback(Output('session-count', 'children'), Input('update', 'n_intervals'))
-# def display_value(value):
-#     symbol_name = dfm.dashboard_active_symbol.name
-#     consolidated_count = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_session_count']
-#     expected_count = dfm.sm.terminated_sessions[symbol_name]['global_expected_session_count']
-#     session_count = consolidated_count + expected_count
-#     return f's: {session_count}  (c:{consolidated_count}  e:{expected_count})'
-
-
-
-
-
 
 
 # ********** symbol & accounts data **********
@@ -287,36 +272,18 @@ def display_value(value):
 
 
 # ********** symbol selection buttons *********
-@app.callback(Output('button-btceur-hidden-msg', 'color'),
-              Input('button-btceur', 'n_clicks'),
+@app.callback(Output('button-symbols', 'children'),
+              Input('button-symbols', 'n_clicks'),
               )
 def on_button_click(n):
     # set BTCEUR as active symbol if button pressed
+    current_symbol_name = dfm.dashboard_active_symbol.name
     if n is not None:
-        dfm.set_dashboard_active_symbol(symbol_name='BTCEUR')
-    return ''
-
-
-@app.callback(Output('button-bnbeur-hidden-msg', 'children'),
-              Input('button-bnbeur', 'n_clicks'),
-              )
-def on_button_click(n):
-    # set BNBEUR as active symbol if button pressed
-    if n is not None:
-        dfm.set_dashboard_active_symbol(symbol_name='BNBEUR')
-    return ''
-
-
-# update symbol selection button colors (green/gray)
-@app.callback(Output('button-btceur', 'color'),
-              Output('button-bnbeur', 'color'),
-              Input('update', 'n_intervals'),
-              )
-def on_button_click(n):
-    # identify last button clicked
-    btceur_color = 'success' if dfm.dashboard_active_symbol.name == 'BTCEUR' else 'light'
-    bnbeur_color = 'success' if dfm.dashboard_active_symbol.name == 'BNBEUR' else 'light'
-    return btceur_color, bnbeur_color
+        next_symbol = dfm.get_next_symbol(symbol_name=current_symbol_name)
+        dfm.set_dashboard_active_symbol(symbol_name=next_symbol)
+        return next_symbol
+    else:
+        return current_symbol_name
 
 
 # Stop buttons

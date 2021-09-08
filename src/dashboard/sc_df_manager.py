@@ -21,22 +21,31 @@ class DataframeManager:
         self.available_symbols = self.sm.symbols
         if len(self.available_symbols) == 0:
             raise Exception('no symbols to show')
+        self.symbol_names = [symbol.name for symbol in self.available_symbols]
 
         # set the active symbol in dashboard
         self.dashboard_active_symbol = self.available_symbols[0]
 
         print('data frame manager')
 
+    def get_next_symbol(self, symbol_name: str) -> str:
+        symbols_count = len(self.symbol_names)
+        if symbols_count > 0 and symbol_name in self.symbol_names:
+            index = self.symbol_names.index(symbol_name)
+            return self.symbol_names[0] if index == symbols_count-1 else self.symbol_names[index + 1]
+        else:
+            raise Exception(f'symbol {symbol_name} not defined')
+
     def set_dashboard_active_symbol(self, symbol_name: str) -> None:
         # set the passed symbol as active if exist, otherwise do nothing
         position_in_list = 0
 
         # get list of available symbol names
-        names = [symbol.name for symbol in self.available_symbols]
+        # names = [symbol.name for symbol in self.available_symbols]
 
         # get position in list for passed symbol name
-        if symbol_name in names:
-            position_in_list = names.index(symbol_name)
+        if symbol_name in self.symbol_names:
+            position_in_list = self.symbol_names.index(symbol_name)
 
         # set the passed symbol as the one active in dashboard
         self.dashboard_active_symbol = self.available_symbols[position_in_list]

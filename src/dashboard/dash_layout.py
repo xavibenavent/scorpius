@@ -107,8 +107,17 @@ class DashLayout:
                                             ]),
                                         ]),
                                         html.Br(),
-                                        # html.H6("Perfect Trades / Buy / Sell", className="card-title"),
-                                        # html.H6(id='trade-info', children='0', className='pt-info'),
+                                        dbc.Row([
+                                            dbc.Col([
+                                                html.H6('TBD', className='global-info-subtitle-2'),
+                                                html.H6(children='0', className='pt-info-1')
+                                            ]),
+                                            dbc.Col([
+                                                html.H6('TBD', className='global-info-subtitle-2'),
+                                                html.H6(children='0', className='pt-info-1')
+                                            ]),
+                                        ]),
+                                        html.Br(),
                                     ]),
                                     # dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True, className='scorpius-card'
@@ -178,14 +187,21 @@ class DashLayout:
                                                 html.H6(id='consolidated-profit', children='0', className='order-info-1')
                                             ]),
                                             dbc.Col([
-                                                html.H6('EXPECT', className='global-info-subtitle-2'),
-                                                html.H6(id='expected-profit', children='0', className='order-info-1')
-                                            ]),
-                                            dbc.Col([
                                                 html.H6('ACTUAL', className='global-info-subtitle-2'),
                                                 html.H6(id='expected-profit-at-cmp', children='0', className='order-info-1')
                                             ]),
                                         ]),
+                                        html.Br(),
+                                        dbc.Row([
+                                            dbc.Col([
+                                                html.H6('EXPECT', className='global-info-subtitle-2'),
+                                                html.H6(id='expected-profit', children='0', className='order-info-1')
+                                            ]),
+                                            dbc.Col([
+                                                html.H6('TBD', className='global-info-subtitle-2'),
+                                                html.H6(children='0', className='order-info-1')
+                                            ]),
+                                        ])
                                     ]),
                                     # dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True, className='scorpius-card'
@@ -249,17 +265,15 @@ class DashLayout:
                 html.Br(), html.Br(),
                 dbc.Row([
                     dbc.Col([
-                        dbc.Button('BTCEUR', id='button-btceur', disabled=False, color='light', block=True,
-                                   className='sc-button'),
+                        dbc.Button('SYMBOL', id='button-symbols', color='success', block=True, className='sc-button'),
                         html.Br(),
                     ]),
                     dbc.Col([
-                        dbc.Button('BNBEUR', id='button-bnbeur', color='light', block=True, className='sc-button'),
+                        dbc.Button('TBD-03', id='TBD-03', color='light', block=True, className='sc-button'),
                         html.Br(),
                     ]),
                     dbc.Col([
-                        dbc.Button('TBD-01', id='button-tbd-01', disabled=False, color='light', block=True,
-                                   className='sc-button'),
+                        dbc.Button('TBD-04', id='TBD-04', color='light', block=True, className='sc-button'),
                         html.Br(),
                     ]),
                     dbc.Col([
@@ -304,29 +318,8 @@ class DashLayout:
                                    className='sc-button'),
                     ]),
                 ]),
-                # todo: needed to allow buttons functionality
-                html.Br(), html.Br(),
-                dbc.Row([
-                    dbc.Col([
-                        self.get_card()
-                    ], xs=12, sm=12, md=12, lg=12, xl=12),
-                ]),
                 dcc.Interval(id='update', n_intervals=0, interval=K_UPDATE_INTERVAL)
             ],)
         ])
         return layout
 
-    def get_card(self) -> dbc.Card:
-        card = dbc.Card(
-            [
-                dbc.CardBody(
-                    [
-                        html.H6(id='button-btceur-hidden-msg', children=''),
-                        html.H6(id='button-bnbeur-hidden-msg', children=''),
-                    ], style={'text-align': 'center'}
-                ),
-            ],
-            outline=False,  # True = remove the block colors from the background and header
-            style={'opacity': 0}
-        )
-        return card
