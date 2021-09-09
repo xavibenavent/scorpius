@@ -79,7 +79,7 @@ class Session:
         )
 
         # class with useful methods
-        self.helpers = Helpers()
+        self.helpers = Helpers(pt_manager=self.ptm, market=self.market)
 
         self.cmp = self.market.get_cmp(symbol_name=self.symbol.name)
         print(f'initial cmp: {self.cmp}')
@@ -409,31 +409,11 @@ class Session:
         self.am.update_current_accounts(received_accounts=accounts)
 
     # ********** check methods **********
-    def _place_market_order(self, order) -> None:  # (bool, Optional[str]):
-        # raise an exception if the order is not placed in binance (probably due to not enough liquidity)
-        # change order status (it will be update to TRADED once received through binance socket)
-        order.set_status(OrderStatus.TO_BE_TRADED)
-        # place order and check message received
-        msg = self.market.place_market_order(order=order)
-        if msg:
-            order.set_binance_id(new_id=msg.get('binance_id'))
-            log.info(f'********** MARKET ORDER PLACED ********** {order}')  # msg: {msg}')
-            # log.info(f'order: {order}')
-        else:
-            log.critical(f'market order not place in binance {order}')
-            raise Exception("MARKET order not placed")
+    def _place_market_order(self, order) -> None:
+        self.helpers.place_market_order(order=order)
 
-    def _place_limit_order(self, order: Order) -> None:  # (bool, Optional[str]):
-        order.set_status(status=OrderStatus.TO_BE_TRADED)
-        # place order
-        msg = self.market.place_limit_order(order=order)
-        if msg:
-            order.set_binance_id(new_id=msg.get('binance_id'))
-            log.debug(f'********** LIMIT ORDER PLACED ********** {order}')  # msg: {msg}')
-            # log.info(f'order: {order}')
-        else:
-            log.critical(f'error placing order {order}')
-            raise Exception("LIMIT order not placed")
+    def _place_limit_order(self, order: Order) -> None:
+        self.helpers.place_limit_order(order=order)
 
     def quit_particular_session(self, quit_mode: QuitMode):
         log.info(f'********** STOP {quit_mode.name} ********** [{self.session_id}] terminated')
@@ -541,38 +521,6 @@ class Session:
             market_orders_count_at_cmp,  # number of orders placed at its own price
             placed_orders_at_order_price
         )
-
-    # def get_side_span_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-    #     distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
-    #     return max(distances) if len(distances) > 0 else 0.0
-    #
-    # def get_span_from_list(self, orders: List[Order]) -> (float, float):
-    #     buy_span = self.get_side_span_from_list(orders=orders, side=k_binance.SIDE_BUY)
-    #     sell_span = self.get_side_span_from_list(orders=orders, side=k_binance.SIDE_SELL)
-    #     return buy_span, sell_span
-    #
-    # def get_gap_span_from_list(self, orders: List[Order]) -> (float, float):
-    #     buy_span, sell_span = self.get_span_from_list(orders=orders)
-    #     if self.gap != 0.0:
-    #         return buy_span / self.gap, sell_span / self.gap
-    #     else:
-    #         return 0.0, 0.0
-
-    def get_side_depth_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-        distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
-        return min(distances) if len(distances) > 0 else 0.0
-
-    def get_depth_from_list(self, orders: List[Order]) -> (float, float):
-        buy_depth = self.get_side_depth_from_list(orders=orders, side=k_binance.SIDE_BUY)
-        sell_depth = self.get_side_depth_from_list(orders=orders, side=k_binance.SIDE_SELL)
-        return buy_depth, sell_depth
-
-    def get_gap_depth_from_list(self, orders: List[Order]) -> (float, float):
-        buy_depth, sell_depth = self.get_depth_from_list(orders=orders)
-        if self.gap != 0.0:
-            return buy_depth / self.gap, sell_depth / self.gap
-        else:
-            return 0.0, 0.0
 
     def get_side_momentum_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) \
             -> float:

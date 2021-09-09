@@ -85,7 +85,7 @@ def display_value(value):
 
     buy_gap_span, sell_gap_span = active_session.helpers.get_gap_span_from_list(orders=session_orders, cmp=cmp, gap=gap)
     total_gap_span = buy_gap_span + sell_gap_span
-    buy_gap_depth, sell_gap_depth = active_session.get_gap_depth_from_list(orders=session_orders)
+    buy_gap_depth, sell_gap_depth = active_session.helpers.get_gap_depth_from_list(orders=session_orders, cmp=cmp, gap=gap)
     total_gap_depth = buy_gap_depth + sell_gap_depth
     buy_gap_momentum, sell_gap_momentum = active_session.get_gap_momentum_from_list(orders=session_orders)
     total_gap_momentum = buy_gap_momentum + sell_gap_momentum
@@ -170,7 +170,7 @@ def display_value(value):
 
     buy_gap_span, sell_gap_span = active_session.helpers.get_gap_span_from_list(orders=all_orders, cmp=cmp, gap=gap)
     total_gap_span = buy_gap_span + sell_gap_span
-    buy_gap_depth, sell_gap_depth = active_session.get_gap_depth_from_list(orders=all_orders)
+    buy_gap_depth, sell_gap_depth = active_session.helpers.get_gap_depth_from_list(orders=all_orders, cmp=cmp, gap=gap)
     total_gap_depth = buy_gap_depth + sell_gap_depth
     buy_gap_momentum, sell_gap_momentum = active_session.get_gap_momentum_from_list(orders=all_orders)
     total_gap_momentum = buy_gap_momentum + sell_gap_momentum
