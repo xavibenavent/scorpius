@@ -34,7 +34,7 @@ class Session:
                  session_stopped_callback: Callable[[Symbol, str, bool, float, float, int, int, int], None],
                  market: MarketAPIOut,
                  account_manager: AccountManager,
-                 check_isolated_callback: Callable[[Symbol, str, float], None],
+                 isolated_order_traded_callback: Callable[[Symbol, float, float], None],
                  get_liquidity_needed_callback: Callable[[Asset], float],
                  ):
 
@@ -46,7 +46,7 @@ class Session:
         self.am = account_manager
 
         # isolated manager callbacks
-        self.check_isolated_callback = check_isolated_callback
+        self.isolated_order_traded_callback = isolated_order_traded_callback
 
         # liquidity needed callback
         self._get_liquidity_needed_callback = get_liquidity_needed_callback
@@ -263,7 +263,13 @@ class Session:
 
         # if no order found, then check in placed_orders_from_previous_sessions list
         if not order_found:
-            self.check_isolated_callback(self.symbol, uid, order_price)
+            # check the isolated orders and, in case an order from previous session have been traded,
+            # return the variation in profit (consolidated & expected), otherwise return zero
+            is_known_order, consolidated, expected = \
+                self.iom.check_isolated_orders(uid=uid, traded_price=order_price)
+
+            if is_known_order:
+                self.isolated_order_traded_callback(self.symbol, consolidated, expected)
 
     def manually_create_new_pt(self, cmp: float, symbol: Symbol):
         # called from the button in the dashboard
@@ -387,7 +393,8 @@ class Session:
             if order.symbol.name != self.symbol.name:
                 raise Exception(f'{self.symbol.name} and {order.symbol.name} have to be equals')
             else:
-                self.place_isolated_order(order=order)
+                self.logbook.append(f'place isolated order at cmp to get liquidity: {order}')
+                self._place_market_order(order=order)
 
             # cancel in Binance the previously placed order
             self.market.cancel_orders([order])
@@ -396,12 +403,6 @@ class Session:
         # update of current balance from Binance
         # log.debug([account.name for account in accounts])
         self.am.update_current_accounts(received_accounts=accounts)
-
-    def place_isolated_order(self, order: Order) -> None:
-        # method called from session manager to place at MARKET price an isolated order, to get liquidity
-        log.info(f'place isolated order at cmp to get liquidity: {order}')
-        self.logbook.append(f'place isolated order at cmp to get liquidity: {order}')
-        self._place_market_order(order=order)
 
     # ********** check methods **********
     def _place_market_order(self, order) -> None:  # (bool, Optional[str]):

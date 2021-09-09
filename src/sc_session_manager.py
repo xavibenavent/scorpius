@@ -1,5 +1,4 @@
 # sc_session_manager.py
-import pprint
 from datetime import datetime
 from typing import Optional, List, Dict
 import logging
@@ -13,7 +12,6 @@ from sc_market_api_out import MarketAPIOut
 from sc_market_sockets_in import MarketSocketsIn
 from sc_account_manager import Account, AccountManager
 from sc_isolated_manager import IsolatedOrdersManager
-from sc_order import Order
 from sc_symbol import Symbol, Asset
 from sc_client_manager import ClientManager
 
@@ -119,18 +117,6 @@ class SessionManager:
             order_price=price,
             bnb_commission=bnb_commission)
 
-    def _update_global_profit(self, symbol: Symbol, consolidated: float, expected: float):
-        # update
-        if symbol.name in self.terminated_sessions.keys():
-            self.terminated_sessions[symbol.name]['global_consolidated_profit'] += consolidated
-            # subtraction because expected is calculated as an absolut value
-            self.terminated_sessions[symbol.name]['global_expected_profit'] -= expected
-
-        # log
-        # log.info(f'********** global profit updated for symbol {symbol.name} **********')
-        # log.info(f'consolidated: {consolidated:,.2f} expected: {expected:,.2f}')
-        # log.info('*****************************************************************************')
-
     def _session_stopped_callback(self,
                                   symbol: Symbol,
                                   session_id: str,
@@ -185,8 +171,7 @@ class SessionManager:
             session_stopped_callback=self._session_stopped_callback,
             market=self.market_api_out,
             account_manager=self.am,
-            check_isolated_callback=self._check_isolated_callback,
-            # try_to_get_liquidity_callback=self._try_to_get_liquidity_callback,
+            isolated_order_traded_callback=self._isolated_order_traded_callback,
             get_liquidity_needed_callback=self._get_liquidity_needed_callback,
         )
 
@@ -236,16 +221,14 @@ class SessionManager:
             liquidity_needed += quote_asset_needed + base_asset_needed
         return liquidity_needed
 
-    def _check_isolated_callback(self, symbol: Symbol, uid: str, order_price: float):
-        # check the isolated orders and, in case an order from previous session have been traded,
-        # return the variation in profit (consolidated & expected), otherwise return zero
-        is_known_order, consolidated, expected = \
-            self.iom.check_isolated_orders(uid=uid, traded_price=order_price)
-
+    def _isolated_order_traded_callback(self, symbol: Symbol, consolidated: float, expected: float):
         # update actual orders placed count, decrementing in one unit
-        if is_known_order:
-            if symbol.name in self.terminated_sessions.keys():
-                self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] -= 1
+        if symbol.name in self.terminated_sessions.keys():
+            self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] -= 1
 
-        # update profit
-        self._update_global_profit(symbol=symbol, consolidated=consolidated, expected=expected)
+        # update global profit
+        if symbol.name in self.terminated_sessions.keys():
+            self.terminated_sessions[symbol.name]['global_consolidated_profit'] += consolidated
+            # subtraction because expected is calculated as an absolut value
+            self.terminated_sessions[symbol.name]['global_expected_profit'] -= expected
+
