@@ -1,16 +1,13 @@
 # sc_session.py
 
 import logging
-import time
 from enum import Enum
 
-from typing import Callable, List, Any, Union
+from typing import Callable, List, Union
 from binance import enums as k_binance
 
-# from sc_market import MarketApiOut
 from sc_market_api_out import MarketAPIOut
 from sc_order import Order, OrderStatus
-# from sc_balance_manager import BalanceManager, Account
 from sc_account_manager import Account, AccountManager
 from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
