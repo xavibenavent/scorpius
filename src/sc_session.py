@@ -16,6 +16,7 @@ from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
 from sc_symbol import Symbol, Asset
 from sc_isolated_manager import IsolatedOrdersManager
+from sc_helpers import Helpers
 
 log = logging.getLogger('log')
 
@@ -76,6 +77,9 @@ class Session:
             session_id=self.session_id,
             symbol=self.symbol
         )
+
+        # class with useful methods
+        self.helpers = Helpers()
 
         self.cmp = self.market.get_cmp(symbol_name=self.symbol.name)
         print(f'initial cmp: {self.cmp}')
@@ -293,7 +297,7 @@ class Session:
                        PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
         all_orders = isolated_orders + session_orders
 
-        buy_span, sell_span = self.get_span_from_list(all_orders)
+        buy_span, sell_span = self.helpers.get_span_from_list(all_orders, cmp=cmp)
         ref_gap = self.gap / 2
 
         if buy_span == 0.0 and sell_span == 0.0:
@@ -538,21 +542,21 @@ class Session:
             placed_orders_at_order_price
         )
 
-    def get_side_span_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
-        distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
-        return max(distances) if len(distances) > 0 else 0.0
-
-    def get_span_from_list(self, orders: List[Order]) -> (float, float):
-        buy_span = self.get_side_span_from_list(orders=orders, side=k_binance.SIDE_BUY)
-        sell_span = self.get_side_span_from_list(orders=orders, side=k_binance.SIDE_SELL)
-        return buy_span, sell_span
-
-    def get_gap_span_from_list(self, orders: List[Order]) -> (float, float):
-        buy_span, sell_span = self.get_span_from_list(orders=orders)
-        if self.gap != 0.0:
-            return buy_span / self.gap, sell_span / self.gap
-        else:
-            return 0.0, 0.0
+    # def get_side_span_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+    #     distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
+    #     return max(distances) if len(distances) > 0 else 0.0
+    #
+    # def get_span_from_list(self, orders: List[Order]) -> (float, float):
+    #     buy_span = self.get_side_span_from_list(orders=orders, side=k_binance.SIDE_BUY)
+    #     sell_span = self.get_side_span_from_list(orders=orders, side=k_binance.SIDE_SELL)
+    #     return buy_span, sell_span
+    #
+    # def get_gap_span_from_list(self, orders: List[Order]) -> (float, float):
+    #     buy_span, sell_span = self.get_span_from_list(orders=orders)
+    #     if self.gap != 0.0:
+    #         return buy_span / self.gap, sell_span / self.gap
+    #     else:
+    #         return 0.0, 0.0
 
     def get_side_depth_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
         distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
@@ -570,7 +574,8 @@ class Session:
         else:
             return 0.0, 0.0
 
-    def get_side_momentum_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) -> float:
+    def get_side_momentum_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) \
+            -> float:
         distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
         return sum(distances) if len(distances) > 0 else 0.0
 

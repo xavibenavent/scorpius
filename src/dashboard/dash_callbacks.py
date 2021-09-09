@@ -80,8 +80,10 @@ def display_value(value):
 
     symbol_name = dfm.dashboard_active_symbol.name
     active_session = dfm.sm.active_sessions[symbol_name]
+    cmp = active_session.cmp
+    gap = active_session.gap
 
-    buy_gap_span, sell_gap_span = active_session.get_gap_span_from_list(orders=session_orders)
+    buy_gap_span, sell_gap_span = active_session.helpers.get_gap_span_from_list(orders=session_orders, cmp=cmp, gap=gap)
     total_gap_span = buy_gap_span + sell_gap_span
     buy_gap_depth, sell_gap_depth = active_session.get_gap_depth_from_list(orders=session_orders)
     total_gap_depth = buy_gap_depth + sell_gap_depth
@@ -163,8 +165,10 @@ def display_value(value):
 
     symbol_name = dfm.dashboard_active_symbol.name
     active_session = dfm.sm.active_sessions[symbol_name]
+    cmp = active_session.cmp
+    gap = active_session.gap
 
-    buy_gap_span, sell_gap_span = active_session.get_gap_span_from_list(orders=all_orders)
+    buy_gap_span, sell_gap_span = active_session.helpers.get_gap_span_from_list(orders=all_orders, cmp=cmp, gap=gap)
     total_gap_span = buy_gap_span + sell_gap_span
     buy_gap_depth, sell_gap_depth = active_session.get_gap_depth_from_list(orders=all_orders)
     total_gap_depth = buy_gap_depth + sell_gap_depth
