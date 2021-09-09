@@ -102,3 +102,6 @@ class IsolatedOrdersManager:
     def log(self):
         for order in self.isolated_orders:
             log.info(f'isolated order: {order}')
+
+    def get_isolated_orders(self, symbol_name: str) -> List[Order]:
+        return [order for order in self.isolated_orders if order.symbol.name == symbol_name]

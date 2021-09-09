@@ -15,7 +15,7 @@ from sc_account_manager import Account, AccountManager
 from sc_pt_manager import PTManager
 from sc_perfect_trade import PerfectTradeStatus
 from sc_symbol import Symbol, Asset
-
+from sc_isolated_manager import IsolatedOrdersManager
 
 log = logging.getLogger('log')
 
@@ -30,26 +30,24 @@ class Session:
     def __init__(self,
                  symbol: Symbol,
                  session_id: str,
+                 isolated_orders_manager: IsolatedOrdersManager,
                  session_stopped_callback: Callable[[Symbol, str, bool, float, float, int, int, int], None],
                  market: MarketAPIOut,
                  account_manager: AccountManager,
                  check_isolated_callback: Callable[[Symbol, str, float], None],
-                 placed_isolated_callback: Callable[[Order], None],
                  try_to_get_liquidity_callback: Callable[[Symbol, Asset, float], None],
                  get_liquidity_needed_callback: Callable[[Asset], float],
-                 get_isolated_orders_callback: Callable[[str], List[Order]]
                  ):
 
         self.symbol = symbol
         self.session_id = session_id
         self.session_stopped_callback = session_stopped_callback
+        self.iom = isolated_orders_manager
         self.market = market
         self.am = account_manager
 
         # isolated manager callbacks
         self.check_isolated_callback = check_isolated_callback
-        self.placed_isolated_callback = placed_isolated_callback
-        self.get_isolated_orders_callback = get_isolated_orders_callback
 
         # liquidity needed callback
         self._get_liquidity_needed_callback = get_liquidity_needed_callback
@@ -82,8 +80,6 @@ class Session:
             symbol=self.symbol
         )
 
-        # used in dashboard in the cmp line chart. initiated with current cmp
-        # self.cmps = [self.market.get_cmp(self.symbol.name)]
         self.cmp = self.market.get_cmp(symbol_name=self.symbol.name)
         print(f'initial cmp: {self.cmp}')
         self.min_cmp = self.cmp
@@ -103,8 +99,6 @@ class Session:
 
         self.alert_msg = ''
 
-        # log.debug(f'session object created: {self.session_id}')
-
     # ********** Binance socket callback functions **********
     def symbol_ticker_callback(self, cmp: float) -> None:
         if self.session_active:
@@ -122,9 +116,6 @@ class Session:
 
                 # 0.2: update cmp count to control timely pt creation
                 self.cmp_count += 1
-
-                # these two lists will be used to plot
-                # self.cmps.append(cmp)
 
                 # update cmp, min_cmp & max_cmp
                 if cmp < self.min_cmp:
@@ -273,15 +264,9 @@ class Session:
                         self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
                         self.cycles_from_last_trade = 0
 
-                # since the traded orders has been identified, do not check more orders
-                # break
-                # return None
-
         # if no order found, then check in placed_orders_from_previous_sessions list
-        # raise Exception()
         if not order_found:
             self.check_isolated_callback(self.symbol, uid, order_price)
-            # raise Exception()
 
     def manually_create_new_pt(self, cmp: float, symbol: Symbol):
         # called from the button in the dashboard
@@ -297,7 +282,8 @@ class Session:
             return False, 0.0
 
         # 2. minimize span
-        isolated_orders = self.get_isolated_orders_callback(self.symbol.name)
+        # isolated_orders = self.get_isolated_orders_callback(self.symbol.name)
+        isolated_orders = self.iom.get_isolated_orders(symbol_name=self.symbol.name)
         session_orders = self.ptm.get_orders_by_request(
             orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
             pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
@@ -459,7 +445,8 @@ class Session:
                     # place only MONITOR orders
                     if order.status == OrderStatus.MONITOR:
                         log.info(f'** isolated order to be appended to list: {order}')
-                        self.placed_isolated_callback(order)
+                        self.iom.isolated_orders.append(order)
+                        # self.placed_isolated_callback(order)
                         self._place_limit_order(order=order)
 
                         placed_orders_at_order_price += 1
