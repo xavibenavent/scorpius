@@ -186,7 +186,7 @@ class SessionManager:
             market=self.market_api_out,
             account_manager=self.am,
             check_isolated_callback=self._check_isolated_callback,
-            try_to_get_liquidity_callback=self._try_to_get_liquidity_callback,
+            # try_to_get_liquidity_callback=self._try_to_get_liquidity_callback,
             get_liquidity_needed_callback=self._get_liquidity_needed_callback,
         )
 
@@ -249,24 +249,3 @@ class SessionManager:
 
         # update profit
         self._update_global_profit(symbol=symbol, consolidated=consolidated, expected=expected)
-
-    def _try_to_get_liquidity_callback(self, symbol: Symbol, asset: Asset, cmp: float):
-        # called from session
-        log.debug(f'{symbol.name} {asset.name()} trying to get liquidity')
-
-        order = self.iom.try_to_get_asset_liquidity(
-            asset=asset,
-            cmp=cmp,
-            max_loss=self.cm.get_max_allowed_loss_for_liquidity(symbol_name=symbol.name))
-
-        if order:
-            # place at MARKET price
-            log.info(f'order to place at market price with loss: {order}')
-            # sanity check
-            if order.symbol.name != symbol.name:
-                raise Exception(f'{symbol.name} and {order.symbol.name} have to be equals')
-            else:
-                self.active_sessions[symbol.name].place_isolated_order(order=order)
-
-            # cancel in Binance the previously placed order
-            self.market_api_out.cancel_orders([order])

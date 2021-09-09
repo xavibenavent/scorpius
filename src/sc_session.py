@@ -35,7 +35,6 @@ class Session:
                  market: MarketAPIOut,
                  account_manager: AccountManager,
                  check_isolated_callback: Callable[[Symbol, str, float], None],
-                 try_to_get_liquidity_callback: Callable[[Symbol, Asset, float], None],
                  get_liquidity_needed_callback: Callable[[Asset], float],
                  ):
 
@@ -51,9 +50,6 @@ class Session:
 
         # liquidity needed callback
         self._get_liquidity_needed_callback = get_liquidity_needed_callback
-
-        # method to call when liquidity is needed
-        self.try_to_get_liquidity_callback = try_to_get_liquidity_callback
 
         self.session_active = True
 
@@ -73,6 +69,7 @@ class Session:
         self.max_negative_profit_allowed = float(config['max_negative_profit_allowed'])
         self.time_between_successive_pt_creation_tries = \
             float(config['time_between_successive_pt_creation_tries'])
+        self.accepted_loss_to_get_liquidity = float(config['accepted_loss_to_get_liquidity'])
         self.forced_shift = float(config['forced_shift'])
 
         self.ptm = PTManager(
@@ -314,6 +311,14 @@ class Session:
         # return True, forced_shift
 
     def _is_liquidity_enough(self, cmp: float, symbol: Symbol) -> (bool, float):
+        """
+        :param cmp:
+        :param symbol:
+        :return:
+            bool: flag to indicate whether there is enough liquidity or not, to create a new PT
+            float: only used if True, it return the shift to apply to the new PT
+        """
+
         # precision for visualization
         bpv = symbol.base_asset().pv()
         qpv = symbol.quote_asset().pv()
@@ -330,25 +335,14 @@ class Session:
         base_asset_needed = self._get_liquidity_needed_callback(symbol.base_asset())
         # total base asset needed
         total_b_needed = base_asset_needed + new_pt_base_asset_liquidity_needed
-        # quote_asset_needed, base_asset_needed = self.ptm.get_symbol_liquidity_needed()
 
         # check available liquidity (quote & base) vs needed when trading both orders
         # get existing liquidity
         quote_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.quote_asset().name())  # free
         base_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.base_asset().name())  # free
 
-        quote_diff = quote_asset_liquidity - total_q_needed
-        base_diff = base_asset_liquidity - total_b_needed
-
-        # log liquidity / needed / diff
-        log.debug(f'{symbol.name} [base] liquidity: {base_asset_liquidity:,.{bpv}f}  -  '
-                  f'needed: {total_b_needed:,.{bpv}f}  -  '
-                  f'diff: {base_diff:,.{qpv}f}')
-        log.debug(f'{symbol.name} [quote] liquidity: {quote_asset_liquidity:,.{qpv}f} -   '
-                  f'needed: {total_q_needed:,.{qpv}f} -   '
-                  f'diff: {quote_diff:,.{qpv}f}')
-        log.debug('[NEW PT ALLOWED]') if quote_diff > 0 and base_diff > 0 \
-            else log.debug('[NOT ENOUGH LIQUIDITY FOR NEW PT]')
+        # quote_diff = quote_asset_liquidity - total_q_needed
+        # base_diff = base_asset_liquidity - total_b_needed
 
         if quote_asset_liquidity < total_q_needed:  # need for quote
             # check whether there is enough quote asset to force a pt shifted to SELL
@@ -359,7 +353,7 @@ class Session:
             else:
                 # get quote by selling base
                 # todo: check whether it works well
-                self.try_to_get_liquidity_callback(self.symbol, symbol.quote_asset(), cmp)
+                self._try_to_get_liquidity(asset=symbol.quote_asset(), cmp=cmp)
                 return False, 0.0
 
         elif base_asset_liquidity < total_b_needed:  # need for base
@@ -371,11 +365,32 @@ class Session:
             else:
                 # get base buying
                 # todo: check whether it works well
-                self.try_to_get_liquidity_callback(self.symbol, symbol.base_asset(), cmp)
+                self._try_to_get_liquidity(asset=symbol.base_asset(), cmp=cmp)
                 return False, 0.0
 
         else:
             return True, 0.0
+
+    def _try_to_get_liquidity(self, asset: Asset, cmp: float):
+        # called from session
+        log.debug(f'{self.symbol.name} {asset.name()} trying to get liquidity')
+
+        order = self.iom.try_to_get_asset_liquidity(
+            asset=asset,
+            cmp=cmp,
+            max_loss=self.accepted_loss_to_get_liquidity)
+
+        if order:
+            # place at MARKET price
+            log.info(f'order to place at market price with loss: {order}')
+            # sanity check
+            if order.symbol.name != self.symbol.name:
+                raise Exception(f'{self.symbol.name} and {order.symbol.name} have to be equals')
+            else:
+                self.place_isolated_order(order=order)
+
+            # cancel in Binance the previously placed order
+            self.market.cancel_orders([order])
 
     def account_balance_callback(self, accounts: List[Account]) -> None:
         # update of current balance from Binance
