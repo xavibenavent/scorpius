@@ -160,7 +160,6 @@ class Helpers:
                         placed_orders_at_order_price += 1
                         # add to isolated orders list
                         log.info(f'trading LIMIT order {order}')
-                        # time.sleep(0.1)
 
         elif quit_mode == QuitMode.TRADE_ALL_PENDING:  # trade diff orders at reference side (BUY or SELL)
             # set session terminating status
@@ -197,14 +196,12 @@ class Helpers:
                     order = buy_orders[i]
                     self.place_market_order(order=order)
                     log.info(f'trading reference market order {order}')
-                    # time.sleep(0.1)
             elif diff < 0:  # SELL SIDE
                 log.info('SELL SIDE')
                 for i in range(-diff):
                     order = sell_orders[i]
                     self.place_market_order(order=order)
                     log.info(f'trading reference market order {order}')
-                    # time.sleep(0.1)
 
         # log final info
         self.ptm.log_perfect_trades_info()
@@ -213,10 +210,6 @@ class Helpers:
         log.info(f'session {session_id} stopped with expected profit: {expected_profit:,.2f}')
 
         market_orders_count_at_cmp = abs(diff)
-
-        # print('---------- LOGBOOK:')
-        # [print(f'     {msg}') for msg in self.logbook]
-        # print('---------- LOGBOOK END')
 
         # send info & profit to session manager
         self._session_stopped_callback(

@@ -308,16 +308,34 @@ def on_button_click(n):
 @app.callback(Output('button-stop-cmp', 'children'), Input('button-stop-cmp', 'n_clicks'))
 def on_button_click(n):
     if n is not None:
-        symbol_name = dfm.dashboard_active_symbol.name
-        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+        symbol = dfm.dashboard_active_symbol
+        symbol_name = symbol.name
+        session = dfm.sm.active_sessions[symbol_name]
+        session.helpers.quit_particular_session(
+            quit_mode=QuitMode.TRADE_ALL_PENDING,
+            session_id=session.session_id,
+            symbol=session.symbol,
+            cmp=session.cmp,
+            iom=session.iom,
+            cmp_count=session.cmp_count)
+
     return 'STOP-CMP'
 
 
 @app.callback(Output('button-stop-price', 'children'), Input('button-stop-price', 'n_clicks'))
 def on_button_click(n):
     if n is not None:
-        symbol_name = dfm.dashboard_active_symbol.name
-        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+        symbol = dfm.dashboard_active_symbol
+        symbol_name = symbol.name
+        session = dfm.sm.active_sessions[symbol_name]
+        session.helpers.quit_particular_session(
+            quit_mode=QuitMode.PLACE_ALL_PENDING,
+            session_id=session.session_id,
+            symbol=session.symbol,
+            cmp=session.cmp,
+            iom=session.iom,
+            cmp_count=session.cmp_count)
+
     return 'STOP-PRICE'
 
 

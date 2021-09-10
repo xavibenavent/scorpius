@@ -96,7 +96,10 @@ class Session:
 
         self.alert_msg = ''
 
+    # *******************************************************
     # ********** Binance socket callback functions **********
+    # *******************************************************
+
     def symbol_ticker_callback(self, cmp: float) -> None:
         if self.session_active:
             try:
@@ -142,85 +145,6 @@ class Session:
 
             except AttributeError as e:
                 print(e)
-
-    def _check_dynamic_parameters(self):
-        pass
-
-    def _check_exit_conditions(self, cmp):
-        # check profit only if orders are stable (no ACTIVE nor TO_BE_TRADED)
-        orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED],
-            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-        )
-        if len(orders) == 0:
-            # 8. check global net profit
-            # return the total profit considering that all remaining orders are traded at current cmp
-            total_profit = self.ptm.get_total_actual_profit_at_cmp(cmp=cmp)
-
-            # exit point 1: target achieved
-            if total_profit > self.target_total_net_profit:
-                self.logbook.append('exit point #1: TRADE_ALL_PENDING')
-                self.session_active = False
-                # self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-                self.helpers.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING,
-                                                     session_id=self.session_id,
-                                                     symbol=self.symbol,
-                                                     cmp=self.cmp,
-                                                     iom=self.iom,
-                                                     cmp_count=self.cmp_count)
-
-
-            # exit point 2: reached maximum allowed loss
-            elif total_profit < self.max_negative_profit_allowed:
-                self.logbook.append('exit point #2: PLACE_ALL_PENDING')
-                self.session_active = False
-                # self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
-                self.helpers.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING,
-                                                     session_id=self.session_id,
-                                                     symbol=self.symbol,
-                                                     cmp=self.cmp,
-                                                     iom=self.iom,
-                                                     cmp_count=self.cmp_count)
-
-    def _check_monitor_orders_for_activating(self, cmp: float) -> None:
-        # get orders
-        monitor_orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.MONITOR],
-            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-        )
-        # change status MONITOR -> ACTIVE
-        [order.set_status(OrderStatus.ACTIVE) for order in monitor_orders if order.is_ready_for_activation(cmp=cmp)]
-
-    def _check_active_orders_for_trading(self, cmp: float) -> None:
-        # get orders
-        active_orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.ACTIVE],
-            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-        )
-        # trade at market price active orders ready for trading
-        [self._place_market_order(order=order) for order in active_orders if order.is_ready_for_trading(cmp=cmp)]
-
-    def _check_inactivity(self, cmp):
-        # a new pt is created if no order has been traded for a while
-        # check elapsed time since last trade
-        if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
-            # check liquidity
-            is_allowed, forced_shift = self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol)
-            if is_allowed:
-                shifted_cmp = cmp + forced_shift
-                self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol, pt_type='FROM_INACTIVITY')
-
-                # check imbalance and add time proportional to it
-                diff = abs(self.buy_count - self.sell_count)
-                if diff > 1:
-                    self.cycles_count_for_inactivity = self.ref_cycles_inactivity * diff
-                else:  # 0 or 1
-                    self.cycles_count_for_inactivity = self.ref_cycles_inactivity
-                self.cycles_from_last_trade = 0
-            else:
-                log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
-                # update inactivity counter to try again after 60 cycles if inactivity continues
-                self.cycles_from_last_trade -= self.time_between_successive_pt_creation_tries
 
     def order_traded_callback(self, uid: str, order_price: float, bnb_commission: float) -> None:
         print(f'********** ORDER TRADED:    price: {order_price} [Q] - commission: {bnb_commission} [BNB]')
@@ -283,6 +207,90 @@ class Session:
 
             if is_known_order:
                 self.isolated_order_traded_callback(self.symbol, consolidated, expected)
+
+    def account_balance_callback(self, accounts: List[Account]) -> None:
+        # update of current balance from Binance
+        # log.debug([account.name for account in accounts])
+        self.am.update_current_accounts(received_accounts=accounts)
+
+    def _check_dynamic_parameters(self):
+        pass
+
+    def _check_exit_conditions(self, cmp):
+        # check profit only if orders are stable (no ACTIVE nor TO_BE_TRADED)
+        orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        if len(orders) == 0:
+            # 8. check global net profit
+            # return the total profit considering that all remaining orders are traded at current cmp
+            total_profit = self.ptm.get_total_actual_profit_at_cmp(cmp=cmp)
+
+            # exit point 1: target achieved
+            if total_profit > self.target_total_net_profit:
+                self.logbook.append('exit point #1: TRADE_ALL_PENDING')
+                self.session_active = False
+                # self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+                self.helpers.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING,
+                                                     session_id=self.session_id,
+                                                     symbol=self.symbol,
+                                                     cmp=self.cmp,
+                                                     iom=self.iom,
+                                                     cmp_count=self.cmp_count)
+
+
+            # exit point 2: reached maximum allowed loss
+            elif total_profit < self.max_negative_profit_allowed:
+                self.logbook.append('exit point #2: PLACE_ALL_PENDING')
+                self.session_active = False
+                # self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+                self.helpers.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING,
+                                                     session_id=self.session_id,
+                                                     symbol=self.symbol,
+                                                     cmp=self.cmp,
+                                                     iom=self.iom,
+                                                     cmp_count=self.cmp_count)
+
+    def _check_monitor_orders_for_activating(self, cmp: float) -> None:
+        # get orders
+        monitor_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.MONITOR],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        # change status MONITOR -> ACTIVE
+        [order.set_status(OrderStatus.ACTIVE) for order in monitor_orders if order.is_ready_for_activation(cmp=cmp)]
+
+    def _check_active_orders_for_trading(self, cmp: float) -> None:
+        # get orders
+        active_orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.ACTIVE],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        # trade at market price active orders ready for trading
+        [self.helpers.place_market_order(order=order) for order in active_orders if order.is_ready_for_trading(cmp=cmp)]
+
+    def _check_inactivity(self, cmp):
+        # a new pt is created if no order has been traded for a while
+        # check elapsed time since last trade
+        if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
+            # check liquidity
+            is_allowed, forced_shift = self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol)
+            if is_allowed:
+                shifted_cmp = cmp + forced_shift
+                self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol, pt_type='FROM_INACTIVITY')
+
+                # check imbalance and add time proportional to it
+                diff = abs(self.buy_count - self.sell_count)
+                if diff > 1:
+                    self.cycles_count_for_inactivity = self.ref_cycles_inactivity * diff
+                else:  # 0 or 1
+                    self.cycles_count_for_inactivity = self.ref_cycles_inactivity
+                self.cycles_from_last_trade = 0
+            else:
+                log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
+                # update inactivity counter to try again after 60 cycles if inactivity continues
+                self.cycles_from_last_trade -= self.time_between_successive_pt_creation_tries
 
     def manually_create_new_pt(self, cmp: float, symbol: Symbol):
         # called from the button in the dashboard
@@ -407,27 +415,7 @@ class Session:
                 raise Exception(f'{self.symbol.name} and {order.symbol.name} have to be equals')
             else:
                 self.logbook.append(f'place isolated order at cmp to get liquidity: {order}')
-                self._place_market_order(order=order)
+                self.helpers.place_market_order(order=order)
 
             # cancel in Binance the previously placed order
             self.market.cancel_orders([order])
-
-    def account_balance_callback(self, accounts: List[Account]) -> None:
-        # update of current balance from Binance
-        # log.debug([account.name for account in accounts])
-        self.am.update_current_accounts(received_accounts=accounts)
-
-    # ********** check methods **********
-    def _place_market_order(self, order) -> None:
-        self.helpers.place_market_order(order=order)
-
-    def _place_limit_order(self, order: Order) -> None:
-        self.helpers.place_limit_order(order=order)
-
-    def quit_particular_session(self, quit_mode: QuitMode):
-        self.helpers.quit_particular_session(quit_mode=quit_mode,
-                                             session_id=self.session_id,
-                                             symbol=self.symbol,
-                                             cmp=self.cmp,
-                                             iom=self.iom,
-                                             cmp_count=self.cmp_count)
