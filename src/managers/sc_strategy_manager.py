@@ -49,6 +49,11 @@ class StrategyManager:
 
         return shift if buy_mtm > sell_mtm else - shift
 
+    @staticmethod
+    def get_new_inactivity_cycles(buy_count: int, sell_count: int, ref_cycles: int) -> int:
+        diff = abs(buy_count - sell_count)
+        return ref_cycles * (diff+1) if diff > 0 else ref_cycles
+
     def is_asset_liquidity_enough(self, asset: Asset, new_pt_need: float) -> bool:
         liquidity_needed = self._get_liquidity_needed_callback(asset) + new_pt_need
         liquidity_available = self.market_api_out.get_asset_liquidity(asset_name=asset.name())  # free

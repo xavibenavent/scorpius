@@ -214,7 +214,13 @@ class Session:
             shifted_cmp = cmp + forced_shift
             # create pt
             self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+
+            # update inactivity counters
             self.cycles_from_last_trade = 0
+            self.cycles_count_for_inactivity = self.strategy_manager.get_new_inactivity_cycles(
+                buy_count=self.buy_count,
+                sell_count=self.sell_count,
+                ref_cycles=self.ref_cycles_inactivity)
         return is_allowed
 
     def _check_dynamic_parameters(self):
@@ -277,15 +283,7 @@ class Session:
         # a new pt is created if no order has been traded for a while
         # check elapsed time since last trade
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
-            if self._try_new_pt_creation(cmp=cmp, symbol=self.symbol):
-                # check imbalance and add time proportional to it
-                diff = abs(self.buy_count - self.sell_count)
-                if diff > 1:
-                    self.cycles_count_for_inactivity = self.ref_cycles_inactivity * diff
-                else:  # 0 or 1
-                    self.cycles_count_for_inactivity = self.ref_cycles_inactivity
-                # self.cycles_from_last_trade = 0
-            else:
+            if not self._try_new_pt_creation(cmp=cmp, symbol=self.symbol):
                 log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
                 # update inactivity counter to try again after 60 cycles if inactivity continues
                 self.cycles_from_last_trade -= self.time_between_successive_pt_creation_tries
