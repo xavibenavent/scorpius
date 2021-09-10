@@ -111,11 +111,7 @@ class Session:
             try:
                 # 0.1: create first pt
                 if self.cmp_count == 1:
-                    is_allowed, forced_shift = self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol)
-                    if is_allowed:
-                        shifted_cmp = cmp + forced_shift
-                        self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
-                        # set gap
+                    if self._try_new_pt_creation(cmp=cmp, symbol=self.symbol):
                         self.gap = self.ptm.get_first_gap()
                     else:
                         log.critical("initial pt not allowed, it will be tried again after inactivity period")
@@ -195,13 +191,7 @@ class Session:
 
                 # check condition for new pt:
                 if order.pt.status == PerfectTradeStatus.COMPLETED:
-                    # check liquidity:
-                    is_allowed, forced_shift = self._allow_new_pt_creation(cmp=self.cmp, symbol=self.symbol)
-                    if is_allowed:
-                        shifted_cmp = order_price + forced_shift
-                        # create pt
-                        self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
-                        self.cycles_from_last_trade = 0
+                    self._try_new_pt_creation(cmp=self.cmp, symbol=self.symbol)
 
         # if no order found, then check in placed_orders_from_previous_sessions list
         if not order_found:
@@ -217,6 +207,15 @@ class Session:
         # update of current balance from Binance
         # log.debug([account.name for account in accounts])
         self.am.update_current_accounts(received_accounts=accounts)
+
+    def _try_new_pt_creation(self, cmp: float, symbol: Symbol) -> bool:
+        is_allowed, forced_shift = self._allow_new_pt_creation(cmp=self.cmp, symbol=self.symbol)
+        if is_allowed:
+            shifted_cmp = cmp + forced_shift
+            # create pt
+            self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+            self.cycles_from_last_trade = 0
+        return is_allowed
 
     def _check_dynamic_parameters(self):
         pass
@@ -278,19 +277,14 @@ class Session:
         # a new pt is created if no order has been traded for a while
         # check elapsed time since last trade
         if self.cycles_from_last_trade > self.cycles_count_for_inactivity:
-            # check liquidity
-            is_allowed, forced_shift = self._allow_new_pt_creation(cmp=cmp, symbol=self.symbol)
-            if is_allowed:
-                shifted_cmp = cmp + forced_shift
-                self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol, pt_type='FROM_INACTIVITY')
-
+            if self._try_new_pt_creation(cmp=cmp, symbol=self.symbol):
                 # check imbalance and add time proportional to it
                 diff = abs(self.buy_count - self.sell_count)
                 if diff > 1:
                     self.cycles_count_for_inactivity = self.ref_cycles_inactivity * diff
                 else:  # 0 or 1
                     self.cycles_count_for_inactivity = self.ref_cycles_inactivity
-                self.cycles_from_last_trade = 0
+                # self.cycles_from_last_trade = 0
             else:
                 log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
                 # update inactivity counter to try again after 60 cycles if inactivity continues
@@ -298,9 +292,7 @@ class Session:
 
     def manually_create_new_pt(self, cmp: float, symbol: Symbol):
         # called from the button in the dashboard
-        is_allowed, _ = self._allow_new_pt_creation(cmp=cmp, symbol=symbol)  # no shift
-        if is_allowed:
-            self.ptm.create_new_pt(cmp=cmp, symbol=symbol)
+        self._try_new_pt_creation(cmp=cmp, symbol=symbol)
 
     def _allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> (bool, float):
         # 1. check liquidity
