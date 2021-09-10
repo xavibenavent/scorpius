@@ -39,7 +39,6 @@ class SessionManager:
             symbol_ticker_callback=self.market_sockets_in.binance_symbol_ticker_callback,
             user_callback=self.market_sockets_in.binance_user_socket_callback
         )
-        # self.market_api_out = MarketApiOut(client_manager=self.client_manager)
         self.market_api_out = MarketAPIOut(client=self.client_manager.client,
                                            hot_reconnect_callback=self.client_manager.hot_reconnect)
 
