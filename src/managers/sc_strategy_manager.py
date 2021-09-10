@@ -70,10 +70,6 @@ class StrategyManager:
         if order:
             # place at MARKET price
             log.info(f'order to place at MARKET price with loss: {order}')
-            # sanity check
-            # if order.symbol.name != symbol.name:
-            #     raise Exception(f'{symbol.name} and {order.symbol.name} have to be equals')
-            # else:
 
             # self.logbook.append(f'place isolated order at cmp to get liquidity: {order}')
             self.helpers.place_market_order(order=order)
