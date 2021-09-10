@@ -1,21 +1,7 @@
 # sc_symbol.py
 
 from typing import Dict
-
-
-class Asset:
-    def __init__(self,
-                 name: str,
-                 pv: int  # precision for visualization
-                 ):
-        self._name = name.upper()
-        self._pv = pv
-
-    def name(self) -> str:
-        return self._name
-
-    def pv(self) -> int:
-        return self._pv
+from basics.sc_asset import Asset
 
 
 class Symbol:
@@ -62,15 +48,15 @@ class Symbol:
         # get reference values from filter
         min_price = float(price_filter['minPrice'])
         max_price = float(price_filter['maxPrice'])
-        tick_size = float(price_filter['tickSize'])
+        # tick_size = float(price_filter['tickSize'])
 
         # this condition is not taken into consideration because of float behaviour
         # that does not give 0 when the condition is matched
         # added a round() in order creation to guarantee it
-        tick_size_condition = round((price - min_price) % tick_size, 0) == 0
+        # tick_size_condition = round((price - min_price) % tick_size, 0) == 0
 
         # check the three conditions are matched
-        conditions = min_price <= price <= max_price #  and tick_size_condition
+        conditions = min_price <= price <= max_price  # and tick_size_condition
         return True if conditions else False
 
     def _is_lot_size_filter_ok(self, qty: float) -> bool:
@@ -81,12 +67,12 @@ class Symbol:
         # get reference values from filter
         min_qty = float(lot_size_filter['minQty'])
         max_qty = float(lot_size_filter['maxQty'])
-        step_size = float(lot_size_filter['stepSize'])
+        # step_size = float(lot_size_filter['stepSize'])
 
         # this condition is not taken into consideration because of float behaviour
         # that does not give 0 when the condition is matched
         # added a round() in order creation to guarantee it
-        step_size_condition = round((qty - min_qty) % step_size == 0, 0)
+        # step_size_condition = round((qty - min_qty) % step_size == 0, 0)
 
         # check the three conditions are matched
         conditions = min_qty <= qty <= max_qty  # and step_size_condition

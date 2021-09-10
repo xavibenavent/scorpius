@@ -3,11 +3,11 @@
 from dash.dependencies import Input, Output
 from dashboard.dash_app import app
 from dashboard.dash_aux import get_pending_html_table
-from sc_session import QuitMode
+from session.sc_session import QuitMode
 from dashboard.sc_df_manager import DataframeManager
 from binance import enums as k_binance
 from datetime import datetime, timedelta
-from sc_perfect_trade import PerfectTradeStatus
+from basics.sc_perfect_trade import PerfectTradeStatus
 
 print('dash_callbacks.py')
 
@@ -172,7 +172,8 @@ def display_value(value):
     total_gap_span = buy_gap_span + sell_gap_span
     buy_gap_depth, sell_gap_depth = active_session.helpers.get_gap_depth_from_list(orders=all_orders, cmp=cmp, gap=gap)
     total_gap_depth = buy_gap_depth + sell_gap_depth
-    buy_gap_momentum, sell_gap_momentum = active_session.helpers.get_gap_momentum_from_list(orders=all_orders, cmp=cmp, gap=gap)
+    buy_gap_momentum, sell_gap_momentum = \
+        active_session.helpers.get_gap_momentum_from_list(orders=all_orders, cmp=cmp, gap=gap)
     total_gap_momentum = buy_gap_momentum + sell_gap_momentum
     return \
         f'{total_gap_span:.2f}',\
@@ -196,7 +197,7 @@ def display_value(value):
     symbol_name = symbol.name
     cmp = dfm.sm.active_sessions[symbol_name].cmp  # s[-1]
     qp = symbol.quote_asset().pv()
-    coin_symbol = symbol.quote_asset().name()
+    # coin_symbol = symbol.quote_asset().name()
     # called the method in session to check buy_count == sell_count
     consolidated = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_profit']
     expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
@@ -204,8 +205,6 @@ def display_value(value):
     return f'{consolidated:,.{qp}f}',\
            f'{expected_at_cmp:,.{qp}f}',\
            f'{expected:,.{qp}f}', \
-
-
 
 
 
@@ -222,10 +221,10 @@ def display_value(value):
 @app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
-    ccfi = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
-    cycles_to_new_pt = ccfi - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
+    cycles_count_for_inactivity = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
+    cycles_to_new_pt = cycles_count_for_inactivity - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
     time_to_new_pt = timedelta(seconds=cycles_to_new_pt)
-    return f'({ccfi})  {time_to_new_pt}'
+    return f'({cycles_count_for_inactivity})  {time_to_new_pt}'
 
 
 @app.callback(Output('accounts-info', 'children'), Input('update', 'n_intervals'))
@@ -404,5 +403,3 @@ def update_table(timer):
     df_pending['total'] = df_pending['total'].map(f'{{:,.{qp}f}}'.format)
 
     return get_pending_html_table(df=df_pending[['pt_id', 'name', 'price', 'amount', 'total', 'status']])
-
-

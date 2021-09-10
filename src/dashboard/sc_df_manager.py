@@ -1,12 +1,11 @@
 # sc_df_manager.py
 
 import pandas as pd
-from typing import Dict, List
-from binance import enums as k_binance
+from typing import List
 
-from sc_order import OrderStatus, Order
-from sc_perfect_trade import PerfectTradeStatus
-from sc_session_manager import SessionManager
+from basics.sc_order import OrderStatus, Order
+from basics.sc_perfect_trade import PerfectTradeStatus
+from managers.sc_session_manager import SessionManager
 
 
 # SYMBOL = 'BTCEUR'

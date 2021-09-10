@@ -1,9 +1,6 @@
 # sc_account_manager.py
-import pprint
 from typing import List, Optional, Dict
 import logging
-
-from sc_symbol import Asset
 
 log = logging.getLogger('log')
 

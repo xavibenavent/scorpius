@@ -1,12 +1,11 @@
 # pp_order.py
 
 import logging
-import secrets
 from enum import Enum
 from binance import enums as k_binance
-from typing import Optional, List
+from typing import Optional
 
-from sc_symbol import Symbol
+from basics.sc_symbol import Symbol
 
 log = logging.getLogger('log')
 

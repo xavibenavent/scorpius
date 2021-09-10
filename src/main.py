@@ -3,7 +3,7 @@
 import logging
 from dashboard.dash_app import app
 import dashboard.dash_callbacks
-from dashboard.sc_df_manager import DataframeManager
+# from dashboard.sc_df_manager import DataframeManager
 from sc_logger import XBLogger
 
 XBLogger()
@@ -22,4 +22,3 @@ server = app.server
 if __name__ == '__main__':
     # dev_tools_hot_release=False to avoid going twice in this file
     app.run_server(dev_tools_ui=True, dev_tools_hot_reload=False)
-    # session.quit(quit_mode=QuitMode.CANCEL_ALL_PLACED)

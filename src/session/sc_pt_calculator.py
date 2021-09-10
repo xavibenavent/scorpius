@@ -1,6 +1,6 @@
 # xb_pt_calculator.py
 import sys
-from sc_symbol import Symbol
+from basics.sc_symbol import Symbol
 
 
 # get buy and sell prices given the net euro balance and the quantity (qb=qs)

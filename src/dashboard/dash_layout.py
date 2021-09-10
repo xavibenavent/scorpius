@@ -12,7 +12,8 @@ K_UPDATE_INTERVAL = 500  # milisecs
 
 
 class DashLayout:
-    def get_layout(self) -> html.Div:
+    @staticmethod
+    def get_layout() -> html.Div:
         layout = html.Div(className='app-overall', children=[
             html.Div(children=[
                 # app info & session data #1
@@ -25,7 +26,8 @@ class DashLayout:
                             html.H1(id='neb', children='', className='neb'),
                             html.H1(id='qty', children='', className='qty'),
                             html.H1(id='target', children='', className='target'),
-                            html.H1(id='max-negative-profit-allowed', children='', className='max-negative-profit-allowed'),
+                            html.H1(id='max-negative-profit-allowed', children='',
+                                    className='max-negative-profit-allowed'),
                             html.H1(id='title', children='Scorpius 1.0', className='app-title'),
                         ]),
                     ]),
@@ -46,7 +48,8 @@ class DashLayout:
                                                 html.H6(id='session-count', className="session-count")
                                             ], align='center'),
                                             dbc.Col([
-                                                html.H6(id='session-cycle-count', children='0', className='session-cycle-count'),
+                                                html.H6(id='session-cycle-count', children='0',
+                                                        className='session-cycle-count'),
                                             ], align='center'),
                                         ]),
                                         html.Br(),
@@ -131,7 +134,8 @@ class DashLayout:
                                                 html.H6("Global", className="card-header-global"),
                                             ], align='center'),
                                             dbc.Col([
-                                                html.H6(id='global-cycle-count', children='0', className='global-cycle-count'),
+                                                html.H6(id='global-cycle-count', children='0',
+                                                        className='global-cycle-count'),
                                             ], align='center'),
                                         ]),
                                         html.Br(),
@@ -146,11 +150,13 @@ class DashLayout:
                                             ]),
                                             dbc.Col([
                                                 html.H6('BUY', className='global-info-subtitle-3'),
-                                                html.H6(id='isol-orders-pending-buy', children='0', className='order-info')
+                                                html.H6(id='isol-orders-pending-buy', children='0',
+                                                        className='order-info')
                                             ]),
                                             dbc.Col([
                                                 html.H6('SELL', className='global-info-subtitle-3'),
-                                                html.H6(id='isol-orders-pending-sell', children='0', className='order-info')
+                                                html.H6(id='isol-orders-pending-sell', children='0',
+                                                        className='order-info')
                                             ]),
                                         ]),
                                         html.Br(),
@@ -184,11 +190,13 @@ class DashLayout:
                                         dbc.Row([
                                             dbc.Col([
                                                 html.H6('DONE', className='global-info-subtitle-2'),
-                                                html.H6(id='consolidated-profit', children='0', className='order-info-1')
+                                                html.H6(id='consolidated-profit', children='0',
+                                                        className='order-info-1')
                                             ]),
                                             dbc.Col([
                                                 html.H6('ACTUAL', className='global-info-subtitle-2'),
-                                                html.H6(id='expected-profit-at-cmp', children='0', className='order-info-1')
+                                                html.H6(id='expected-profit-at-cmp', children='0',
+                                                        className='order-info-1')
                                             ]),
                                         ]),
                                         html.Br(),
@@ -327,4 +335,3 @@ class DashLayout:
             ],)
         ])
         return layout
-

@@ -1,8 +1,8 @@
 # sc_fake_simulator_out.py
 
-from typing import List, Dict
-from sc_account_manager import Account, AccountManager
-from config_manager import ConfigManager
+from typing import Dict
+from managers.sc_account_manager import AccountManager
+from managers.config_manager import ConfigManager
 
 
 class FakeSimulatorOut:
@@ -36,15 +36,16 @@ class FakeSimulatorOut:
             'permissions': ['SPOT']
         }
 
-    def get_asset_balance(self, asset: str, account_manager: AccountManager) -> dict:
+    @staticmethod
+    def get_asset_balance(asset: str, account_manager: AccountManager) -> dict:
         account = account_manager.get_account(name=asset)
         if account:
             return {"asset": asset, "free": account.free, "locked": account.locked}
         else:
             raise Exception(f'wrong asset: {asset}')
 
-
-    def get_symbol_info(self, symbol_name: str) -> dict:
+    @staticmethod
+    def get_symbol_info(symbol_name: str) -> dict:
         if symbol_name == 'BTCEUR':
             return {
                 "symbol": symbol_name,
@@ -148,12 +149,16 @@ class FakeSimulatorOut:
                 'isSpotTradingAllowed': True,
                 'isMarginTradingAllowed': True,
                 'filters': [
-                    {'filterType': 'PRICE_FILTER', 'minPrice': '0.00000100', 'maxPrice': '922327.00000000', 'tickSize': '0.00000100'},
+                    {'filterType': 'PRICE_FILTER', 'minPrice': '0.00000100', 'maxPrice': '922327.00000000',
+                     'tickSize': '0.00000100'},
                     {'filterType': 'PERCENT_PRICE', 'multiplierUp': '5', 'multiplierDown': '0.2', 'avgPriceMins': 5},
-                    {'filterType': 'LOT_SIZE', 'minQty': '0.00010000', 'maxQty': '100000.00000000', 'stepSize': '0.00010000'},
-                    {'filterType': 'MIN_NOTIONAL', 'minNotional': '0.00010000', 'applyToMarket': True, 'avgPriceMins': 5},
+                    {'filterType': 'LOT_SIZE', 'minQty': '0.00010000', 'maxQty': '100000.00000000',
+                     'stepSize': '0.00010000'},
+                    {'filterType': 'MIN_NOTIONAL', 'minNotional': '0.00010000', 'applyToMarket': True,
+                     'avgPriceMins': 5},
                     {'filterType': 'ICEBERG_PARTS', 'limit': 10},
-                    {'filterType': 'MARKET_LOT_SIZE', 'minQty': '0.00000000', 'maxQty': '746.43672750', 'stepSize': '0.00000000'},
+                    {'filterType': 'MARKET_LOT_SIZE', 'minQty': '0.00000000', 'maxQty': '746.43672750',
+                     'stepSize': '0.00000000'},
                     {'filterType': 'MAX_NUM_ORDERS', 'maxNumOrders': 200},
                     {'filterType': 'MAX_NUM_ALGO_ORDERS', 'maxNumAlgoOrders': 5}
                 ],

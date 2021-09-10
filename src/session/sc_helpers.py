@@ -4,12 +4,12 @@ import logging
 from typing import List, Union, Callable
 from enum import Enum
 from binance import enums as k_binance
-from sc_order import Order, OrderStatus
-from sc_perfect_trade import PerfectTradeStatus
-from sc_pt_manager import PTManager
-from sc_market_api_out import MarketAPIOut
-from sc_symbol import Symbol
-from sc_isolated_manager import IsolatedOrdersManager
+from basics.sc_order import Order, OrderStatus
+from basics.sc_perfect_trade import PerfectTradeStatus
+from session.sc_pt_manager import PTManager
+from market.sc_market_api_out import MarketAPIOut
+from basics.sc_symbol import Symbol
+from managers.sc_isolated_manager import IsolatedOrdersManager
 
 log = logging.getLogger('log')
 
@@ -24,7 +24,7 @@ class Helpers:
     def __init__(self,
                  pt_manager: PTManager,
                  market: MarketAPIOut,
-                 session_stopped_callback: Callable[[Symbol, str, bool, float, float, int, int, int], None]
+                 session_stopped_callback: Callable[[Symbol, bool, float, float, int, int, int], None]
                  ):
         self.ptm = pt_manager
         self.market = market
@@ -214,7 +214,6 @@ class Helpers:
         # send info & profit to session manager
         self._session_stopped_callback(
             symbol,
-            session_id,
             is_session_fully_consolidated,
             consolidated_profit,
             expected_profit,
@@ -222,4 +221,3 @@ class Helpers:
             market_orders_count_at_cmp,  # number of orders placed at its own price
             placed_orders_at_order_price
         )
-

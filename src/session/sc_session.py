@@ -1,20 +1,18 @@
 # sc_session.py
 
 import logging
-from enum import Enum
 
-from typing import Callable, List, Union
+from typing import Callable, List
 from binance import enums as k_binance
 
-from sc_market_api_out import MarketAPIOut
-from sc_order import Order, OrderStatus
-from sc_account_manager import Account, AccountManager
-from sc_pt_manager import PTManager
-from sc_perfect_trade import PerfectTradeStatus
-from sc_symbol import Symbol, Asset
-from sc_isolated_manager import IsolatedOrdersManager
-from sc_helpers import Helpers
-from sc_helpers import QuitMode
+from market.sc_market_api_out import MarketAPIOut
+from basics.sc_order import OrderStatus
+from managers.sc_account_manager import Account, AccountManager
+from session.sc_pt_manager import PTManager
+from basics.sc_perfect_trade import PerfectTradeStatus
+from basics.sc_symbol import Symbol, Asset
+from managers.sc_isolated_manager import IsolatedOrdersManager
+from session.sc_helpers import Helpers, QuitMode
 
 log = logging.getLogger('log')
 
@@ -24,7 +22,7 @@ class Session:
                  symbol: Symbol,
                  session_id: str,
                  isolated_orders_manager: IsolatedOrdersManager,
-                 session_stopped_callback: Callable[[Symbol, str, bool, float, float, int, int, int], None],
+                 session_stopped_callback: Callable[[Symbol, bool, float, float, int, int, int], None],
                  market: MarketAPIOut,
                  account_manager: AccountManager,
                  isolated_order_traded_callback: Callable[[Symbol, float, float], None],
@@ -33,7 +31,6 @@ class Session:
 
         self.symbol = symbol
         self.session_id = session_id
-        # self.session_stopped_callback = session_stopped_callback
         self.iom = isolated_orders_manager
         self.market = market
         self.am = account_manager
@@ -163,7 +160,6 @@ class Session:
             if order.uid == uid:
                 order_found = True
 
-                # log.info(f'confirmation of order traded: {order}')
                 self.logbook.append(f'order traded: {order.pt.id} {order.name} {order.k_side}')
                 # reset counter
                 self.cycles_from_last_trade = 0
@@ -238,7 +234,6 @@ class Session:
                                                      cmp=self.cmp,
                                                      iom=self.iom,
                                                      cmp_count=self.cmp_count)
-
 
             # exit point 2: reached maximum allowed loss
             elif total_profit < self.max_negative_profit_allowed:
@@ -346,10 +341,6 @@ class Session:
             float: only used if True, it return the shift to apply to the new PT
         """
 
-        # precision for visualization
-        bpv = symbol.base_asset().pv()
-        qpv = symbol.quote_asset().pv()
-
         # liquidity needed for new pt orders (b1 & s1)
         new_pt_base_asset_liquidity_needed = self.quantity
         new_pt_quote_asset_liquidity_needed = self.quantity * cmp
@@ -375,7 +366,6 @@ class Session:
             # check whether there is enough quote asset to force a pt shifted to SELL
             if base_asset_liquidity > total_b_needed:  # enough base
                 # force the creation of a shifted pt to SELL base and get quote
-                # log.info(f'new pt with forced shift: {-self.forced_shift}')
                 return False, -self.forced_shift  # force SELL
             else:
                 # get quote by selling base
@@ -386,8 +376,6 @@ class Session:
         elif base_asset_liquidity < total_b_needed:  # need for base
             if quote_asset_liquidity > total_q_needed:  # enough quote
                 # force the creation of a shifted pt to BUY base
-                # log.info(f'new pt with forced shift: {+self.forced_shift} '
-                #          f'q: {quote_asset_liquidity} b: {base_asset_liquidity}')
                 return False, +self.forced_shift  # force SELL
             else:
                 # get base buying

@@ -1,9 +1,7 @@
 # sc_perfect_trade.py
 
-import logging
-import configparser
 from enum import Enum
-from sc_order import Order, OrderStatus
+from basics.sc_order import Order
 from typing import List
 
 
@@ -36,7 +34,7 @@ class PerfectTrade:
             sum([order.get_total_at_cmp(cmp=order.price)
                  for order in self.orders])
 
-    def get_actual_profit_at_cmp(self, cmp:float) -> float:
+    def get_actual_profit_at_cmp(self, cmp: float) -> float:
         # return the pt profit considering that all remaining orders, except NEW, are traded at current cmp
         pt_profit = 0.0
 
@@ -69,7 +67,3 @@ class PerfectTrade:
 
     def get_gap(self) -> float:
         return abs(self.orders[1].price - self.orders[0].price)
-
-
-
-

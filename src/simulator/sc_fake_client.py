@@ -3,11 +3,11 @@
 import logging
 from typing import List, Callable, Dict
 
-from sc_account_manager import Account, AccountManager
-from config_manager import ConfigManager
+from managers.sc_account_manager import Account, AccountManager
+from managers.config_manager import ConfigManager
 from simulator.thread_cmp_generator import ThreadCmpGenerator
 from simulator.sc_fake_simulator_out import FakeSimulatorOut
-from sc_symbol import Symbol, Asset
+from basics.sc_symbol import Symbol, Asset
 
 log = logging.getLogger('log')
 

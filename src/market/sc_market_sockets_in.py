@@ -1,10 +1,9 @@
 # sc_market_sockets_in.py
 
 from typing import Optional, Callable, List, Dict
-from pprint import pprint
 import logging
 
-from sc_account_manager import Account
+from managers.sc_account_manager import Account
 
 log = logging.getLogger('log')
 
@@ -60,8 +59,6 @@ class MarketSocketsIn:
             log.critical(f'symbol ticker socket error: {msg["m"]}')
 
         elif event_type == '24hrTicker':
-            # log.debug(f'symbol ticker with msg: {msg}')
-
             # get symbol & check it
             symbol_name = msg['s']
             if symbol_name not in ['BTCEUR', 'BNBEUR', 'ETHBTC']:

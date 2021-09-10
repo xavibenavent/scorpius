@@ -3,8 +3,8 @@
 from typing import List, Optional
 import logging
 from binance import enums as k_binance
-from sc_order import Order
-from sc_account_manager import Asset
+from basics.sc_order import Order
+from basics.sc_asset import Asset
 
 log = logging.getLogger('log')
 

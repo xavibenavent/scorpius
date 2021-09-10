@@ -7,7 +7,7 @@ from typing import Union, List, Dict, Callable, Optional
 from binance.client import Client as BinanceSpotClient
 from binance import ThreadedWebsocketManager
 
-from config_manager import ConfigManager
+from managers.config_manager import ConfigManager
 from simulator.sc_fake_client import FakeClient
 from simulator.thread_cmp_generator import ThreadCmpGenerator as Generator
 

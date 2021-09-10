@@ -1,17 +1,16 @@
 # sc_market_api_out.py
-import pprint
 
 from binance.client import Client
 from binance import enums as k_binance
 from binance.exceptions import *
-from typing import Callable, Optional, List, Dict
+from typing import Callable, Optional, List
 from requests.exceptions import ConnectionError, ReadTimeout
 from urllib3.exceptions import ProtocolError
 import socket
 import logging
 
-from sc_order import Order
-from sc_account_manager import Account
+from basics.sc_order import Order
+from managers.sc_account_manager import Account
 
 
 log = logging.getLogger('log')

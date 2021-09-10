@@ -4,10 +4,10 @@ from typing import Optional, List
 from binance import enums as k_binance
 import logging
 
-from sc_order import Order, OrderStatus
-from sc_pt_calculator import get_prices_given_neb  # get_pt_values
-from sc_perfect_trade import PerfectTrade, PerfectTradeStatus
-from sc_symbol import Symbol
+from basics.sc_order import Order, OrderStatus
+from session.sc_pt_calculator import get_prices_given_neb  # get_pt_values
+from basics.sc_perfect_trade import PerfectTrade, PerfectTradeStatus
+from basics.sc_symbol import Symbol
 
 log = logging.getLogger('log')
 

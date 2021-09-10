@@ -5,15 +5,15 @@ import logging
 import os
 import signal
 
-from config_manager import ConfigManager
+from managers.config_manager import ConfigManager
 
-from sc_session import Session
-from sc_market_api_out import MarketAPIOut
-from sc_market_sockets_in import MarketSocketsIn
-from sc_account_manager import Account, AccountManager
-from sc_isolated_manager import IsolatedOrdersManager
-from sc_symbol import Symbol, Asset
-from sc_client_manager import ClientManager
+from session.sc_session import Session
+from market.sc_market_api_out import MarketAPIOut
+from market.sc_market_sockets_in import MarketSocketsIn
+from managers.sc_account_manager import Account, AccountManager
+from managers.sc_isolated_manager import IsolatedOrdersManager
+from basics.sc_symbol import Symbol, Asset
+from managers.sc_client_manager import ClientManager
 
 log = logging.getLogger('log')
 
@@ -118,7 +118,6 @@ class SessionManager:
 
     def _session_stopped_callback(self,
                                   symbol: Symbol,
-                                  session_id: str,
                                   is_session_fully_consolidated: bool,
                                   consolidated_profit: float,
                                   expected_profit: float,
@@ -162,7 +161,8 @@ class SessionManager:
         self.terminated_sessions[symbol.name]['global_placed_pending_orders_count'] = 0
 
     def start_new_session(self, symbol: Symbol) -> Session:
-        session_id = f'SESSION{self.all_symbols_session_count + 1:03d}{symbol.name}{datetime.now().strftime("%m%d%H%M")}'
+        session_id = f'SESSION{self.all_symbols_session_count + 1:03d}' \
+                     f'{symbol.name}{datetime.now().strftime("%m%d%H%M")}'
         session = Session(
             symbol=symbol,
             session_id=session_id,
@@ -205,7 +205,6 @@ class SessionManager:
         # if SELL => need for base asset liquidity
         # get orders
         liquidity_needed = 0.0
-        pv = asset.pv()
         for session in self.active_sessions.values():
             quote_asset_needed = 0.0
             base_asset_needed = 0.0
@@ -230,4 +229,3 @@ class SessionManager:
             self.terminated_sessions[symbol.name]['global_consolidated_profit'] += consolidated
             # subtraction because expected is calculated as an absolut value
             self.terminated_sessions[symbol.name]['global_expected_profit'] -= expected
-
