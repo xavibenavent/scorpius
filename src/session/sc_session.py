@@ -12,6 +12,7 @@ from session.sc_pt_manager import PTManager
 from basics.sc_perfect_trade import PerfectTradeStatus
 from basics.sc_symbol import Symbol, Asset
 from managers.sc_isolated_manager import IsolatedOrdersManager
+from managers.sc_strategy_manager import StrategyManager
 from session.sc_helpers import Helpers, QuitMode
 
 log = logging.getLogger('log')
@@ -72,6 +73,14 @@ class Session:
             pt_manager=self.ptm,
             market=self.market,
             session_stopped_callback=session_stopped_callback
+        )
+
+        self.strategy_manager = StrategyManager(
+            quantity=self.quantity,
+            market_api_out=self.market,
+            isolated_orders_manager=self.iom,
+            helpers= self.helpers,
+            get_liquidity_needed_callback=get_liquidity_needed_callback
         )
 
         self.cmp = self.market.get_cmp(symbol_name=self.symbol.name)
@@ -294,116 +303,40 @@ class Session:
             self.ptm.create_new_pt(cmp=cmp, symbol=symbol)
 
     def _allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> (bool, float):
-        # 1. liquidity
-        is_allowed_by_liquidity, forced_shift = self._is_liquidity_enough(cmp=cmp, symbol=symbol)
-        # in case a new pt is allowed by liquidity, also return the needed shifted (to force SELL or BUY)
-        if not is_allowed_by_liquidity:
+        # 1. check liquidity
+        # check base liquidity and try to get if not enough
+        if not self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(), new_pt_need=self.quantity):
+            # try to get
+            self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.base_asset(), cmp=cmp)
+            return False, 0.0
+
+        # check quote liquidity and try to get if not enough
+        if not self.strategy_manager.is_asset_liquidity_enough(asset=symbol.quote_asset(),
+                                                               new_pt_need=self.quantity * cmp):
+            # try to get
+            self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.quote_asset(), cmp=cmp)
             return False, 0.0
 
         # 2. minimize span
-        # isolated_orders = self.get_isolated_orders_callback(self.symbol.name)
-        isolated_orders = self.iom.get_isolated_orders(symbol_name=self.symbol.name)
+        all_orders = self.get_all_orders_for_symbol(symbol=symbol)
+        shift = self.strategy_manager.get_shift_to_minimize_span(all_orders=all_orders, cmp=cmp, gap=self.gap)
+        if shift != 0:
+            return True, shift
+
+        # 3. balance momentum
+        shift = self.strategy_manager.get_shift_to_balance_momentum(all_orders=all_orders, cmp=cmp, gap=self.gap)
+        return True, shift
+
+        # dynamic parameters:
+        #   - inactivity time
+        #   - neb/amount
+
+    def get_all_orders_for_symbol(self, symbol: Symbol):
+        isolated_orders = self.iom.get_isolated_orders(symbol_name=symbol.name)
         session_orders = self.ptm.get_orders_by_request(
             orders_status=[OrderStatus.MONITOR, OrderStatus.ACTIVE],
             pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED,
                        PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
         all_orders = isolated_orders + session_orders
+        return all_orders
 
-        buy_span, sell_span = self.helpers.get_span_from_list(all_orders, cmp=cmp)
-        ref_gap = self.gap / 2
-
-        if buy_span == 0.0 and sell_span == 0.0:
-            return True, 0.0
-        elif buy_span == 0.0:
-            return True, ref_gap
-        elif sell_span == 0.0:
-            return True, -ref_gap
-        else:
-            buy_mtm, sell_mtm = self.helpers.get_momentum_from_list(orders=all_orders, cmp=cmp)
-            if buy_mtm > sell_mtm:
-                return True, self.gap
-            else:
-                return True, -self.gap
-        # 3. balance buy & sell momentum
-        # dynamic parameters:
-        #   - inactivity time
-        #   - neb/amount
-
-        # if all conditions passed
-        # return True, forced_shift
-
-    def _is_liquidity_enough(self, cmp: float, symbol: Symbol) -> (bool, float):
-        """
-        :param cmp:
-        :param symbol:
-        :return:
-            bool: flag to indicate whether there is enough liquidity or not, to create a new PT
-            float: only used if True, it return the shift to apply to the new PT
-        """
-
-        # liquidity needed for new pt orders (b1 & s1)
-        new_pt_base_asset_liquidity_needed = self.quantity
-        new_pt_quote_asset_liquidity_needed = self.quantity * cmp
-
-        # get total quote needed to trade all alive orders at their own price
-        quote_asset_needed = self._get_liquidity_needed_callback(symbol.quote_asset())
-        # total quote asset needed
-        total_q_needed = quote_asset_needed + new_pt_quote_asset_liquidity_needed
-
-        base_asset_needed = self._get_liquidity_needed_callback(symbol.base_asset())
-        # total base asset needed
-        total_b_needed = base_asset_needed + new_pt_base_asset_liquidity_needed
-
-        # check available liquidity (quote & base) vs needed when trading both orders
-        # get existing liquidity
-        quote_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.quote_asset().name())  # free
-        base_asset_liquidity = self.market.get_asset_liquidity(asset_name=symbol.base_asset().name())  # free
-
-        # quote_diff = quote_asset_liquidity - total_q_needed
-        # base_diff = base_asset_liquidity - total_b_needed
-
-        if quote_asset_liquidity < total_q_needed:  # need for quote
-            # check whether there is enough quote asset to force a pt shifted to SELL
-            if base_asset_liquidity > total_b_needed:  # enough base
-                # force the creation of a shifted pt to SELL base and get quote
-                return False, -self.forced_shift  # force SELL
-            else:
-                # get quote by selling base
-                # todo: check whether it works well
-                self._try_to_get_liquidity(asset=symbol.quote_asset(), cmp=cmp)
-                return False, 0.0
-
-        elif base_asset_liquidity < total_b_needed:  # need for base
-            if quote_asset_liquidity > total_q_needed:  # enough quote
-                # force the creation of a shifted pt to BUY base
-                return False, +self.forced_shift  # force SELL
-            else:
-                # get base buying
-                # todo: check whether it works well
-                self._try_to_get_liquidity(asset=symbol.base_asset(), cmp=cmp)
-                return False, 0.0
-
-        else:
-            return True, 0.0
-
-    def _try_to_get_liquidity(self, asset: Asset, cmp: float):
-        # called from session
-        log.debug(f'{self.symbol.name} {asset.name()} trying to get liquidity')
-
-        order = self.iom.try_to_get_asset_liquidity(
-            asset=asset,
-            cmp=cmp,
-            max_loss=self.accepted_loss_to_get_liquidity)
-
-        if order:
-            # place at MARKET price
-            log.info(f'order to place at market price with loss: {order}')
-            # sanity check
-            if order.symbol.name != self.symbol.name:
-                raise Exception(f'{self.symbol.name} and {order.symbol.name} have to be equals')
-            else:
-                self.logbook.append(f'place isolated order at cmp to get liquidity: {order}')
-                self.helpers.place_market_order(order=order)
-
-            # cancel in Binance the previously placed order
-            self.market.cancel_orders([order])
