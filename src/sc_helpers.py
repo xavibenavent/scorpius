@@ -57,6 +57,28 @@ class Helpers:
             buy_depth, sell_depth = Helpers.get_depth_from_list(orders=orders, cmp=cmp)
             return (buy_depth / gap), (sell_depth / gap)
 
+    @staticmethod
+    def get_side_momentum_from_list(orders: List[Order],
+                                    side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL],
+                                    cmp: float) \
+            -> float:
+        distances = [order.distance(cmp=cmp) for order in orders if order.k_side == side]
+        return sum(distances) if len(distances) > 0 else 0.0
+
+    @staticmethod
+    def get_momentum_from_list(orders: List[Order], cmp: float) -> (float, float):
+        buy_mtm = Helpers.get_side_momentum_from_list(orders=orders, side=k_binance.SIDE_BUY, cmp=cmp)
+        sell_mtm = Helpers.get_side_momentum_from_list(orders=orders, side=k_binance.SIDE_SELL, cmp=cmp)
+        return buy_mtm, sell_mtm
+
+    @staticmethod
+    def get_gap_momentum_from_list(orders: List[Order], cmp: float, gap: float) -> (float, float):
+        if gap == 0:
+            return 0.0, 0.0
+        else:
+            buy_mtm, sell_mtm = Helpers.get_momentum_from_list(orders=orders, cmp=cmp)
+            return (buy_mtm / gap), (sell_mtm / gap)
+
     def place_market_order(self, order) -> None:
         # raise an exception if the order is not placed in binance (probably due to not enough liquidity)
         # change order status (it will be update to TRADED once received through binance socket)

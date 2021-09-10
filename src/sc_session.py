@@ -304,7 +304,7 @@ class Session:
         elif sell_span == 0.0:
             return True, -ref_gap
         else:
-            buy_mtm, sell_mtm = self.get_momentum_from_list(all_orders)
+            buy_mtm, sell_mtm = self.helpers.get_momentum_from_list(orders=all_orders, cmp=cmp)
             if buy_mtm > sell_mtm:
                 return True, self.gap
             else:
@@ -518,20 +518,3 @@ class Session:
             market_orders_count_at_cmp,  # number of orders placed at its own price
             placed_orders_at_order_price
         )
-
-    def get_side_momentum_from_list(self, orders: List[Order], side: Union[k_binance.SIDE_BUY, k_binance.SIDE_SELL]) \
-            -> float:
-        distances = [order.distance(cmp=self.cmp) for order in orders if order.k_side == side]
-        return sum(distances) if len(distances) > 0 else 0.0
-
-    def get_momentum_from_list(self, orders: List[Order]) -> (float, float):
-        buy_mtm = self.get_side_momentum_from_list(orders=orders, side=k_binance.SIDE_BUY)
-        sell_mtm = self.get_side_momentum_from_list(orders=orders, side=k_binance.SIDE_SELL)
-        return buy_mtm, sell_mtm
-
-    def get_gap_momentum_from_list(self, orders: List[Order]) -> (float, float):
-        buy_mtm, sell_mtm = self.get_momentum_from_list(orders=orders)
-        if self.gap != 0.0:
-            return buy_mtm / self.gap, sell_mtm / self.gap
-        else:
-            return 0.0, 0.0
