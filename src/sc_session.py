@@ -14,14 +14,9 @@ from sc_perfect_trade import PerfectTradeStatus
 from sc_symbol import Symbol, Asset
 from sc_isolated_manager import IsolatedOrdersManager
 from sc_helpers import Helpers
+from sc_helpers import QuitMode
 
 log = logging.getLogger('log')
-
-
-class QuitMode(Enum):
-    CANCEL_ALL = 1
-    PLACE_ALL_PENDING = 2
-    TRADE_ALL_PENDING = 3
 
 
 class Session:
@@ -38,7 +33,7 @@ class Session:
 
         self.symbol = symbol
         self.session_id = session_id
-        self.session_stopped_callback = session_stopped_callback
+        # self.session_stopped_callback = session_stopped_callback
         self.iom = isolated_orders_manager
         self.market = market
         self.am = account_manager
@@ -76,7 +71,11 @@ class Session:
         )
 
         # class with useful methods
-        self.helpers = Helpers(pt_manager=self.ptm, market=self.market)
+        self.helpers = Helpers(
+            pt_manager=self.ptm,
+            market=self.market,
+            session_stopped_callback=session_stopped_callback
+        )
 
         self.cmp = self.market.get_cmp(symbol_name=self.symbol.name)
         print(f'initial cmp: {self.cmp}')
@@ -162,13 +161,26 @@ class Session:
             if total_profit > self.target_total_net_profit:
                 self.logbook.append('exit point #1: TRADE_ALL_PENDING')
                 self.session_active = False
-                self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+                # self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+                self.helpers.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING,
+                                                     session_id=self.session_id,
+                                                     symbol=self.symbol,
+                                                     cmp=self.cmp,
+                                                     iom=self.iom,
+                                                     cmp_count=self.cmp_count)
+
 
             # exit point 2: reached maximum allowed loss
             elif total_profit < self.max_negative_profit_allowed:
                 self.logbook.append('exit point #2: PLACE_ALL_PENDING')
                 self.session_active = False
-                self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+                # self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
+                self.helpers.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING,
+                                                     session_id=self.session_id,
+                                                     symbol=self.symbol,
+                                                     cmp=self.cmp,
+                                                     iom=self.iom,
+                                                     cmp_count=self.cmp_count)
 
     def _check_monitor_orders_for_activating(self, cmp: float) -> None:
         # get orders
@@ -413,108 +425,9 @@ class Session:
         self.helpers.place_limit_order(order=order)
 
     def quit_particular_session(self, quit_mode: QuitMode):
-        log.info(f'********** STOP {quit_mode.name} ********** [{self.session_id}] terminated')
-
-        # init used variables
-        is_session_fully_consolidated = False
-        diff = 0
-        consolidated_profit = 0.0
-        expected_profit = 0.0
-        placed_orders_at_order_price = 0
-
-        if quit_mode == QuitMode.PLACE_ALL_PENDING:  # place all monitor orders
-            log.info('quit placing isolated orders')
-            # set session terminating status
-            is_session_fully_consolidated = False
-
-            # get consolidated: total profit considering only the COMPLETED perfect trades
-            consolidated_profit += self.ptm.get_consolidated_profit()
-            expected_profit += self.ptm.get_expected_profit()
-
-            # get non completed pt
-            non_completed_pt = [pt for pt in self.ptm.perfect_trades
-                                if pt.status == PerfectTradeStatus.BUY_TRADED
-                                or pt.status == PerfectTradeStatus.SELL_TRADED]
-
-            # get expected profit as the profit of all non completed pt orders (by pairs)
-            for pt in non_completed_pt:
-                for order in pt.orders:
-                    # place only MONITOR orders
-                    if order.status == OrderStatus.MONITOR:
-                        log.info(f'** isolated order to be appended to list: {order}')
-                        self.iom.isolated_orders.append(order)
-                        # self.placed_isolated_callback(order)
-                        self._place_limit_order(order=order)
-
-                        placed_orders_at_order_price += 1
-                        # add to isolated orders list
-                        log.info(f'trading LIMIT order {order}')
-                        # time.sleep(0.1)
-
-        elif quit_mode == QuitMode.TRADE_ALL_PENDING:  # trade diff orders at reference side (BUY or SELL)
-            # set session terminating status
-            is_session_fully_consolidated = True
-
-            # get consolidated profit (expected is zero)
-            consolidated_profit += self.ptm.get_total_actual_profit_at_cmp(cmp=self.cmp)
-
-            # place orders
-            # get MONITOR orders in non completed pt
-            monitor_orders = self.ptm.get_orders_by_request(
-                orders_status=[OrderStatus.MONITOR],
-                pt_status=[PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-            )
-
-            # get diff to know at which side to trade & set reference orders
-            buy_orders = []
-            sell_orders = []
-            for order in monitor_orders:
-                if order.k_side == k_binance.SIDE_BUY:
-                    buy_orders.append(order)
-                    diff += 1
-                elif order.k_side == k_binance.SIDE_SELL:
-                    sell_orders.append(order)
-                    diff -= 1
-
-            log.info(f'diff: {diff}')
-            # trade only diff count orders at market price (cmp), at the right side
-            if diff == 0:
-                pass
-            elif diff > 0:  # BUY SIDE
-                log.info('BUY SIDE')
-                for i in range(diff):
-                    order = buy_orders[i]
-                    self._place_market_order(order=order)
-                    log.info(f'trading reference market order {order}')
-                    # time.sleep(0.1)
-            elif diff < 0:  # SELL SIDE
-                log.info('SELL SIDE')
-                for i in range(-diff):
-                    order = sell_orders[i]
-                    self._place_market_order(order=order)
-                    log.info(f'trading reference market order {order}')
-                    # time.sleep(0.1)
-
-        # log final info
-        self.ptm.log_perfect_trades_info()
-
-        log.info(f'session {self.session_id} stopped with consolidated profit: {consolidated_profit:,.2f}')
-        log.info(f'session {self.session_id} stopped with expected profit: {expected_profit:,.2f}')
-
-        market_orders_count_at_cmp = abs(diff)
-
-        print('---------- LOGBOOK:')
-        [print(f'     {msg}') for msg in self.logbook]
-        print('---------- LOGBOOK END')
-
-        # send info & profit to session manager
-        self.session_stopped_callback(
-            self.symbol,
-            self.session_id,
-            is_session_fully_consolidated,
-            consolidated_profit,
-            expected_profit,
-            self.cmp_count,
-            market_orders_count_at_cmp,  # number of orders placed at its own price
-            placed_orders_at_order_price
-        )
+        self.helpers.quit_particular_session(quit_mode=quit_mode,
+                                             session_id=self.session_id,
+                                             symbol=self.symbol,
+                                             cmp=self.cmp,
+                                             iom=self.iom,
+                                             cmp_count=self.cmp_count)

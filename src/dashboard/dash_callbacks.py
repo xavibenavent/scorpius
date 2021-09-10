@@ -324,8 +324,16 @@ def on_button_click(n):
 @app.callback(Output('button-stop-cancel', 'children'), Input('button-stop-cancel', 'n_clicks'))
 def on_button_click(n):
     if n is not None:
-        symbol_name = dfm.dashboard_active_symbol.name
-        dfm.sm.active_sessions[symbol_name].quit_particular_session(quit_mode=QuitMode.CANCEL_ALL)
+        symbol = dfm.dashboard_active_symbol
+        symbol_name = symbol.name
+        session = dfm.sm.active_sessions[symbol_name]
+        session.helpers.quit_particular_session(
+            quit_mode=QuitMode.CANCEL_ALL,
+            session_id=session.session_id,
+            symbol=session.symbol,
+            cmp=session.cmp,
+            iom=session.iom,
+            cmp_count=session.cmp_count)
     return 'STOP-CANCEL'
 
 
