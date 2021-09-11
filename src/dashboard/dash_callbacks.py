@@ -209,13 +209,13 @@ def display_value(value):
 
 
 # ********** PT count / traded orders count **********
-@app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
-    pt_count = len(dfm.sm.active_sessions[symbol_name].ptm.perfect_trades)
-    buy_count = dfm.sm.active_sessions[symbol_name].buy_count
-    sell_count = dfm.sm.active_sessions[symbol_name].sell_count
-    return f'pt: {pt_count}   b: {buy_count}   s: {sell_count}'
+# @app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
+# def display_value(value):
+#     symbol_name = dfm.dashboard_active_symbol.name
+#     pt_count = len(dfm.sm.active_sessions[symbol_name].ptm.perfect_trades)
+#     buy_count = dfm.sm.active_sessions[symbol_name].buy_count
+#     sell_count = dfm.sm.active_sessions[symbol_name].sell_count
+#     return f'pt: {pt_count}   b: {buy_count}   s: {sell_count}'
 
 
 @app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
@@ -227,11 +227,11 @@ def display_value(value):
     return f'({cycles_count_for_inactivity})  {time_to_new_pt}'
 
 
-@app.callback(Output('accounts-info', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    accounts_info = [f'{account.name}: {account.free:,.2f} ' for account in dfm.sm.am.accounts.values()]
-    accounts_info_s = ' '.join(map(str, accounts_info))
-    return accounts_info_s
+# @app.callback(Output('accounts-info', 'children'), Input('update', 'n_intervals'))
+# def display_value(value):
+#     accounts_info = [f'{account.name}: {account.free:,.2f} ' for account in dfm.sm.am.accounts.values()]
+#     accounts_info_s = ' '.join(map(str, accounts_info))
+#     return accounts_info_s
 
 
 # ********** symbol & accounts data **********
