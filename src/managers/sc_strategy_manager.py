@@ -12,6 +12,8 @@ from managers.sc_client_manager import ConfigManager
 
 log = logging.getLogger('log')
 
+BNB_BUFFER = 1.0
+
 
 class StrategyManager:
     def __init__(self,
@@ -55,6 +57,9 @@ class StrategyManager:
         return ref_cycles * (diff+1) if diff > 0 else ref_cycles
 
     def is_asset_liquidity_enough(self, asset: Asset, new_pt_need: float) -> bool:
+        # special buffer for BNB
+        if asset.name() == 'BNB':
+            new_pt_need += BNB_BUFFER
         liquidity_needed = self._get_liquidity_needed_callback(asset) + new_pt_need
         liquidity_available = self.market_api_out.get_asset_liquidity(asset_name=asset.name())  # free
         return True if liquidity_available > liquidity_needed else False  # need for quote
@@ -76,11 +81,12 @@ class StrategyManager:
             # place at MARKET price
             log.info(f'order to place at MARKET price with loss: {order}')
 
+            # cancel in Binance the previously placed order
+            self.market_api_out.cancel_orders([order])
+            log.info(f'order canceled in Binance from previous sessions: {order}')
+
             # self.logbook.append(f'place isolated order at cmp to get liquidity: {order}')
             self.helpers.place_market_order(order=order)
             log.info(f'order placed at Market price with loss: {order}')
 
-            # cancel in Binance the previously placed order
-            self.market_api_out.cancel_orders([order])
-            log.info(f'order canceled in Binance from previous sessions: {order}')
 
