@@ -297,14 +297,14 @@ class Session:
         # check base liquidity and try to get if not enough
         if not self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(), new_pt_need=self.quantity):
             # try to get
-            self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.base_asset(), cmp=cmp)
+            # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.base_asset(), cmp=cmp)
             return False, 0.0
 
         # check quote liquidity and try to get if not enough
         if not self.strategy_manager.is_asset_liquidity_enough(asset=symbol.quote_asset(),
                                                                new_pt_need=self.quantity * cmp):
             # try to get
-            self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.quote_asset(), cmp=cmp)
+            # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.quote_asset(), cmp=cmp)
             return False, 0.0
 
         # 2. minimize span

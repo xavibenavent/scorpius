@@ -44,7 +44,7 @@ def display_value(value):
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol_name = dfm.dashboard_active_symbol.name
-    return f'#{dfm.sm.session_count[symbol_name] + 1:03d}', \
+    return f'#{dfm.sm.session_count[symbol_name]:03d}', \
            f'{timedelta(seconds=dfm.sm.active_sessions[symbol_name].cmp_count)}'
 
 
