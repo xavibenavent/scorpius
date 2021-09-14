@@ -224,6 +224,9 @@ class DashLayout:
                         dbc.Row([
                             html.H1(id='cycles-to-new-pt', children='XXX', className='cycles-to-new-pt'),
                             html.H1(id='accounts-info', children='accounts info: (...)', className='accounts-info'),
+                            # html.H1(id='short-prediction', children='0.0', className='short-prediction'),
+                            # html.H1(id='long-prediction', children='0.0', className='long-prediction'),
+
                         ]),
                     ]),
                 ]),

@@ -227,6 +227,17 @@ def display_value(value):
     return f'({cycles_count_for_inactivity})  {time_to_new_pt}'
 
 
+# @app.callback(Output('short-prediction', 'children'),
+#               Output('long-prediction', 'children'),
+#               Input('update', 'n_intervals'))
+# def display_value(value):
+#     symbol_name = dfm.dashboard_active_symbol.name
+#     session = dfm.sm.active_sessions[symbol_name]
+#     short_prediction = session.strategy_manager.get_tendency(session.cmp_pattern_short) - session.cmp
+#     long_prediction = session.strategy_manager.get_tendency(session.cmp_pattern_long) - session.cmp
+#     return f'short: {short_prediction:,.0f}', f'long: {long_prediction:,.0f}'
+
+
 # @app.callback(Output('accounts-info', 'children'), Input('update', 'n_intervals'))
 # def display_value(value):
 #     accounts_info = [f'{account.name}: {account.free:,.2f} ' for account in dfm.sm.am.accounts.values()]

@@ -258,6 +258,18 @@
     text-align: center;
 }
 
+.short-prediction {
+    padding: 20px;
+    font-size: 25px;
+    color: Orange;
+}
+
+.long-prediction {
+    padding: 20px;
+    font-size: 25px;
+    color: Orange;
+}
+
 /* profit info */
 .card-main-title {
     font-size: 35px;
