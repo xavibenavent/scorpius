@@ -34,7 +34,7 @@ class StrategyManager:
         # return shift only if one of both sides is 0.0, otherwise return 0.0
         buy_span, sell_span = self.helpers.get_span_from_list(orders=all_orders, cmp=cmp)
 
-        factor = 0.5  # todo: convert to parameter in config.ini
+        factor = - 0.8  # todo: convert to parameter in config.ini
         shift = gap * factor
 
         if buy_span == 0.0 and sell_span > 0:
