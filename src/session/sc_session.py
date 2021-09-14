@@ -19,6 +19,8 @@ log = logging.getLogger('log')
 
 
 class Session:
+    CMP_PATTERN_LENGTH = 10
+
     def __init__(self,
                  symbol: Symbol,
                  session_id: str,
@@ -88,7 +90,8 @@ class Session:
         self.min_cmp = self.cmp
         self.max_cmp = self.cmp
 
-        self.cmp_pattern: List[float] = [0.0] * 10  # todo: convert 10 to parameter
+        self.cmp_pattern_short: List[float] = [0.0] * self.CMP_PATTERN_LENGTH
+        self.cmp_pattern_long: List[float] = [0.0] * self.CMP_PATTERN_LENGTH
 
         self.gap = 0.0
 
@@ -129,7 +132,12 @@ class Session:
                 self.cmp = cmp
 
                 # add to pattern for prediction
-                self.add_cmp_to_pattern(new_cmp=cmp)
+                # short: last 10 cmp
+                self.add_cmp_to_pattern(new_cmp=cmp, pattern=self.cmp_pattern_short)
+                # long: last 100 cmp (save one out of 10)
+                if self.cmp_count % 10 == 0:
+                    self.add_cmp_to_pattern(new_cmp=cmp, pattern=self.cmp_pattern_long)
+                # print(f'{self.symbol.name} pattern: {self.cmp_pattern}')
 
                 # counter used to detect inactivity
                 self.cycles_from_last_trade += 1
@@ -322,10 +330,22 @@ class Session:
         # shift = self.strategy_manager.get_shift_to_balance_momentum(all_orders=all_orders, cmp=cmp, gap=self.gap)
         # return True, shift
 
-        if 0.0 not in self.cmp_pattern:
-            predicted_cmp = self.strategy_manager.get_tendency(cmp_pattern=self.cmp_pattern)
-            shift = predicted_cmp - cmp
-            print(cmp, predicted_cmp, shift)
+        # Set shift based on predicted value
+        if 0.0 not in self.cmp_pattern_short and 0.0 not in self.cmp_pattern_long:
+            predicted_cmp = self.strategy_manager.get_tendency(cmp_pattern=self.cmp_pattern_short)
+            shift_short = predicted_cmp - cmp
+            print(f'cmp: {cmp} predicted value: {predicted_cmp} shift_short: {shift_short}')
+
+            predicted_cmp = self.strategy_manager.get_tendency(cmp_pattern=self.cmp_pattern_long)
+            shift_long = predicted_cmp - cmp
+            print(f'cmp: {cmp} predicted value: {predicted_cmp} shift_long: {shift_long}')
+
+            # set value as average from short and long
+            short_weight = 0.5
+            long_weight = 0.5
+            shift = short_weight * shift_short + long_weight * shift_long
+            print(f'applied shift: {shift}')
+
             return True, shift
         else:
             return True, 0.0
@@ -343,12 +363,13 @@ class Session:
         all_orders = isolated_orders + session_orders
         return all_orders
 
-    def add_cmp_to_pattern(self, new_cmp: float):
+    @staticmethod
+    def add_cmp_to_pattern(new_cmp: float, pattern: List[float]):
         # shift left
-        for i in range(0, len(self.cmp_pattern) - 1):
-            self.cmp_pattern[i] = self.cmp_pattern[i + 1]
+        for i in range(0, len(pattern) - 1):
+            pattern[i] = pattern[i + 1]
         # update last
-        self.cmp_pattern[-1] = new_cmp
+        pattern[-1] = new_cmp
         # print(self.cmp_pattern)
 
 

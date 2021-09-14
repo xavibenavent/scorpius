@@ -35,10 +35,14 @@ class StrategyManager:
 
     @staticmethod
     def get_tendency(cmp_pattern: List[float]) -> float:
-        x_pattern = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        number_of_predictions = 10
+        pattern_length = len(cmp_pattern)
+
+        x_pattern = [i for i in range(0, pattern_length)]
         X = np.array(x_pattern).reshape(-1, 1)
         y = np.array(cmp_pattern).reshape(-1, 1)
-        to_predict_x = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+        to_predict_x = [i for i in range(pattern_length, pattern_length + number_of_predictions)]
         to_predict_x = np.array(to_predict_x).reshape(-1, 1)
 
         # predict
@@ -48,8 +52,9 @@ class StrategyManager:
 
         slope = regsr.coef_
 
-        last_y = cmp_pattern[-1]
+        # get prediction value
         new_y = predicted_y[0, -1]
+        last_y = cmp_pattern[-1]
         percent_step = (new_y - last_y) / last_y * 100.0
 
         # return slope[0, 0] * 100.0
