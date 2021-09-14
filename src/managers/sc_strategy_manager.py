@@ -46,7 +46,7 @@ class StrategyManager:
     def get_shift_to_balance_momentum(self, all_orders: List[Order], cmp: float, gap: float) -> float:
         buy_mtm, sell_mtm = self.helpers.get_momentum_from_list(orders=all_orders, cmp=cmp)
 
-        mtm_factor = 0.5  # todo: convert to parameter in config.ini
+        mtm_factor = 0.8  # todo: convert to parameter in config.ini
         shift = gap * mtm_factor
 
         return shift if buy_mtm > sell_mtm else - shift
