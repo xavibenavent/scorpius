@@ -88,6 +88,8 @@ class Session:
         self.min_cmp = self.cmp
         self.max_cmp = self.cmp
 
+        self.cmp_pattern: List[float] = [0.0] * 10  # todo: convert 10 to parameter
+
         self.gap = 0.0
 
         self.total_profit_series = [0.0]
@@ -125,6 +127,9 @@ class Session:
                 if cmp > self.max_cmp:
                     self.max_cmp = cmp
                 self.cmp = cmp
+
+                # add to pattern for prediction
+                self.add_cmp_to_pattern(new_cmp=cmp)
 
                 # counter used to detect inactivity
                 self.cycles_from_last_trade += 1
@@ -307,15 +312,23 @@ class Session:
             # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.quote_asset(), cmp=cmp)
             return False, 0.0
 
-        # 2. minimize span
-        all_orders = self.get_all_orders_for_symbol(symbol=symbol)
-        shift = self.strategy_manager.get_shift_to_minimize_span(all_orders=all_orders, cmp=cmp, gap=self.gap)
-        if shift != 0:
-            return True, shift
+        # # 2. minimize span
+        # all_orders = self.get_all_orders_for_symbol(symbol=symbol)
+        # shift = self.strategy_manager.get_shift_to_minimize_span(all_orders=all_orders, cmp=cmp, gap=self.gap)
+        # if shift != 0:
+        #     return True, shift
+        #
+        # # 3. balance momentum
+        # shift = self.strategy_manager.get_shift_to_balance_momentum(all_orders=all_orders, cmp=cmp, gap=self.gap)
+        # return True, shift
 
-        # 3. balance momentum
-        shift = self.strategy_manager.get_shift_to_balance_momentum(all_orders=all_orders, cmp=cmp, gap=self.gap)
-        return True, shift
+        if 0.0 not in self.cmp_pattern:
+            predicted_cmp = self.strategy_manager.get_tendency(cmp_pattern=self.cmp_pattern)
+            shift = predicted_cmp - cmp
+            print(cmp, predicted_cmp, shift)
+            return True, shift
+        else:
+            return True, 0.0
 
         # dynamic parameters:
         #   - inactivity time
@@ -329,4 +342,14 @@ class Session:
                        PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED])
         all_orders = isolated_orders + session_orders
         return all_orders
+
+    def add_cmp_to_pattern(self, new_cmp: float):
+        # shift left
+        for i in range(0, len(self.cmp_pattern) - 1):
+            self.cmp_pattern[i] = self.cmp_pattern[i + 1]
+        # update last
+        self.cmp_pattern[-1] = new_cmp
+        # print(self.cmp_pattern)
+
+
 

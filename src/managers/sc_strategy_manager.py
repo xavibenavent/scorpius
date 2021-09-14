@@ -1,5 +1,8 @@
 # sc_strategy_manager.py
 
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
 import logging
 from typing import Callable, List
 from basics.sc_asset import Asset
@@ -29,6 +32,28 @@ class StrategyManager:
         self.helpers = helpers
         self._get_liquidity_needed_callback = get_liquidity_needed_callback
         self.config_manager = ConfigManager(config_file='config_new.ini')
+
+    @staticmethod
+    def get_tendency(cmp_pattern: List[float]) -> float:
+        x_pattern = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        X = np.array(x_pattern).reshape(-1, 1)
+        y = np.array(cmp_pattern).reshape(-1, 1)
+        to_predict_x = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+        to_predict_x = np.array(to_predict_x).reshape(-1, 1)
+
+        # predict
+        regsr = LinearRegression()
+        regsr.fit(X, y)
+        predicted_y = regsr.predict(to_predict_x)
+
+        slope = regsr.coef_
+
+        last_y = cmp_pattern[-1]
+        new_y = predicted_y[0, -1]
+        percent_step = (new_y - last_y) / last_y * 100.0
+
+        # return slope[0, 0] * 100.0
+        return new_y
 
     def get_shift_to_minimize_span(self, all_orders: List[Order], cmp: float, gap: float) -> float:
         # return shift only if one of both sides is 0.0, otherwise return 0.0
