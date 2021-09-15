@@ -13,6 +13,8 @@ from market.sc_market_sockets_in import MarketSocketsIn
 from managers.sc_account_manager import Account, AccountManager
 from managers.sc_isolated_manager import IsolatedOrdersManager
 from basics.sc_symbol import Symbol, Asset
+from basics.sc_order import Order, OrderStatus
+from basics.sc_perfect_trade import PerfectTrade
 from managers.sc_client_manager import ClientManager
 
 log = logging.getLogger('log')
@@ -62,6 +64,29 @@ class SessionManager:
             self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
 
         self.client_manager.start_sockets()
+
+        # get orders placed in previous app runs and append them to isolated orders list
+        msg = self.market_api_out.get_open_orders()
+        for order in msg:
+            symbol_name = order['symbol']
+            # get symbol by name
+            symbols = [symbol for symbol in self.symbols if symbol.name == symbol_name]
+            # append only orders from symbols managed by session manager
+            if len(symbols) > 0:
+                symbol = symbols[0]
+
+                open_order = Order(
+                    symbol=symbol,
+                    order_id=order['clientOrderId'],
+                    k_side=order['side'],
+                    price=float(order['price']),
+                    amount=float(order['origQty']),
+                    status=OrderStatus.TO_BE_TRADED,
+                    binance_id=order['orderId'],
+                    name='b1' if order['side'] == 'BUY' else 's1'
+                )
+                open_order.pt = PerfectTrade(pt_id='*', orders=[open_order, open_order])
+                self.iom.previous_runs_orders.append(open_order)
 
     def _get_symbols(self) -> List[Symbol]:
         # list to return

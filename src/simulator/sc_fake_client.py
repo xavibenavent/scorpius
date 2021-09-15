@@ -276,6 +276,9 @@ class FakeClient:
     def get_symbol_info(self, symbol: str) -> dict:
         return self.fso.get_symbol_info(symbol_name=symbol)
 
+    def get_open_orders(self):
+        return []
+
     def get_account(self):
         return self.fso.get_account()
 

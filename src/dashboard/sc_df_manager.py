@@ -62,8 +62,13 @@ class DataframeManager:
         isolated_orders = [order for order in self.sm.iom.isolated_orders if order.symbol.name == symbol_name]
         return isolated_orders
 
+    def get_previous_runs_orders(self) -> List[Order]:
+        symbol_name = self.dashboard_active_symbol.name
+        previous_runs_orders = [order for order in self.sm.iom.previous_runs_orders if order.symbol.name == symbol_name]
+        return previous_runs_orders
+
     def get_all_orders(self) -> List[Order]:
-        return self.get_session_orders() + self.get_isolated_orders()
+        return self.get_session_orders() + self.get_isolated_orders() + self.get_previous_runs_orders()
 
     def get_all_orders_df(self) -> pd.DataFrame:
         # get list with all orders:
@@ -93,14 +98,3 @@ class DataframeManager:
         )
         df1 = df.append(other=cmp_order, ignore_index=True)
         return df1
-
-    # def get_span_depth_momentum(self) -> Dict[str, float]:
-    #     symbol_name = self.dashboard_active_symbol.name
-    #     return dict(
-    #         buy_span=self.sm.active_sessions[symbol_name].get_gap_span(side=k_binance.SIDE_BUY),
-    #         sell_span=self.sm.active_sessions[symbol_name].get_gap_span(side=k_binance.SIDE_SELL),
-    #         buy_depth=self.sm.active_sessions[symbol_name].get_gap_depth(side=k_binance.SIDE_BUY),
-    #         sell_depth=self.sm.active_sessions[symbol_name].get_gap_depth(side=k_binance.SIDE_SELL),
-    #         buy_momentum=self.sm.active_sessions[symbol_name].get_gap_momentum(side=k_binance.SIDE_BUY),
-    #         sell_momentum=self.sm.active_sessions[symbol_name].get_gap_momentum(side=k_binance.SIDE_SELL)
-    #     )

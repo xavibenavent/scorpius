@@ -9,7 +9,9 @@ from urllib3.exceptions import ProtocolError
 import socket
 import logging
 
-from basics.sc_order import Order
+from basics.sc_order import Order, OrderStatus
+from basics.sc_symbol import Symbol
+from basics.sc_asset import Asset
 from managers.sc_account_manager import Account
 
 
@@ -95,6 +97,17 @@ class MarketAPIOut:
             log.critical(e)
             self.hot_reconnect_callback()
         return None  # msg['orderId'], msg['status'] == 'FILLED' or 'NEW'
+
+    def get_open_orders(self) -> Optional[dict]:
+        try:
+            msg = self.client.get_open_orders()
+            return msg
+        except (BinanceAPIException, BinanceRequestException) as e:
+            log.critical(e)
+        except (ConnectionError, ReadTimeout, ProtocolError, socket.error) as e:
+            log.critical(e)
+            self.hot_reconnect_callback()
+        return None
 
     def get_account_info(self) -> Optional[List[Account]]:
         try:

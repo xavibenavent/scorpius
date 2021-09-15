@@ -12,6 +12,11 @@ log = logging.getLogger('log')
 class IsolatedOrdersManager:
     def __init__(self):
         self.isolated_orders: List[Order] = []
+        self.previous_runs_orders: List[Order] = []
+
+    def check_previous_runs_orders(self, uid: str) -> None:
+        # remove from list and, therefore, from dashboard
+        [self.previous_runs_orders.remove(order) for order in self.previous_runs_orders if order.uid == uid]
 
     def check_isolated_orders(self, uid: str, traded_price: float) -> (float, float):
         # check if an order from previous sessions have been traded,
