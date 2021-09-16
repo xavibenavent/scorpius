@@ -65,7 +65,7 @@ class SessionManager:
 
         self.client_manager.start_sockets()
 
-        # get orders placed in previous app runs and append them to isolated orders list
+        # get orders placed in previous app runs and append them to previous runs orders list
         msg = self.market_api_out.get_open_orders()
         for order in msg:
             symbol_name = order['symbol']
