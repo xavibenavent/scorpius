@@ -216,6 +216,7 @@ class Session:
             if is_known_order:
                 self.isolated_order_traded_callback(self.symbol, consolidated, expected)
             else:
+                print(f'checking previous runs order with uid: {uid} price: {order_price}')
                 self.iom.check_previous_runs_orders(uid=uid)
 
     def account_balance_callback(self, accounts: List[Account]) -> None:
