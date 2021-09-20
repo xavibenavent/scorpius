@@ -87,17 +87,26 @@ class StrategyManager:
         return ref_cycles * (diff+1) if diff > 0 else ref_cycles
 
     def is_asset_liquidity_enough(self, asset: Asset, new_pt_need: float) -> bool:
+        liquidity_available, liquidity_needed = self._get_both_liquidity(asset=asset, new_pt_need=new_pt_need)
+        return True if liquidity_available > liquidity_needed else False  # need for quote
+
+    def _get_both_liquidity(self, asset: Asset, new_pt_need: float):
         # special buffer for BNB
         if asset.name() == 'BNB':
             new_pt_need += BNB_BUFFER
         liquidity_needed = self._get_liquidity_needed_callback(asset) + new_pt_need
         liquidity_available = self.market_api_out.get_asset_liquidity(asset_name=asset.name())  # free
-        return True if liquidity_available > liquidity_needed else False  # need for quote
+        return liquidity_available, liquidity_needed
 
     def is_symbol_liquidity_enough(self, cmp: float, symbol: Symbol) -> (bool, bool):
         is_base_enough = self.is_asset_liquidity_enough(asset=symbol.base_asset(), new_pt_need=self.quantity)
         is_quote_enough = self.is_asset_liquidity_enough(asset=symbol.quote_asset(), new_pt_need=self.quantity * cmp)
         return is_base_enough, is_quote_enough
+
+    def is_last_possible(self, asset: Asset, new_pt_need: float) -> bool:
+        liquidity_available, liquidity_needed = self._get_both_liquidity(asset=asset, new_pt_need=new_pt_need)
+        liquidity_needed += new_pt_need
+        return True if liquidity_available < liquidity_needed else False  # need for quote
 
     def try_to_get_liquidity(self, symbol: Symbol, asset: Asset, cmp: float):
         # return the order to trade to get liquidity for the asset or None

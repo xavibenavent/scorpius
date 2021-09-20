@@ -323,9 +323,23 @@ class Session:
             # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.quote_asset(), cmp=cmp)
             return False, 0.0
 
+        # check whether it is the last possible buy
+        if self.strategy_manager.is_last_possible(asset=symbol.base_asset(), new_pt_need=self.quantity):
+            # force buy
+            shift = self.gap * 1.1 if self.gap != 0.0 else self.forced_shift
+            log.info(f'forced buy with shift {shift}')
+            return True, shift
+
+        # check whether it is the last possible sell
+        if self.strategy_manager.is_last_possible(asset=symbol.quote_asset(), new_pt_need=self.quantity * cmp):
+            # force sell
+            shift = self.gap * 1.1 * (-1) if self.gap != 0.0 else self.forced_shift * (-1)
+            log.info(f'forced sell with shift {shift}')
+            return True, shift
+
         # # 2. minimize span
         # all_orders = self.get_all_orders_for_symbol(symbol=symbol)
-        # shift = self.strategy_manager.get_shift_to_minimize_span(all_orders=all_orders, cmp=cmp, gap=self.gap)
+        # shift = self.strategy_manager.get_shift_to_minimize_span (all_orders=all_orders, cmp=cmp, gap=self.gap)
         # if shift != 0:
         #     return True, shift
         #
