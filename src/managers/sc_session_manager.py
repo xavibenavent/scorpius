@@ -223,6 +223,9 @@ class SessionManager:
         # exit
         raise Exception("********** SESSION TERMINATED, PRESS CTRL-C ********")
 
+    def get_liquidity_for_alive_orders(self, asset: Asset) -> float:
+        return self._get_liquidity_needed_callback(asset=asset)
+
     # ********** session callbacks **********
 
     def _get_liquidity_needed_callback(self, asset: Asset) -> float:

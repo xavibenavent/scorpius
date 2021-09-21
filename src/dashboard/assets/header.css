@@ -239,12 +239,24 @@
 
 
 .locked {
-    font-size: 30px;
-    color: DarkGray;
+    font-size: 28px;
+    color: #d95900;
+    text-align: right;
+}
+
+.alive {
+    font-size: 28px;
+    color: #e68000;
     text-align: right;
 }
 
 .free {
+    font-size: 28px;
+    color: #f5ad00;
+    text-align: right;
+}
+
+.total {
     font-size: 32px;
     color: DarkSeaGreen;
     text-align: right;

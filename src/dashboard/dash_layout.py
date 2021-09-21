@@ -8,7 +8,7 @@ import dash_core_components as dcc
 print('dash_layout.py')
 
 # with lower values the dashboard does not refresh itself correctly
-K_UPDATE_INTERVAL = 500  # milisecs
+K_UPDATE_INTERVAL = 1000  # milisecs
 
 
 class DashLayout:
@@ -247,8 +247,9 @@ class DashLayout:
                             dbc.CardBody([
                                 html.H6(id='base-asset', className="liquidity-card-title"),
                                 html.H6(id='base-asset-locked', children='0.00', className='locked'),
-                                html.H6(id='base-asset-alive', children='0.00', className='locked'),
-                                html.H6(id='base-asset-free', children='0.00', className='free')
+                                html.H6(id='base-asset-alive', children='0.00', className='alive'),
+                                html.H6(id='base-asset-free', children='0.00', className='free'),
+                                html.H6(id='base-asset-total', children='0.00', className='total')
                             ])
                         ], className='liquidity-card'),
                     ],  xs=3, sm=3, md=3, lg=3, xl=3),
@@ -257,8 +258,9 @@ class DashLayout:
                             dbc.CardBody([
                                 html.H6(id='quote-asset', className="liquidity-card-title"),
                                 html.H6(id='quote-asset-locked', children='0.00', className='locked'),
-                                html.H6(id='quote-asset-alive', children='0.00', className='locked'),
-                                html.H6(id='quote-asset-free', children='0.00', className='free')
+                                html.H6(id='quote-asset-alive', children='0.00', className='alive'),
+                                html.H6(id='quote-asset-free', children='0.00', className='free'),
+                                html.H6(id='quote-asset-total', children='0.00', className='total')
                             ])
                         ], className='liquidity-card'),
                     ],  xs=3, sm=3, md=3, lg=3, xl=3),
@@ -267,8 +269,9 @@ class DashLayout:
                             dbc.CardBody([
                                 html.H6("BNB", className="liquidity-card-title"),
                                 html.H6(id='bnb-locked', children='0.00', className='locked'),
-                                html.H6(id='bnb-alive', children='0.00', className='locked'),
-                                html.H6(id='bnb-free', children='0.00', className='free')
+                                html.H6(id='bnb-alive', children='0.00', className='alive'),
+                                html.H6(id='bnb-free', children='0.00', className='free'),
+                                html.H6(id='bnb-total', children='0.00', className='total')
                             ])
                         ], className='liquidity-card'),
                     ], xs=3, sm=3, md=3, lg=3, xl=3),

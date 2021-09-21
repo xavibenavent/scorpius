@@ -8,6 +8,7 @@ from dashboard.sc_df_manager import DataframeManager
 from binance import enums as k_binance
 from datetime import datetime, timedelta
 from basics.sc_perfect_trade import PerfectTradeStatus
+from basics.sc_asset import Asset
 
 print('dash_callbacks.py')
 
@@ -252,13 +253,19 @@ def display_value(value):
     Output('cmp', 'children'),
     Output('cmp-min', 'children'),
     Output('base-asset', 'children'),
-    Output('base-asset-free', 'children'),
     Output('base-asset-locked', 'children'),
+    Output('base-asset-alive', 'children'),
+    Output('base-asset-free', 'children'),
+    Output('base-asset-total', 'children'),
     Output('quote-asset', 'children'),
-    Output('quote-asset-free', 'children'),
     Output('quote-asset-locked', 'children'),
-    Output('bnb-free', 'children'),
+    Output('quote-asset-alive', 'children'),
+    Output('quote-asset-free', 'children'),
+    Output('quote-asset-total', 'children'),
     Output('bnb-locked', 'children'),
+    Output('bnb-alive', 'children'),
+    Output('bnb-free', 'children'),
+    Output('bnb-total', 'children'),
     Input('update', 'n_intervals')
 )
 def display_value(value):
@@ -270,19 +277,30 @@ def display_value(value):
     bnb_account = bm.get_account('BNB')
     quote_pv = symbol.quote_asset().pv()
 
+    base_alive = dfm.sm.get_liquidity_for_alive_orders(asset=symbol.base_asset())
+    quote_alive = dfm.sm.get_liquidity_for_alive_orders(asset=symbol.quote_asset())
+    bnb_alive = dfm.sm.get_liquidity_for_alive_orders(asset=Asset(name='BNB', pv=6))
+    # bnb_alive = 1.0
+
     return \
         symbol_name, \
         f'{dfm.sm.active_sessions[symbol_name].max_cmp:,.{quote_pv}f}', \
         f'{dfm.sm.active_sessions[symbol_name].cmp:,.{quote_pv}f}', \
         f'{dfm.sm.active_sessions[symbol_name].min_cmp:,.{quote_pv}f}', \
         symbol.base_asset().name(),\
-        f'{base_account.free:,.{symbol.base_asset().pv()}f}', \
         f'{base_account.locked:,.{symbol.base_asset().pv()}f}', \
+        f'{base_alive:,.{symbol.base_asset().pv()}f}', \
+        f'{base_account.free - base_alive:,.{symbol.base_asset().pv()}f}', \
+        f'{base_account.get_total():,.{symbol.base_asset().pv()}f}', \
         symbol.quote_asset().name(), \
-        f'{quote_account.free:,.{symbol.quote_asset().pv()}f}', \
-        f'{quote_account.locked:,.{symbol.quote_asset().pv()}f}',\
-        f'{bnb_account.free:,.6f}',\
-        f'{bnb_account.locked:,.6f}'
+        f'{quote_account.locked:,.{symbol.quote_asset().pv()}f}', \
+        f'{quote_alive:,.{symbol.quote_asset().pv()}f}', \
+        f'{quote_account.free - quote_alive:,.{symbol.quote_asset().pv()}f}',\
+        f'{quote_account.get_total():,.{symbol.quote_asset().pv()}f}',\
+        f'{bnb_account.locked:,.6f}',\
+        f'{bnb_alive:,.6f}', \
+        f'{bnb_account.free - bnb_alive:,.6f}', \
+        f'{bnb_account.get_total():,.6f}'
 
 
 # ********** alert message **********
