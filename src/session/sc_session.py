@@ -115,7 +115,7 @@ class Session:
         if self.session_active:
             try:
                 # 0.1: create first pt
-                if self.cmp_count == 1:
+                if self.cmp_count == 5:
                     if self._try_new_pt_creation(cmp=cmp, symbol=self.symbol):
                         self.gap = self.ptm.get_first_gap()
                     else:
