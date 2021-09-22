@@ -277,6 +277,7 @@ class Session:
                                                      iom=self.iom,
                                                      cmp_count=self.cmp_count)
 
+
     def _check_monitor_orders_for_activating(self, cmp: float) -> None:
         # get orders
         monitor_orders = self.ptm.get_orders_by_request(
