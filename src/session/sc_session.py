@@ -81,7 +81,7 @@ class Session:
             quantity=self.quantity,
             market_api_out=self.market,
             isolated_orders_manager=self.iom,
-            helpers= self.helpers,
+            helpers=self.helpers,
             get_liquidity_needed_callback=get_liquidity_needed_callback
         )
 
@@ -267,9 +267,8 @@ class Session:
 
             # exit point 2: reached maximum allowed loss
             elif total_profit < self.max_negative_profit_allowed:
-                self.logbook.append('exit point #2: PLACE_ALL_PENDING')
+                self.logbook.append('exit point #2: PLACE_ALL_PENDING by max negative profit reached')
                 self.session_active = False
-                # self.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING)
                 self.helpers.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING,
                                                      session_id=self.session_id,
                                                      symbol=self.symbol,
@@ -277,6 +276,18 @@ class Session:
                                                      iom=self.iom,
                                                      cmp_count=self.cmp_count)
 
+            # exit point 3: reached target with completed pt
+            else:
+                completed_pt = self.ptm.get_pt_by_request(pt_status=[PerfectTradeStatus.COMPLETED])
+                if sum([pt.get_actual_profit_at_cmp(cmp=cmp) for pt in completed_pt]) > self.target_total_net_profit:
+                    self.logbook.append('exit point #3: PLACE_ALL_PENDING by target reached with completed pt')
+                    self.session_active = False
+                    self.helpers.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING,
+                                                         session_id=self.session_id,
+                                                         symbol=self.symbol,
+                                                         cmp=self.cmp,
+                                                         iom=self.iom,
+                                                         cmp_count=self.cmp_count)
 
     def _check_monitor_orders_for_activating(self, cmp: float) -> None:
         # get orders
@@ -389,6 +400,3 @@ class Session:
         # update last
         pattern[-1] = new_cmp
         # print(self.cmp_pattern)
-
-
-
