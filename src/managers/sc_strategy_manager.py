@@ -105,7 +105,7 @@ class StrategyManager:
 
     def is_last_possible(self, asset: Asset, new_pt_need: float) -> bool:
         liquidity_available, liquidity_needed = self._get_both_liquidity(asset=asset, new_pt_need=new_pt_need)
-        liquidity_needed += new_pt_need
+        liquidity_needed += (new_pt_need * 2)
         return True if liquidity_available < liquidity_needed else False  # need for quote
 
     def try_to_get_liquidity(self, symbol: Symbol, asset: Asset, cmp: float):
