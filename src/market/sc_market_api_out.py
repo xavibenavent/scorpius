@@ -131,10 +131,10 @@ class MarketAPIOut:
         return None
 
     def get_asset_balance(self, asset_name: str) -> Optional[Account]:
-        print(f'asset name: {asset_name}')
+        log.info(f'asset name: {asset_name}')
         try:
             d = self.client.get_asset_balance(asset=asset_name)
-            print(f'd: {d}')
+            log.info(f'd: {d}')
             free = float(d.get('free'))
             locked = float(d.get('locked'))
             return Account(name=asset_name, free=free, locked=locked)

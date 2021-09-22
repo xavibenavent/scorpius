@@ -170,7 +170,7 @@ class SessionManager:
         if self.all_symbols_session_count < 100_000:
             self.active_sessions[symbol.name] = self.start_new_session(symbol=symbol)
         else:
-            self.stop_global_session()
+            self.reboot_global_session()
             # self.market.stop()
             # raise Exception('********** GLOBAL SESSION MANAGER FINISHED **********')
 
@@ -211,7 +211,7 @@ class SessionManager:
 
         return session
 
-    def stop_global_session(self):
+    def reboot_global_session(self):
         # stop market (binance sockets)
         self.client_manager.stop()
         log.critical("********** SESSION TERMINATED FROM BUTTON ********")

@@ -271,10 +271,11 @@ def display_value(value):
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
-    bm = dfm.sm.active_sessions[symbol_name].am
-    base_account = bm.get_account(symbol.base_asset().name())
-    quote_account = bm.get_account(symbol.quote_asset().name())
-    bnb_account = bm.get_account('BNB')
+    # am = dfm.sm.active_sessions[symbol_name].am
+    am = dfm.sm.am
+    base_account = am.get_account(symbol.base_asset().name())
+    quote_account = am.get_account(symbol.quote_asset().name())
+    bnb_account = am.get_account('BNB')
     quote_pv = symbol.quote_asset().pv()
 
     base_alive = dfm.sm.get_liquidity_for_alive_orders(asset=symbol.base_asset())
@@ -383,11 +384,25 @@ def on_button_click(n):
     return 'STOP-CANCEL'
 
 
-@app.callback(Output('button-stop-global-session', 'children'), Input('button-stop-global-session', 'n_clicks'))
+@app.callback(Output('button-reboot-global-session', 'children'), Input('button-reboot-global-session', 'n_clicks'))
 def on_button_click(n):
     if n is not None:
-        dfm.sm.stop_global_session()
-    return 'STOP-SESSION'
+        # as first step, perform STOP-PRICE actions
+        symbol = dfm.dashboard_active_symbol
+        symbol_name = symbol.name
+        for session in dfm.sm.active_sessions.values():
+            # session = dfm.sm.active_sessions[symbol_name]
+            session.helpers.quit_particular_session(
+                quit_mode=QuitMode.PLACE_ALL_PENDING,
+                session_id=session.session_id,
+                symbol=session.symbol,
+                cmp=session.cmp,
+                iom=session.iom,
+                cmp_count=session.cmp_count)
+
+        # finish app ans it will cause a gunicorn workers reboot (reset-like app)
+        dfm.sm.reboot_global_session()
+    return 'REBOOT-SESSION'
 
 
 @app.callback(Output('button-new-pt', 'children'), Input('button-new-pt', 'n_clicks'))

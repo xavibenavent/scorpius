@@ -331,7 +331,7 @@ class DashLayout:
                                    className='sc-button'),
                     ]),
                     dbc.Col([
-                        dbc.Button('STOP-SESSION', id='button-stop-global-session', color='danger', block=True,
+                        dbc.Button('REBOOT-SESSION', id='button-reboot-global-session', color='danger', block=True,
                                    className='sc-button'),
                         dbc.Button('- 10.0 €', id='button-decrease-cmp', color='warning', block=True,
                                    className='sc-button'),
