@@ -136,10 +136,13 @@ class SessionManager:
 
     def _order_traded_callback(self, symbol_name: str, uid: str, price: float, bnb_commission: float) -> None:
         # depending on symbol name, send the traded order data to the right session
-        self.active_sessions[symbol_name].order_traded_callback(
-            uid=uid,
-            order_price=price,
-            bnb_commission=bnb_commission)
+        if symbol_name in self.active_sessions.keys():
+            self.active_sessions[symbol_name].order_traded_callback(
+                uid=uid,
+                order_price=price,
+                bnb_commission=bnb_commission)
+        else:
+            log.info(f'traded order for symbol not in the app: {symbol_name}')
 
     def _session_stopped_callback(self,
                                   symbol: Symbol,
