@@ -335,20 +335,6 @@ class Session:
             # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.quote_asset(), cmp=cmp)
             return False, 0.0
 
-        # # check whether it is the last possible buy
-        # if self.strategy_manager.is_last_possible(asset=symbol.base_asset(), new_pt_need=self.quantity):
-        #     # force buy
-        #     shift = self.gap * 1.1 if self.gap != 0.0 else self.forced_shift
-        #     log.info(f'forced buy with shift {shift}')
-        #     return True, shift
-        #
-        # # check whether it is the last possible sell
-        # if self.strategy_manager.is_last_possible(asset=symbol.quote_asset(), new_pt_need=self.quantity * cmp):
-        #     # force sell
-        #     shift = self.gap * 1.1 * (-1) if self.gap != 0.0 else self.forced_shift * (-1)
-        #     log.info(f'forced sell with shift {shift}')
-        #     return True, shift
-
         # check whether it is the last possible buy
         is_base_last, base_rel_dist = self.strategy_manager.is_last_possible(asset=symbol.base_asset(),
                                                                              new_pt_need=self.quantity)
@@ -359,7 +345,8 @@ class Session:
         if is_base_last and is_quote_last:
             log.info(f'both base and quote are in last zone:')
             log.info(f'base_rel_dist: {base_rel_dist} quote_rel_dist: {quote_rel_dist}')
-            if base_rel_dist < quote_rel_dist:
+            # more relative distance means less liquidity
+            if base_rel_dist > quote_rel_dist:
                 # force buy
                 shift = self.gap * 1.1 if self.gap != 0.0 else self.forced_shift
                 log.info(f'forced buy (base) with shift {shift}')

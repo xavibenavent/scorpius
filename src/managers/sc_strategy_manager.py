@@ -107,9 +107,8 @@ class StrategyManager:
         liquidity_available, liquidity_needed = self._get_both_liquidity(asset=asset, new_pt_need=new_pt_need)
         liquidity_needed += (new_pt_need * 2)
         is_last = True if liquidity_available < liquidity_needed else False  # need for quote
-        rel_dist = (liquidity_available - liquidity_needed) / new_pt_need
+        rel_dist = (liquidity_needed - liquidity_available) / new_pt_need
         return is_last, rel_dist
-
 
     def try_to_get_liquidity(self, symbol: Symbol, asset: Asset, cmp: float):
         # return the order to trade to get liquidity for the asset or None
