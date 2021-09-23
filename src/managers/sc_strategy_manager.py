@@ -103,10 +103,13 @@ class StrategyManager:
         is_quote_enough = self.is_asset_liquidity_enough(asset=symbol.quote_asset(), new_pt_need=self.quantity * cmp)
         return is_base_enough, is_quote_enough
 
-    def is_last_possible(self, asset: Asset, new_pt_need: float) -> bool:
+    def is_last_possible(self, asset: Asset, new_pt_need: float) -> (bool, float):
         liquidity_available, liquidity_needed = self._get_both_liquidity(asset=asset, new_pt_need=new_pt_need)
         liquidity_needed += (new_pt_need * 2)
-        return True if liquidity_available < liquidity_needed else False  # need for quote
+        is_last = True if liquidity_available < liquidity_needed else False  # need for quote
+        rel_dist = (liquidity_available - liquidity_needed) / new_pt_need
+        return is_last, rel_dist
+
 
     def try_to_get_liquidity(self, symbol: Symbol, asset: Asset, cmp: float):
         # return the order to trade to get liquidity for the asset or None
