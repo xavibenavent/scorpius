@@ -17,13 +17,15 @@ class MarketSocketsIn:
     def __init__(self,
                  order_traded_callback: Optional[Callable[[str, str, float, float], None]],
                  account_balance_callback: Optional[Callable[[List[Account]], None]],
-                 symbol_ticker_callback: Callable[[str, float], None]
+                 symbol_ticker_callback: Callable[[str, float], None],
+                 update_previous_callback: Callable[[], None]
                  ):
 
         # the three callback functions are in the Session Manager class
         self.order_traded_callback: Callable[[str, str, float, float], None] = order_traded_callback
         self.account_balance_callback: Callable[[List[Account]], None] = account_balance_callback
         self.symbol_ticker_callback: Callable[[str, float], None] = symbol_ticker_callback
+        self.update_previous_callback: Callable[[], None] = update_previous_callback
 
     def binance_user_socket_callback(self, msg: Dict) -> None:
         # depending on the event type, it will call the right callback function
@@ -40,6 +42,10 @@ class MarketSocketsIn:
 
                 # ********** order traded callback **********
                 self.order_traded_callback(symbol, uid, order_price, bnb_commission)
+
+            # to force get all open orders and update dashboard
+            if msg['x'] in ['NEW', 'CANCELED', 'TRADE']:
+                self.update_previous_callback()
 
         elif event_type == 'outboundAccountPosition':
             binance_accounts = msg[self.B_BALANCE_ARRAY]

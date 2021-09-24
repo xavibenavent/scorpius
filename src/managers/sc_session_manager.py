@@ -34,7 +34,8 @@ class SessionManager:
         self.market_sockets_in = MarketSocketsIn(
             order_traded_callback=self._order_traded_callback,
             account_balance_callback=self._account_balance_callback,
-            symbol_ticker_callback=self._symbol_ticker_callback
+            symbol_ticker_callback=self._symbol_ticker_callback,
+            update_previous_callback=self._update_previous_callback
         )
 
         self.client_manager = ClientManager(
@@ -66,6 +67,13 @@ class SessionManager:
         self.client_manager.start_sockets()
 
         # get orders placed in previous app runs and append them to previous runs orders list
+        self._get_previous_orders()
+
+    def _get_previous_orders(self):
+        # clear list
+        if len(self.iom.previous_runs_orders) > 0:
+            self.iom.previous_runs_orders.clear()
+
         msg = self.market_api_out.get_open_orders()
         for order in msg:
             symbol_name = order['symbol']
@@ -260,3 +268,7 @@ class SessionManager:
             self.terminated_sessions[symbol.name]['global_consolidated_profit'] += consolidated
             # subtraction because expected is calculated as an absolut value
             self.terminated_sessions[symbol.name]['global_expected_profit'] -= expected
+
+    def _update_previous_callback(self):
+        log.info('update previous callback')
+        self._get_previous_orders()
