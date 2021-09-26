@@ -53,7 +53,7 @@ class MarketSocketsIn:
                 self.update_previous_callback()
 
                 symbol_name = msg['s']
-                uid = str(msg['c'])
+                uid = str(msg['C'])  # uppercase 'C' (lower case 'c' is new uid created by Binance)
                 k_side = msg['S']
                 price = float(msg['p'])
                 qty = float(msg['q'])
