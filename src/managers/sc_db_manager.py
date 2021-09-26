@@ -1,7 +1,7 @@
 # sc_db_manager.py
 import sqlite3
 from sqlite3 import Connection, Error
-from typing import List, Optional, Any
+from typing import List, Optional
 from binance import enums as k_binance
 import logging
 
@@ -19,6 +19,20 @@ class DBManager:
         self.conn = self._create_connection()
         self.cursor = self.conn.cursor()
 
+        # create tables if they do not exist
+        try:
+            if self.ACTIONS_TABLE in tables:
+                query = f'CREATE TABLE IF NOT EXISTS {self.ACTIONS_TABLE} '
+                query += '(action_id TEXT, side TEXT, qty REAL, price REAL);'
+                self.cursor.execute(query)
+                self.conn.commit()
+            elif self.ORDERS_TABLE in tables:
+                pass
+        except Error as e:
+            log.critical(e)
+
+        pass
+
     def __del__(self):
         log.info('closing cursor and connection to database')
         self.conn.close()
@@ -31,17 +45,25 @@ class DBManager:
         except Error as e:
             log.critical(e)
 
+    def delete_action(self, action: Action):
+        try:
+            query = f'DELETE FROM {self.ACTIONS_TABLE} WHERE action_id = ?'
+            self.cursor.execute(query, (action.action_id,))
+            self.conn.commit()
+        except Error as e:
+            log.critical(e)
+
     def get_all_actions(self) -> Optional[List[Action]]:
         try:
             query = f'SELECT * FROM {self.ACTIONS_TABLE};'
             rows = self.cursor.execute(query).fetchall()
-            pass
+            return [self._get_action_from_row(row) for row in rows]
         except Error as e:
             log.critical(e)
         return None
 
     @staticmethod
-    def _get_action_from_row(row: Any) -> Action:
+    def _get_action_from_row(row: list) -> Action:
         return Action(
             action_id=row[0],
             side=row[1],

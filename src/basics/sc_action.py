@@ -4,7 +4,7 @@ from binance import enums as k_binance
 
 
 class Action:
-    def __init(self, action_id: str, side: k_binance, qty: float, price: float):
+    def __init__(self, action_id: str, side: k_binance, qty: float, price: float):
         self.action_id = action_id
         self.side = side
         self.qty = qty
