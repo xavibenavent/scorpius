@@ -441,7 +441,7 @@ def update_table(timer):
     # sort by price
     df1 = df.sort_values(by=['price'], ascending=False)
     # filter by status for each table (monitor-placed & traded)
-    df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp', 'to_be_traded'])]
+    df_pending = df1[df1.status.isin(['monitor', 'active', 'cmp', 'to_be_traded', 'canceled'])]
     qp = dfm.dashboard_active_symbol.quote_asset().pv()
     df_pending['price'] = df_pending['price'].map(f'{{:,.{qp}f}}'.format)  # two {{ }} to escape { in f-string
     df_pending['total'] = df_pending['total'].map(f'{{:,.{qp}f}}'.format)
