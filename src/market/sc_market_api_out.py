@@ -131,7 +131,7 @@ class MarketAPIOut:
         return None
 
     def get_asset_balance(self, asset_name: str) -> Optional[Account]:
-        log.info(f'asset name: {asset_name}')
+        # log.info(f'asset name: {asset_name}')
         try:
             d = self.client.get_asset_balance(asset=asset_name)
             log.info(f'd: {d}')

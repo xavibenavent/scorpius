@@ -56,6 +56,7 @@ class DBManager:
             self.cursor.execute(f'INSERT INTO {self.PENDING_ORDERS_TABLE} VALUES (?, ?, ?, ?, ?)',
                                 pending_order.get_tuple_for_pending_order_table())
             self.conn.commit()
+            log.info(f'added pending order {pending_order}')
         except Error as e:
             log.critical(e)
 
@@ -72,6 +73,7 @@ class DBManager:
             query = f'DELETE FROM {self.PENDING_ORDERS_TABLE} WHERE uid = ?'
             self.cursor.execute(query, (pending_order_uid,))
             self.conn.commit()
+            log.info(f'deleted pending order wirh uid {pending_order_uid}')
         except Error as e:
             log.critical(e)
 

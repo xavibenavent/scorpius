@@ -115,6 +115,7 @@ class IsolatedOrdersManager:
         return [order for order in self.isolated_orders if order.symbol.name == symbol_name]
 
     def canceled_order(self, uid: str):
+        log.info(f'canceled order with uid {uid}')
         for order in self.isolated_orders:
             if order.uid == uid:
                 order.status = OrderStatus.CANCELED

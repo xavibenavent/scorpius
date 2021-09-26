@@ -19,3 +19,6 @@ class PendingOrder:
     def get_tuple_for_pending_order_table(self) -> (str, str, k_binance, float, float):
         return self.symbol_name, self.uid, self.k_side, self.price, self.qty
 
+    def __repr__(self):
+        return f'{self.symbol_name} {self.uid} {self.price} {self.qty}'
+
