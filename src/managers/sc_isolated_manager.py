@@ -3,7 +3,7 @@
 from typing import List, Optional
 import logging
 from binance import enums as k_binance
-from basics.sc_order import Order
+from basics.sc_order import Order, OrderStatus
 from basics.sc_asset import Asset
 
 log = logging.getLogger('log')
@@ -113,3 +113,9 @@ class IsolatedOrdersManager:
 
     def get_isolated_orders(self, symbol_name: str) -> List[Order]:
         return [order for order in self.isolated_orders if order.symbol.name == symbol_name]
+
+    def canceled_order(self, uid: str):
+        for order in self.isolated_orders:
+            if order.uid == uid:
+                order.status = OrderStatus.CANCELED
+

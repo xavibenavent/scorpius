@@ -18,7 +18,8 @@ class MarketSocketsIn:
                  order_traded_callback: Optional[Callable[[str, str, float, float], None]],
                  account_balance_callback: Optional[Callable[[List[Account]], None]],
                  symbol_ticker_callback: Callable[[str, float], None],
-                 update_previous_callback: Callable[[], None]
+                 update_previous_callback: Callable[[], None],
+                 order_canceled_callback: Callable[[str, str, str, float, float], None]
                  ):
 
         # the three callback functions are in the Session Manager class
@@ -26,6 +27,7 @@ class MarketSocketsIn:
         self.account_balance_callback: Callable[[List[Account]], None] = account_balance_callback
         self.symbol_ticker_callback: Callable[[str, float], None] = symbol_ticker_callback
         self.update_previous_callback: Callable[[], None] = update_previous_callback
+        self.order_canceled_callback: Callable[[str, str, str, float, float], None] = order_canceled_callback
 
     def binance_user_socket_callback(self, msg: Dict) -> None:
         # depending on the event type, it will call the right callback function
@@ -44,8 +46,18 @@ class MarketSocketsIn:
                 self.order_traded_callback(symbol, uid, order_price, bnb_commission)
 
             # to force get all open orders and update dashboard
-            if msg['x'] in ['NEW', 'CANCELED', 'TRADE']:
+            if msg['x'] in ['NEW', 'TRADE']:
                 self.update_previous_callback()
+
+            if msg['x'] == 'CANCELED':
+                self.update_previous_callback()
+
+                symbol_name = msg['s']
+                uid = str(msg['c'])
+                k_side = msg['S']
+                price = float(msg['p'])
+                qty = float(msg['q'])
+                self.order_canceled_callback(symbol_name, uid, k_side, price, qty)
 
         elif event_type == 'outboundAccountPosition':
             binance_accounts = msg[self.B_BALANCE_ARRAY]

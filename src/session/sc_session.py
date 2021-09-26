@@ -420,3 +420,4 @@ class Session:
         # update last
         pattern[-1] = new_cmp
         # print(self.cmp_pattern)
+

@@ -6,6 +6,7 @@ import os
 import signal
 
 from managers.config_manager import ConfigManager
+from managers.sc_db_manager import DBManager
 
 from session.sc_session import Session
 from market.sc_market_api_out import MarketAPIOut
@@ -14,6 +15,7 @@ from managers.sc_account_manager import Account, AccountManager
 from managers.sc_isolated_manager import IsolatedOrdersManager
 from basics.sc_symbol import Symbol, Asset
 from basics.sc_order import Order, OrderStatus
+from basics.sc_pending_order import PendingOrder
 from basics.sc_perfect_trade import PerfectTrade
 from managers.sc_client_manager import ClientManager
 
@@ -28,6 +30,7 @@ class SessionManager:
         self.all_symbols_session_count = 0
 
         # MANAGERS
+        self.dbm = DBManager()
         self.iom = IsolatedOrdersManager()
         self.cm = ConfigManager(config_file='config_new.ini')
 
@@ -35,7 +38,8 @@ class SessionManager:
             order_traded_callback=self._order_traded_callback,
             account_balance_callback=self._account_balance_callback,
             symbol_ticker_callback=self._symbol_ticker_callback,
-            update_previous_callback=self._update_previous_callback
+            update_previous_callback=self._update_previous_callback,
+            order_canceled_callback=self._order_canceled_callback
         )
 
         self.client_manager = ClientManager(
@@ -74,6 +78,10 @@ class SessionManager:
         if len(self.iom.previous_runs_orders) > 0:
             self.iom.previous_runs_orders.clear()
 
+        # get al uid in isolated orders (used later)
+        isolated_uids = [order.uid for order in self.iom.isolated_orders]
+
+        # get all placed orders
         msg = self.market_api_out.get_open_orders()
         for order in msg:
             symbol_name = order['symbol']
@@ -82,19 +90,25 @@ class SessionManager:
             # append only orders from symbols managed by session manager
             if len(symbols) > 0:
                 symbol = symbols[0]
-
-                open_order = Order(
-                    symbol=symbol,
-                    order_id=order['clientOrderId'],
-                    k_side=order['side'],
-                    price=float(order['price']),
-                    amount=float(order['origQty']),
-                    status=OrderStatus.TO_BE_TRADED,
-                    binance_id=order['orderId'],
-                    name='b1' if order['side'] == 'BUY' else 's1'
-                )
-                open_order.pt = PerfectTrade(pt_id='*', orders=[open_order, open_order])
-                self.iom.previous_runs_orders.append(open_order)
+                # create only orders not managed by the actual glob)l session (not in isolated orders9
+                order_uid = order['clientOrderId']
+                if order_uid not in isolated_uids:
+                    open_order = Order(
+                        symbol=symbol,
+                        order_id=order_uid,
+                        k_side=order['side'],
+                        price=float(order['price']),
+                        amount=float(order['origQty']),
+                        status=OrderStatus.TO_BE_TRADED,
+                        binance_id=order['orderId'],
+                        name='b1' if order['side'] == 'BUY' else 's1'
+                    )
+                    open_order.pt = PerfectTrade(pt_id='*', orders=[open_order, open_order])
+                    self.iom.previous_runs_orders.append(open_order)
+                else:
+                    log.info(f'order with uid {order_uid} already in isolated orders')
+            else:
+                log.info(f'order with uid {order["clientOrderId"]} in symbol {symbol_name} not added to dashboard')
 
     def _get_symbols(self) -> List[Symbol]:
         # list to return
@@ -272,3 +286,11 @@ class SessionManager:
     def _update_previous_callback(self):
         log.info('update previous callback')
         self._get_previous_orders()
+
+    def _order_canceled_callback(self, symbol_name: str, uid: str, k_side: str, price: float, qty: float):
+        # update text in dashboard
+        self.iom.canceled_order(uid=uid)
+
+        # add pending order to database
+        pending_order = PendingOrder(symbol_name=symbol_name, uid=uid, k_side=k_side, price=price, qty=qty)
+        self.dbm.add_pending_order(pending_order=pending_order)
