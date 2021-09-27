@@ -260,7 +260,9 @@ class FakeClient:
                     base_account.free += order.quantity
                     base_account.locked -= order.quantity
                 # call user socket callback
+                self._call_user_socket_order_canceled(order=order)
                 self._call_user_socket_balance_update()
+
                 return {
                         "symbol": symbol,
                         "origClientOrderId": origClientOrderId,
@@ -387,6 +389,21 @@ class FakeClient:
             c=order.uid,
             L=str(order.price),
             n=str(bnb_commission)  # n: bnb commission
+        )
+        self._user_socket_callback(msg)
+
+    def _call_user_socket_order_canceled(self, order: FakeOrder):
+        msg = dict(
+            e='executionReport',
+            s=order.symbol_name,
+            x='CANCELED',
+            # X='FILLED',
+            C=order.uid,
+            L=str(order.price),
+            S=order.side,
+            p=str(order.price),
+            q=str(order.quantity),
+            # n=str(bnb_commission)  # n: bnb commission
         )
         self._user_socket_callback(msg)
 

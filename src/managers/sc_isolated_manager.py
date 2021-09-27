@@ -84,28 +84,42 @@ class IsolatedOrdersManager:
              if order.symbol.name == symbol_name]
         )
 
-    def try_to_get_asset_liquidity(self, asset: Asset, cmp: float, max_loss: float) -> Optional[Order]:
-        # get candidate orders depending on side
-        candidate_orders: List[Order] = []
-        for order in self.isolated_orders:
-            criteria_1 = order.k_side == k_binance.SIDE_BUY and order.symbol.base_asset().name() == asset.name()
-            criteria_2 = order.k_side == k_binance.SIDE_SELL and order.symbol.quote_asset().name() == asset.name()
-            if criteria_1 or criteria_2:
-                candidate_orders. append(order)
+    def get_further_order(self, cmp: float, k_side: k_binance) -> Optional[Order]:
+        # since base liquidity is needed, a placed SELL order has to be CANCELED
+        # get furthest side order or None
+        further_order: Optional[Order] = None
+        max_distance = 0.0
+        side_orders = [order for order in self.isolated_orders
+                       if order.k_side == k_side and order.status == OrderStatus.TO_BE_TRADED]
+        for order in side_orders:
+            distance = order.get_distance(cmp=cmp)
+            if distance > max_distance:
+                max_distance = distance
+                further_order = order
+        return further_order
 
-        # trade one order if loss is below the threshold defined in config.ini
-        if len(candidate_orders) > 0:
-            for candidate_order in candidate_orders:
-                # get (pt) loss taking into account the sibling order
-                candidate_loss = candidate_order.get_total_at_cmp(cmp=cmp)
-                sibling_loss = \
-                    candidate_order.sibling_order.get_total_at_cmp(cmp=candidate_order.sibling_order.price)
-                loss = candidate_loss + sibling_loss
-                # check allowed limit
-                if loss > max_loss:
-                    log.debug(f'found a good order with loss {loss:,.2f} for getting liquidity: {candidate_order}')
-                    return candidate_order
-        return None
+    # def try_to_get_asset_liquidity(self, asset: Asset, cmp: float, max_loss: float) -> Optional[Order]:
+    #     # get candidate orders depending on side
+    #     candidate_orders: List[Order] = []
+    #     for order in self.isolated_orders:
+    #         criteria_1 = order.k_side == k_binance.SIDE_BUY and order.symbol.base_asset().name() == asset.name()
+    #         criteria_2 = order.k_side == k_binance.SIDE_SELL and order.symbol.quote_asset().name() == asset.name()
+    #         if criteria_1 or criteria_2:
+    #             candidate_orders. append(order)
+    #
+    #     # trade one order if loss is below the threshold defined in config.ini
+    #     if len(candidate_orders) > 0:
+    #         for candidate_order in candidate_orders:
+    #             # get (pt) loss taking into account the sibling order
+    #             candidate_loss = candidate_order.get_total_at_cmp(cmp=cmp)
+    #             sibling_loss = \
+    #                 candidate_order.sibling_order.get_total_at_cmp(cmp=candidate_order.sibling_order.price)
+    #             loss = candidate_loss + sibling_loss
+    #             # check allowed limit
+    #             if loss > max_loss:
+    #                 log.debug(f'found a good order with loss {loss:,.2f} for getting liquidity: {candidate_order}')
+    #                 return candidate_order
+    #     return None
 
     def log(self):
         for order in self.isolated_orders:

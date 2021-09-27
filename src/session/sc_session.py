@@ -65,6 +65,12 @@ class Session:
         self.accepted_loss_to_get_liquidity = float(config['accepted_loss_to_get_liquidity'])
         self.forced_shift = float(config['forced_shift'])
 
+        # take into account that the maximum rate is one check every minute
+        # (parameter time_between_successive_pt_creation_tries)
+        self.tries_to_force_get_liquidity = 2  # todo: move to parameter
+        self.base_negative_try_count = 0
+        self.quote_negative_try_count = 0
+
         self.ptm = PTManager(
             session_id=self.session_id,
             symbol=self.symbol
@@ -324,16 +330,29 @@ class Session:
         # 1. check liquidity
         # check base liquidity and try to get if not enough
         if not self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(), new_pt_need=self.quantity):
-            # try to get
-            # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.base_asset(), cmp=cmp)
+            self.base_negative_try_count += 1
+            if self.base_negative_try_count > self.tries_to_force_get_liquidity:
+                # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.base_asset(), cmp=cmp)
+                furthest_sell_order = self.iom.get_further_order(cmp=cmp, k_side=k_binance.SIDE_SELL)
+                if furthest_sell_order and furthest_sell_order.get_distance(cmp=cmp) > 1000.0:
+                    self.market.cancel_orders([furthest_sell_order])
             return False, 0.0
+        else:
+            # reset negative tries counter
+            self.base_negative_try_count = 0
 
         # check quote liquidity and try to get if not enough
         if not self.strategy_manager.is_asset_liquidity_enough(asset=symbol.quote_asset(),
                                                                new_pt_need=self.quantity * cmp):
-            # try to get
-            # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.quote_asset(), cmp=cmp)
+            self.quote_negative_try_count += 1
+            if self.quote_negative_try_count > self.tries_to_force_get_liquidity:
+                # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.quote_asset(), cmp=cmp)
+                furthest_buy_order = self.iom.get_further_order(cmp=cmp, k_side=k_binance.SIDE_BUY)
+                if furthest_buy_order and furthest_buy_order.get_distance(cmp=cmp) > 1000.0:
+                    self.market.cancel_orders([furthest_buy_order])
             return False, 0.0
+        else:
+            self.quote_negative_try_count = 0
 
         # check whether it is the last possible buy
         is_base_last, base_rel_dist = self.strategy_manager.is_last_possible(asset=symbol.base_asset(),
