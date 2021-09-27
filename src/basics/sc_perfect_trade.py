@@ -44,7 +44,7 @@ class PerfectTrade:
         if self.status in [PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED, PerfectTradeStatus.COMPLETED]:
             for order in self.orders:
 
-                if order.status.name in ['MONITOR', 'ACTIVE', 'TO_BE_TRADED']:
+                if order.status.name in ['MONITOR', 'ACTIVE', 'TO_BE_TRADED', 'CANCELED']:
                     # return the value as traded at current cmp
                     pt_profit += order.get_total_at_cmp(cmp=cmp)
 
