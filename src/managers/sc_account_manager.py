@@ -28,13 +28,13 @@ class AccountManager:
         for a in received_accounts:
             if a.name in self.accounts.keys():
                 # update values
-                log.info(f'account: {a.name} free updated from {self.accounts[a.name].free} to {a.free}')
-                log.info(f'account: {a.name} locked updated from {self.accounts[a.name].locked} to {a.locked}')
+                # log.info(f'account: {a.name} free updated from {self.accounts[a.name].free} to {a.free}')
+                # log.info(f'account: {a.name} locked updated from {self.accounts[a.name].locked} to {a.locked}')
                 self.accounts[a.name].free = a.free
                 self.accounts[a.name].locked = a.locked
             else:
                 # add new account
-                log.info(f'account: {a.name} set to free {a.free} locked {a.locked}')
+                # log.info(f'account: {a.name} set to free {a.free} locked {a.locked}')
                 self.accounts[a.name] = a
 
     def get_account(self, name: str) -> Optional[Account]:

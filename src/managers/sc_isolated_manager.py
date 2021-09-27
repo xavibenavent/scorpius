@@ -85,8 +85,6 @@ class IsolatedOrdersManager:
         )
 
     def get_further_order(self, cmp: float, k_side: k_binance) -> Optional[Order]:
-        # since base liquidity is needed, a placed SELL order has to be CANCELED
-        # get furthest side order or None
         further_order: Optional[Order] = None
         max_distance = 0.0
         side_orders = [order for order in self.isolated_orders

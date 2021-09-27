@@ -220,6 +220,7 @@ class SessionManager:
             session_stopped_callback=self._session_stopped_callback,
             market=self.market_api_out,
             account_manager=self.am,
+            dbm=self.dbm,
             isolated_order_traded_callback=self._isolated_order_traded_callback,
             get_liquidity_needed_callback=self._get_liquidity_needed_callback,
         )

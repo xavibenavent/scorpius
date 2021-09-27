@@ -6,13 +6,15 @@ from typing import Callable, List
 from binance import enums as k_binance
 
 from market.sc_market_api_out import MarketAPIOut
-from basics.sc_order import OrderStatus
+from basics.sc_order import OrderStatus, Order
 from managers.sc_account_manager import Account, AccountManager
 from session.sc_pt_manager import PTManager
 from basics.sc_perfect_trade import PerfectTradeStatus
 from basics.sc_symbol import Symbol, Asset
+from basics.sc_action import Action
 from managers.sc_isolated_manager import IsolatedOrdersManager
 from managers.sc_strategy_manager import StrategyManager
+from managers.sc_db_manager import DBManager
 from session.sc_helpers import Helpers, QuitMode
 
 log = logging.getLogger('log')
@@ -28,6 +30,7 @@ class Session:
                  session_stopped_callback: Callable[[Symbol, bool, float, float, int, int, int], None],
                  market: MarketAPIOut,
                  account_manager: AccountManager,
+                 dbm: DBManager,
                  isolated_order_traded_callback: Callable[[Symbol, float, float], None],
                  get_liquidity_needed_callback: Callable[[Asset], float],
                  ):
@@ -37,6 +40,7 @@ class Session:
         self.iom = isolated_orders_manager
         self.market = market
         self.am = account_manager
+        self.dbm = dbm
 
         # isolated manager callbacks
         self.isolated_order_traded_callback = isolated_order_traded_callback
@@ -67,9 +71,12 @@ class Session:
 
         # take into account that the maximum rate is one check every minute
         # (parameter time_between_successive_pt_creation_tries)
-        self.tries_to_force_get_liquidity = 2  # todo: move to parameter
+        self.tries_to_force_get_liquidity = 60  # todo: move to parameter
         self.base_negative_try_count = 0
         self.quote_negative_try_count = 0
+
+        # distance for replacing order
+        self.distance_for_replacing_order = 100.0  # todo: move to parameter
 
         self.ptm = PTManager(
             session_id=self.session_id,
@@ -125,7 +132,8 @@ class Session:
                     if self._try_new_pt_creation(cmp=cmp, symbol=self.symbol):
                         self.gap = self.ptm.get_first_gap()
                     else:
-                        log.critical("initial pt not allowed, it will be tried again after inactivity period")
+                        # log.critical("initial pt not allowed, it will be tried again after inactivity period")
+                        pass
 
                 # 0.2: update cmp count to control timely pt creation
                 self.cmp_count += 1
@@ -158,8 +166,8 @@ class Session:
                 # 5. check inactivity
                 self._check_inactivity(cmp=cmp)
 
-                # 6. check dynamic parameters
-                self._check_dynamic_parameters()
+                # 6. check pending orders to place if close to be traded
+                self._check_pending_orders()
 
                 # ********** SESSION EXIT POINT ********
                 self._check_exit_conditions(cmp)
@@ -245,8 +253,65 @@ class Session:
                 ref_cycles=self.ref_cycles_inactivity)
         return is_allowed
 
-    def _check_dynamic_parameters(self):
-        pass
+    def _check_pending_orders(self):
+        # get pending orders that meet the criteria for re-placing
+        pending_orders = [order for order in self.iom.get_isolated_orders(symbol_name=self.symbol.name)
+                          if order.status == OrderStatus.CANCELED
+                          and order.get_distance(cmp=self.cmp) < self.distance_for_replacing_order]
+        for order in pending_orders:
+            log.info(f'pending order {order} to be processed')
+            # set asset & liquidity needed depending upon k_side
+            if order.k_side == k_binance.SIDE_SELL:
+                asset = self.symbol.base_asset()
+                counter_asset = self.symbol.quote_asset()
+                liquidity_needed = order.amount
+                counter_liquidity_needed = order.amount * order.price
+            else:
+                asset = self.symbol.quote_asset()
+                counter_asset = self.symbol.base_asset()
+                liquidity_needed = order.amount * order.price
+                counter_liquidity_needed = order.amount
+
+            log.info(f'PENDING_ORDER: asset: {asset.name()} liquidity needed: {liquidity_needed}')
+
+            # check whether there is enough liquidity for placing it
+            if self.strategy_manager.is_asset_liquidity_enough(asset=asset, new_pt_need=liquidity_needed):
+                # place, change status & delete from database
+                log.info(f'PENDING_ORDER: place, change status & delete from database')
+                self.market.place_limit_order(order=order)
+                order.status = OrderStatus.TO_BE_TRADED
+                # self.dbm.delete_pending_order(pending_order_uid=order.uid)
+            else:
+                # since there will be no further orders of the same side to cancel and get liquidity
+                # the only way is buying or selling depending upon the order side
+                # check there is liquidity of the counter side to trade
+                log.info(f'PENDING_ORDER: trying to buy/sell to get enough liquidity for canceling')
+                counter_k_side = k_binance.SIDE_BUY if order.k_side == k_binance.SIDE_SELL else k_binance.SIDE_SELL
+                if self.strategy_manager.is_asset_liquidity_enough(asset=counter_asset,
+                                                                   new_pt_need=counter_liquidity_needed):
+                    # prepare & place market order
+                    new_order = Order(symbol=self.symbol,
+                                      order_id='NO_ID',
+                                      k_side=counter_k_side,
+                                      price=order.price,
+                                      amount=order.amount,
+                                      status=OrderStatus.TO_BE_TRADED)
+                    log.info(f'PENDING_ORDER: MARKET place order: {new_order}')
+                    self.market.place_market_order(order=new_order)
+                    self.dbm.add_action(action=Action(
+                        action_id='ACTION_FOR_CANCELING',
+                        side=counter_k_side,
+                        qty=order.amount,
+                        price=self.cmp))
+
+                else:
+                    # cancel furthest counter order
+                    log.info(f'PENDING_ORDER: cancel farthest at counter side')
+                    furthest_order = self.iom.get_further_order(cmp=self.cmp,
+                                                                k_side=counter_k_side)
+                    if furthest_order:
+                        log.info(f'PENDING_ORDER: cancel order {furthest_order}')
+                        self.market.cancel_orders([furthest_order])
 
     def _check_exit_conditions(self, cmp):
         # check profit only if orders are stable (no ACTIVE nor TO_BE_TRADED)
@@ -329,13 +394,35 @@ class Session:
     def _allow_new_pt_creation(self, cmp: float, symbol: Symbol) -> (bool, float):
         # 1. check liquidity
         # check base liquidity and try to get if not enough
-        if not self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(), new_pt_need=self.quantity):
+        if not self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(),
+                                                               new_pt_need=self.quantity):
             self.base_negative_try_count += 1
             if self.base_negative_try_count > self.tries_to_force_get_liquidity:
-                # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.base_asset(), cmp=cmp)
-                furthest_sell_order = self.iom.get_further_order(cmp=cmp, k_side=k_binance.SIDE_SELL)
-                if furthest_sell_order and furthest_sell_order.get_distance(cmp=cmp) > 1000.0:
+                # get furthest order (or NOne)
+                furthest_sell_order = self.iom.get_further_order(cmp=cmp,
+                                                                 k_side=k_binance.SIDE_SELL)
+                if furthest_sell_order and furthest_sell_order.get_distance(cmp=cmp) > 400.0:
                     self.market.cancel_orders([furthest_sell_order])
+                else:
+                    # BUY base
+                    log.info(f'PENDING_ORDER: trying to buy base to get enough liquidity to create new pt')
+                    if self.strategy_manager.is_asset_liquidity_enough(asset=symbol.quote_asset(),
+                                                                       new_pt_need=self.quantity * cmp):
+                        # prepare & place market order
+                        new_order = Order(symbol=self.symbol,
+                                          order_id='NO_ID',
+                                          k_side=k_binance.SIDE_BUY,
+                                          price=cmp,
+                                          amount=self.quantity,
+                                          status=OrderStatus.TO_BE_TRADED)
+                        log.info(f'PENDING_ORDER: MARKET place order: {new_order}')
+                        self.market.place_market_order(order=new_order)
+                        self.dbm.add_action(action=Action(
+                            action_id='ACTION_TO_CREATE_NEW_PT',
+                            side=k_binance.SIDE_BUY,
+                            qty=self.quantity,
+                            price=self.cmp))
+
             return False, 0.0
         else:
             # reset negative tries counter
@@ -348,8 +435,28 @@ class Session:
             if self.quote_negative_try_count > self.tries_to_force_get_liquidity:
                 # self.strategy_manager.try_to_get_liquidity(symbol=symbol, asset=symbol.quote_asset(), cmp=cmp)
                 furthest_buy_order = self.iom.get_further_order(cmp=cmp, k_side=k_binance.SIDE_BUY)
-                if furthest_buy_order and furthest_buy_order.get_distance(cmp=cmp) > 1000.0:
+                if furthest_buy_order and furthest_buy_order.get_distance(cmp=cmp) > 400.0:
                     self.market.cancel_orders([furthest_buy_order])
+                else:
+                    # SELL base
+                    log.info(f'PENDING_ORDER: trying to sell base to get enough liquidity to create new pt')
+                    if self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(),
+                                                                       new_pt_need=self.quantity):
+                        # prepare & place market order
+                        new_order = Order(symbol=self.symbol,
+                                          order_id='NO_ID',
+                                          k_side=k_binance.SIDE_SELL,
+                                          price=cmp,
+                                          amount=self.quantity,
+                                          status=OrderStatus.TO_BE_TRADED)
+                        log.info(f'PENDING_ORDER: MARKET place order: {new_order}')
+                        self.market.place_market_order(order=new_order)
+                        self.dbm.add_action(action=Action(
+                            action_id='ACTION_TO_CREATE_NEW_PT',
+                            side=k_binance.SIDE_SELL,
+                            qty=self.quantity,
+                            price=self.cmp))
+
             return False, 0.0
         else:
             self.quote_negative_try_count = 0
