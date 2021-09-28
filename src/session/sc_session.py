@@ -409,18 +409,19 @@ class Session:
                     if self.strategy_manager.is_asset_liquidity_enough(asset=symbol.quote_asset(),
                                                                        new_pt_need=self.quantity * cmp):
                         # prepare & place market order
+                        new_qty = self.quantity / 2
                         new_order = Order(symbol=self.symbol,
                                           order_id='NO_ID',
                                           k_side=k_binance.SIDE_BUY,
                                           price=cmp,
-                                          amount=self.quantity,
+                                          amount=new_qty,
                                           status=OrderStatus.TO_BE_TRADED)
                         log.info(f'PENDING_ORDER: MARKET place order: {new_order}')
                         self.market.place_market_order(order=new_order)
                         self.dbm.add_action(action=Action(
                             action_id='ACTION_TO_CREATE_NEW_PT',
                             side=k_binance.SIDE_BUY,
-                            qty=self.quantity,
+                            qty=new_qty,
                             price=self.cmp))
 
             return False, 0.0
@@ -443,18 +444,19 @@ class Session:
                     if self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(),
                                                                        new_pt_need=self.quantity):
                         # prepare & place market order
+                        new_qty = self.quantity / 2
                         new_order = Order(symbol=self.symbol,
                                           order_id='NO_ID',
                                           k_side=k_binance.SIDE_SELL,
                                           price=cmp,
-                                          amount=self.quantity,
+                                          amount=new_qty,
                                           status=OrderStatus.TO_BE_TRADED)
                         log.info(f'PENDING_ORDER: MARKET place order: {new_order}')
                         self.market.place_market_order(order=new_order)
                         self.dbm.add_action(action=Action(
                             action_id='ACTION_TO_CREATE_NEW_PT',
                             side=k_binance.SIDE_SELL,
-                            qty=self.quantity,
+                            qty=new_qty,
                             price=self.cmp))
 
             return False, 0.0
@@ -546,4 +548,19 @@ class Session:
         # update last
         pattern[-1] = new_cmp
         # print(self.cmp_pattern)
+
+    def get_actions_balance(self) -> (int, int, float):
+        buy_actions = [action for action in self.dbm.get_all_actions() if action.side == k_binance.SIDE_BUY]
+        sell_actions = [action for action in self.dbm.get_all_actions() if action.side == k_binance.SIDE_SELL]
+        buy_actions_count = len(buy_actions)
+        sell_actions_count = len(sell_actions)
+
+        actions_for_balance_count = min([buy_actions_count, sell_actions_count])
+
+        actions_balance = 0.0
+        for i in range(actions_for_balance_count):
+            actions_balance += sell_actions[i].price * sell_actions[i].qty
+            actions_balance -= buy_actions[i].price * buy_actions[i].qty
+
+        return buy_actions_count, sell_actions_count, actions_balance
 

@@ -112,12 +112,13 @@ class DashLayout:
                                         html.Br(),
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6('TBD', className='global-info-subtitle-2'),
-                                                html.H6(children='0', className='pt-info-1')
+                                                # Negative Try Count
+                                                html.H6('NEG-TRY', className='global-info-subtitle-2'),
+                                                html.H6(id='ntc', children='0', className='pt-info-1')
                                             ]),
                                             dbc.Col([
-                                                html.H6('TBD', className='global-info-subtitle-2'),
-                                                html.H6(children='0', className='pt-info-1')
+                                                html.H6('NEXT TRY', className='global-info-subtitle-2'),
+                                                html.H6(id='time-to-next-try', children='0', className='pt-info-1')
                                             ]),
                                         ]),
                                         html.Br(),
@@ -206,8 +207,8 @@ class DashLayout:
                                                 html.H6(id='expected-profit', children='0', className='order-info-1')
                                             ]),
                                             dbc.Col([
-                                                html.H6('TBD', className='global-info-subtitle-2'),
-                                                html.H6(children='0', className='order-info-1')
+                                                html.H6('ACTIONS', className='global-info-subtitle-2'),
+                                                html.H6(id='actions-info', children='0', className='order-info-1')
                                             ]),
                                         ])
                                     ]),

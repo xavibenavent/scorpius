@@ -105,14 +105,35 @@ def display_value(value):
 # ********** Session STOP profits **********
 @app.callback(Output('actual-profit', 'children'),
               Output('stop-price-profit', 'children'),
+              Output('ntc', 'children'),
+              Output('time-to-next-try', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
     symbol_name = symbol.name
     cmp = dfm.sm.active_sessions[symbol_name].cmp
     qp = symbol.quote_asset().pv()
+    base_ntc = dfm.sm.active_sessions[symbol_name].base_negative_try_count
+    quote_ntc = dfm.sm.active_sessions[symbol_name].quote_negative_try_count
+    
+    cycles_count_for_inactivity = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
+    cycles_to_new_pt = cycles_count_for_inactivity - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
+    time_to_next_try = timedelta(seconds=cycles_to_new_pt)
+    
     return f'{dfm.sm.active_sessions[symbol_name].ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.{qp}f}',\
-           f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f}'
+           f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f}', \
+           f'{base_ntc} - {quote_ntc}', \
+           f'{time_to_next_try}' 
+
+
+@app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
+def display_value(value):
+    symbol_name = dfm.dashboard_active_symbol.name
+    cycles_count_for_inactivity = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
+    cycles_to_new_pt = cycles_count_for_inactivity - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
+    time_to_new_pt = timedelta(seconds=cycles_to_new_pt)
+    return f'({cycles_count_for_inactivity})  {time_to_new_pt}'
+
 
 
 # **********************************
@@ -192,6 +213,7 @@ def display_value(value):
 @app.callback(Output('consolidated-profit', 'children'),
               Output('expected-profit-at-cmp', 'children'),
               Output('expected-profit', 'children'),
+              Output('actions-info', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
@@ -203,10 +225,11 @@ def display_value(value):
     consolidated = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_profit']
     expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
     expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=cmp, symbol_name=symbol_name)
+    buy_actions_count, sell_actions_count, actions_balance = dfm.sm.active_sessions[symbol_name].get_actions_balance()
     return f'{consolidated:,.{qp}f}',\
            f'{expected_at_cmp:,.{qp}f}',\
            f'{expected:,.{qp}f}', \
-
+           f'{buy_actions_count}/{sell_actions_count} {actions_balance:,.2f}'
 
 
 # ********** PT count / traded orders count **********
@@ -219,13 +242,6 @@ def display_value(value):
 #     return f'pt: {pt_count}   b: {buy_count}   s: {sell_count}'
 
 
-@app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
-    cycles_count_for_inactivity = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
-    cycles_to_new_pt = cycles_count_for_inactivity - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
-    time_to_new_pt = timedelta(seconds=cycles_to_new_pt)
-    return f'({cycles_count_for_inactivity})  {time_to_new_pt}'
 
 
 # @app.callback(Output('short-prediction', 'children'),
