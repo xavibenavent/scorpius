@@ -252,7 +252,7 @@ class Session:
 
     def _check_pending_orders(self):
         # get pending orders that meet the criteria for re-placing
-        pending_orders = [order for order in self.iom.get_isolated_orders(symbol_name=self.symbol.name)
+        pending_orders = [order for order in self.iom.get_all_orders(symbol_name=self.symbol.name)
                           if order.status == OrderStatus.CANCELED
                           and order.get_distance(cmp=self.cmp) < self.distance_for_replacing_order]
         for order in pending_orders:

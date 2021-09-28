@@ -88,7 +88,7 @@ class IsolatedOrdersManager:
         # return the furthest order that meets the three criteria
         further_order: Optional[Order] = None
         max_distance = 0.0
-        side_orders = [order for order in self.isolated_orders
+        side_orders = [order for order in self.isolated_orders + self.previous_runs_orders
                        if order.k_side == k_side
                        and order.status == OrderStatus.TO_BE_TRADED
                        and order.distance(cmp=cmp) > min_distance]
@@ -129,9 +129,18 @@ class IsolatedOrdersManager:
     def get_isolated_orders(self, symbol_name: str) -> List[Order]:
         return [order for order in self.isolated_orders if order.symbol.name == symbol_name]
 
+    def get_previous_runs_orders(self, symbol_name: str) -> List[Order]:
+        return [order for order in self.previous_runs_orders if order.symbol.name == symbol_name]
+
+    def get_all_orders(self, symbol_name: str) -> List[Order]:
+        return self.get_isolated_orders(symbol_name=symbol_name) \
+               + self.get_previous_runs_orders(symbol_name=symbol_name)
+
+
+
     def canceled_order(self, uid: str):
         log.info(f'canceled order with uid {uid}')
-        for order in self.isolated_orders:
+        for order in self.isolated_orders + self.previous_runs_orders:
             if order.uid == uid:
                 order.status = OrderStatus.CANCELED
 
