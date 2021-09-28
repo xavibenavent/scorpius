@@ -84,11 +84,14 @@ class IsolatedOrdersManager:
              if order.symbol.name == symbol_name]
         )
 
-    def get_further_order(self, cmp: float, k_side: k_binance) -> Optional[Order]:
+    def get_further_order(self, cmp: float, k_side: k_binance, min_distance: float) -> Optional[Order]:
+        # return the furthest order that meets the three criteria
         further_order: Optional[Order] = None
         max_distance = 0.0
         side_orders = [order for order in self.isolated_orders
-                       if order.k_side == k_side and order.status == OrderStatus.TO_BE_TRADED]
+                       if order.k_side == k_side
+                       and order.status == OrderStatus.TO_BE_TRADED
+                       and order.distance(cmp=cmp) > min_distance]
         for order in side_orders:
             distance = order.get_distance(cmp=cmp)
             if distance > max_distance:

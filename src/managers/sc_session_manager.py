@@ -154,7 +154,8 @@ class SessionManager:
 
     def _symbol_ticker_callback(self, symbol_name: str, cmp: float) -> None:
         # depending on symbol name, send the last price to the right session
-        self.active_sessions[symbol_name].symbol_ticker_callback(cmp=cmp)
+        if symbol_name in self.active_sessions.keys():
+            self.active_sessions[symbol_name].symbol_ticker_callback(cmp=cmp)
 
     def _order_traded_callback(self, symbol_name: str, uid: str, price: float, bnb_commission: float) -> None:
         # depending on symbol name, send the traded order data to the right session
