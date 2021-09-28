@@ -118,21 +118,22 @@ def display_value(value):
     
     cycles_count_for_inactivity = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
     cycles_to_new_pt = cycles_count_for_inactivity - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
+    cycles_to_new_pt = 0.0 if cycles_to_new_pt < 0 else cycles_to_new_pt
     time_to_next_try = timedelta(seconds=cycles_to_new_pt)
-    
+
     return f'{dfm.sm.active_sessions[symbol_name].ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.{qp}f}',\
            f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f}', \
            f'{base_ntc} - {quote_ntc}', \
            f'{time_to_next_try}' 
 
 
-@app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
-def display_value(value):
-    symbol_name = dfm.dashboard_active_symbol.name
-    cycles_count_for_inactivity = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
-    cycles_to_new_pt = cycles_count_for_inactivity - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
-    time_to_new_pt = timedelta(seconds=cycles_to_new_pt)
-    return f'({cycles_count_for_inactivity})  {time_to_new_pt}'
+# @app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
+# def display_value(value):
+#     symbol_name = dfm.dashboard_active_symbol.name
+#     cycles_count_for_inactivity = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
+#     cycles_to_new_pt = cycles_count_for_inactivity - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
+#     time_to_new_pt = timedelta(seconds=cycles_to_new_pt)
+#     return f'({cycles_count_for_inactivity})  {time_to_new_pt}'
 
 
 
@@ -214,6 +215,7 @@ def display_value(value):
               Output('expected-profit-at-cmp', 'children'),
               Output('expected-profit', 'children'),
               Output('actions-info', 'children'),
+              Output('done-aa', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
@@ -229,7 +231,8 @@ def display_value(value):
     return f'{consolidated:,.{qp}f}',\
            f'{expected_at_cmp:,.{qp}f}',\
            f'{expected:,.{qp}f}', \
-           f'{buy_actions_count}/{sell_actions_count} {actions_balance:,.2f}'
+           f'{buy_actions_count}/{sell_actions_count} {actions_balance:,.2f}', \
+           f'{consolidated + expected_at_cmp + actions_balance:,.2f}'
 
 
 # ********** PT count / traded orders count **********

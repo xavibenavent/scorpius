@@ -122,6 +122,17 @@ class DashLayout:
                                             ]),
                                         ]),
                                         html.Br(),
+                                        dbc.Row([
+                                            dbc.Col([
+                                                html.H6('TBD-003', className='global-info-subtitle-2'),
+                                                html.H6(id='tbd-003', children='0', className='pt-info-1')
+                                            ]),
+                                            dbc.Col([
+                                                html.H6('TBD-004', className='global-info-subtitle-2'),
+                                                html.H6(id='tbd-004', children='0', className='pt-info-1')
+                                            ]),
+                                        ]),
+                                        html.Br(),
                                     ]),
                                     # dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True, className='scorpius-card'
@@ -210,6 +221,17 @@ class DashLayout:
                                                 html.H6('ACTIONS', className='global-info-subtitle-2'),
                                                 html.H6(id='actions-info', children='0', className='order-info-1')
                                             ]),
+                                        ]),
+                                        html.Br(),
+                                        dbc.Row([
+                                            dbc.Col([
+                                                html.H6('DONE + AA', className='global-info-subtitle-2'),
+                                                html.H6(id='done-aa', children='0', className='order-info-1')
+                                            ]),
+                                            dbc.Col([
+                                                html.H6('TBD-006', className='global-info-subtitle-2'),
+                                                html.H6(id='tbd-006', children='0', className='order-info-1')
+                                            ]),
                                         ])
                                     ]),
                                     # dbc.CardFooter('Footer')
@@ -218,19 +240,19 @@ class DashLayout:
                         ])
                     ], xs=12, sm=12, md=12, lg=12, xl=12),
                 ]),
-                # html.Br(), html.Br(), html.Br(),
+                html.Br(), html.Br(), html.Br(),
                 # session data #2
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Row([
-                            html.H1(id='cycles-to-new-pt', children='XXX', className='cycles-to-new-pt'),
-                            html.H1(id='accounts-info', children='accounts info: (...)', className='accounts-info'),
-                            # html.H1(id='short-prediction', children='0.0', className='short-prediction'),
-                            # html.H1(id='long-prediction', children='0.0', className='long-prediction'),
-
-                        ]),
-                    ]),
-                ]),
+                # dbc.Row([
+                #     dbc.Col([
+                #         dbc.Row([
+                #             html.H1(id='cycles-to-new-pt', children='XXX', className='cycles-to-new-pt'),
+                #             html.H1(id='accounts-info', children='accounts info: (...)', className='accounts-info'),
+                #             # html.H1(id='short-prediction', children='0.0', className='short-prediction'),
+                #             # html.H1(id='long-prediction', children='0.0', className='long-prediction'),
+                #
+                #         ]),
+                #     ]),
+                # ]),
                 # symbol & balance cards
                 dbc.Row([
                     dbc.Col([

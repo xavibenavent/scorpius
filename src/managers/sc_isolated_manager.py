@@ -136,8 +136,6 @@ class IsolatedOrdersManager:
         return self.get_isolated_orders(symbol_name=symbol_name) \
                + self.get_previous_runs_orders(symbol_name=symbol_name)
 
-
-
     def canceled_order(self, uid: str):
         log.info(f'canceled order with uid {uid}')
         for order in self.isolated_orders + self.previous_runs_orders:
