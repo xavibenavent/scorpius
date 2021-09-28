@@ -287,11 +287,12 @@ class Session:
                 if self.strategy_manager.is_asset_liquidity_enough(asset=counter_asset,
                                                                    new_pt_need=counter_liquidity_needed):
                     # prepare & place market order
+                    new_qty = order.amount / 3
                     new_order = Order(symbol=self.symbol,
                                       order_id='NO_ID',
                                       k_side=counter_k_side,
                                       price=order.price,
-                                      amount=order.amount,
+                                      amount=new_qty,
                                       status=OrderStatus.TO_BE_TRADED)
                     log.info(f'PENDING_ORDER: MARKET place order: {new_order}')
                     self.market.place_market_order(order=new_order)
@@ -408,7 +409,7 @@ class Session:
                     if self.strategy_manager.is_asset_liquidity_enough(asset=symbol.quote_asset(),
                                                                        new_pt_need=self.quantity * cmp):
                         # prepare & place market order
-                        new_qty = self.quantity / 2
+                        new_qty = self.quantity / 3
                         new_order = Order(symbol=self.symbol,
                                           order_id='NO_ID',
                                           k_side=k_binance.SIDE_BUY,
@@ -445,7 +446,7 @@ class Session:
                     if self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(),
                                                                        new_pt_need=self.quantity):
                         # prepare & place market order
-                        new_qty = self.quantity / 2
+                        new_qty = self.quantity / 3
                         new_order = Order(symbol=self.symbol,
                                           order_id='NO_ID',
                                           k_side=k_binance.SIDE_SELL,
