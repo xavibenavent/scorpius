@@ -14,7 +14,7 @@ from basics.sc_symbol import Symbol, Asset
 from managers.sc_isolated_manager import IsolatedOrdersManager
 from managers.sc_strategy_manager import StrategyManager
 from managers.sc_db_manager import DBManager
-from session.sc_helpers import Helpers, QuitMode
+from session.sc_helpers import Helpers
 from session.sc_checks_manager import ChecksManager
 
 log = logging.getLogger('log')
@@ -51,35 +51,17 @@ class Session:
 
         self.session_active = True
 
+        # parameters from config.ini
         config = self.symbol.config_data
+        self.cycles_count_for_inactivity = int(config['cycles_count_for_inactivity'])  # use as variable
 
-        self.commission_rate_symbol = config['commission_rate_symbol']
-        self.target_total_net_profit = float(config['target_total_net_profit'])
-        self.cycles_count_for_inactivity = int(config['cycles_count_for_inactivity'])
-        self.ref_cycles_inactivity = self.cycles_count_for_inactivity
-        self.fee = float(config['fee'])
-        self.quantity = float(config['quantity'])
-        self.net_quote_balance = float(config['net_quote_balance'])
-        self.max_negative_profit_allowed = float(config['max_negative_profit_allowed'])
-        self.time_between_successive_pt_creation_tries = \
-            float(config['time_between_successive_pt_creation_tries'])
-        self.accepted_loss_to_get_liquidity = float(config['accepted_loss_to_get_liquidity'])
-        self.forced_shift = float(config['forced_shift'])
-
-        # take into account that the maximum rate is one check every minute
-        # (parameter time_between_successive_pt_creation_tries)
-        self.tries_to_force_get_liquidity = int(config['tries_to_force_get_liquidity'])
-        self.base_negative_try_count = 0
-        self.quote_negative_try_count = 0
-
-        # distance for replacing order
-        self.distance_for_replacing_order = float(config['distance_for_replacing_order'])
-        self.min_distance_for_canceling_order = float(config['min_distance_for_canceling_order'])
-
-        self.cancel_max = int(config['cancel_max'])
+        self.P_COMMISSION_RATE_SYMBOL = config['commission_rate_symbol']
+        self.P_REF_CYCLES_INACTIVITY = self.cycles_count_for_inactivity
+        self.P_QUANTITY = float(config['quantity'])
+        self.P_NET_QUOTE_BALANCE = float(config['net_quote_balance'])
+        self.P_TIME_BETWEEN_SUCCESSIVE_PT_CREATION_TRIES = float(config['time_between_successive_pt_creation_tries'])
 
         self.consolidated_profit = consolidated_profit
-        self.consolidated_vs_actions_count_rate = float(config['consolidated_vs_actions_count_rate'])
 
         self.ptm = PTManager(
             session_id=self.session_id,
@@ -94,7 +76,7 @@ class Session:
         )
 
         self.strategy_manager = StrategyManager(
-            quantity=self.quantity,
+            quantity=self.P_QUANTITY,
             market_api_out=self.market,
             isolated_orders_manager=self.iom,
             helpers=self.helpers,
@@ -186,7 +168,7 @@ class Session:
                 self.checks_manager.check_pending_orders(cmp=cmp, consolidated_profit=self.consolidated_profit)
 
                 # ********** SESSION EXIT POINT ********
-                self._check_exit_conditions(cmp)
+                self.checks_manager.check_exit_conditions(cmp=cmp, session_id=self.session_id, cmp_count=self.cmp_count)
 
             except AttributeError as e:
                 print(e)
@@ -221,7 +203,7 @@ class Session:
                 # set commission and price
                 order.set_bnb_commission(
                     commission=bnb_commission,
-                    bnb_quote_rate=self.market.get_cmp(symbol_name=self.commission_rate_symbol))
+                    bnb_quote_rate=self.market.get_cmp(symbol_name=self.P_COMMISSION_RATE_SYMBOL))
 
                 # set traded order price
                 order.price = order_price
@@ -273,55 +255,8 @@ class Session:
             self.cycles_count_for_inactivity = self.strategy_manager.get_new_inactivity_cycles(
                 buy_count=self.buy_count,
                 sell_count=self.sell_count,
-                ref_cycles=self.ref_cycles_inactivity)
+                ref_cycles=self.P_REF_CYCLES_INACTIVITY)
         return is_allowed
-
-    def _check_exit_conditions(self, cmp):
-        # check profit only if orders are stable (no ACTIVE nor TO_BE_TRADED)
-        orders = self.ptm.get_orders_by_request(
-            orders_status=[OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED],
-            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
-        )
-        if len(orders) == 0:
-            # 8. check global net profit
-            # return the total profit considering that all remaining orders are traded at current cmp
-            total_profit = self.ptm.get_total_actual_profit_at_cmp(cmp=cmp)
-
-            # exit point 1: target achieved
-            if total_profit > self.target_total_net_profit:
-                self.logbook.append('exit point #1: TRADE_ALL_PENDING')
-                self.session_active = False
-                # self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
-                self.helpers.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING,
-                                                     session_id=self.session_id,
-                                                     symbol=self.symbol,
-                                                     cmp=self.cmp,
-                                                     iom=self.iom,
-                                                     cmp_count=self.cmp_count)
-
-            # exit point 2: reached maximum allowed loss
-            elif total_profit < self.max_negative_profit_allowed:
-                self.logbook.append('exit point #2: PLACE_ALL_PENDING by max negative profit reached')
-                self.session_active = False
-                self.helpers.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING,
-                                                     session_id=self.session_id,
-                                                     symbol=self.symbol,
-                                                     cmp=self.cmp,
-                                                     iom=self.iom,
-                                                     cmp_count=self.cmp_count)
-
-            # exit point 3: reached target with completed pt
-            else:
-                completed_pt = self.ptm.get_pt_by_request(pt_status=[PerfectTradeStatus.COMPLETED])
-                if sum([pt.get_actual_profit_at_cmp(cmp=cmp) for pt in completed_pt]) > self.target_total_net_profit:
-                    self.logbook.append('exit point #3: PLACE_ALL_PENDING by target reached with completed pt')
-                    self.session_active = False
-                    self.helpers.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING,
-                                                         session_id=self.session_id,
-                                                         symbol=self.symbol,
-                                                         cmp=self.cmp,
-                                                         iom=self.iom,
-                                                         cmp_count=self.cmp_count)
 
     def _check_inactivity(self, cmp):
         # a new pt is created if no order has been traded for a while
@@ -330,7 +265,7 @@ class Session:
             if not self._try_new_pt_creation(cmp=cmp):
                 log.info('new perfect trade creation is not allowed. it will be tried again after 60"')
                 # update inactivity counter to try again after 60 cycles if inactivity continues
-                self.cycles_from_last_trade -= self.time_between_successive_pt_creation_tries
+                self.cycles_from_last_trade -= self.P_TIME_BETWEEN_SUCCESSIVE_PT_CREATION_TRIES
 
     def manually_create_new_pt(self):
         # called from the button in the dashboard
@@ -352,4 +287,3 @@ class Session:
             pattern[i] = pattern[i + 1]
         # update last
         pattern[-1] = new_cmp
-        # print(self.cmp_pattern)

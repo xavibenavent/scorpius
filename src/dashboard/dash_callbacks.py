@@ -3,7 +3,7 @@
 from dash.dependencies import Input, Output
 from dashboard.dash_app import app
 from dashboard.dash_aux import get_pending_html_table
-from session.sc_session import QuitMode
+from session.sc_helpers import QuitMode
 from dashboard.sc_df_manager import DataframeManager
 from binance import enums as k_binance
 from datetime import datetime, timedelta
@@ -29,10 +29,10 @@ def display_value(value):
 
     return \
         f'{datetime.now().strftime("%H:%M:%S")}',\
-        f'n: {dfm.sm.active_sessions[symbol_name].net_quote_balance:,.2f} {quote_name}',\
-        f'q: {dfm.sm.active_sessions[symbol_name].quantity:,.4f} {base_name}',\
-        f't: {dfm.sm.active_sessions[symbol_name].target_total_net_profit:,.2f} {quote_name}',\
-        f'({dfm.sm.active_sessions[symbol_name].max_negative_profit_allowed:,.2f})'
+        f'n: {dfm.sm.active_sessions[symbol_name].P_NET_QUOTE_BALANCE:,.2f} {quote_name}',\
+        f'q: {dfm.sm.active_sessions[symbol_name].P_QUANTITY:,.4f} {base_name}',\
+        f't: {dfm.sm.active_sessions[symbol_name].checks_manager.P_TARGET_TOTAL_NET_PROFIT:,.2f} {quote_name}',\
+        f'({dfm.sm.active_sessions[symbol_name].checks_manager.P_MAX_NEGATIVE_PROFIT_ALLOWED:,.2f})'
 
 
 # **********************************
@@ -113,8 +113,8 @@ def display_value(value):
     symbol_name = symbol.name
     cmp = dfm.sm.active_sessions[symbol_name].cmp
     qp = symbol.quote_asset().pv()
-    base_ntc = dfm.sm.active_sessions[symbol_name].base_negative_try_count
-    quote_ntc = dfm.sm.active_sessions[symbol_name].quote_negative_try_count
+    base_ntc = dfm.sm.active_sessions[symbol_name].checks_manager.base_negative_try_count
+    quote_ntc = dfm.sm.active_sessions[symbol_name].checks_manager.quote_negative_try_count
     
     cycles_count_for_inactivity = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
     cycles_to_new_pt = cycles_count_for_inactivity - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade

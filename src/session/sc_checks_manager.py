@@ -7,7 +7,7 @@ from typing import List
 from managers.sc_isolated_manager import IsolatedOrdersManager
 from managers.sc_strategy_manager import StrategyManager
 from session.sc_pt_manager import PTManager, PerfectTradeStatus
-from session.sc_helpers import Helpers
+from session.sc_helpers import Helpers, QuitMode
 from basics.sc_order import Order, OrderStatus
 from market.sc_market_api_out import MarketAPIOut
 from basics.sc_symbol import Symbol
@@ -34,6 +34,8 @@ class ChecksManager:
         self.symbol = symbol
 
         # parameters needed from config.ini
+        self.P_TARGET_TOTAL_NET_PROFIT = float(config['target_total_net_profit'])
+        self.P_MAX_NEGATIVE_PROFIT_ALLOWED = float(config['max_negative_profit_allowed'])
         self.P_DISTANCE_FOR_REPLACING_ORDER = float(config['distance_for_replacing_order'])
         self.P_CONSOLIDATED_VS_ACTIONS_COUNT_RATE = float(config['consolidated_vs_actions_count_rate'])
         self.P_CANCEL_MAX = int(config['cancel_max'])
@@ -62,6 +64,62 @@ class ChecksManager:
         )
         # trade at market price active orders ready for trading
         [self.helpers.place_market_order(order=order) for order in active_orders if order.is_ready_for_trading(cmp=cmp)]
+
+    def check_exit_conditions(self, cmp: float, session_id: str, cmp_count: int):
+        # check profit only if orders are stable (no ACTIVE nor TO_BE_TRADED)
+        orders = self.ptm.get_orders_by_request(
+            orders_status=[OrderStatus.ACTIVE, OrderStatus.TO_BE_TRADED],
+            pt_status=[PerfectTradeStatus.NEW, PerfectTradeStatus.BUY_TRADED, PerfectTradeStatus.SELL_TRADED]
+        )
+        if len(orders) == 0:
+            # 8. check global net profit
+            # return the total profit considering that all remaining orders are traded at current cmp
+            total_profit = self.ptm.get_total_actual_profit_at_cmp(cmp=cmp)
+
+            # exit point 1: target achieved
+            if total_profit > self.P_TARGET_TOTAL_NET_PROFIT:
+                log.info('exit point #1: TRADE_ALL_PENDING')
+
+                # todo: check whether it works without it
+                # self.session_active = False
+
+                # self.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING)
+                self.helpers.quit_particular_session(quit_mode=QuitMode.TRADE_ALL_PENDING,
+                                                     session_id=session_id,
+                                                     symbol=self.symbol,
+                                                     cmp=cmp,
+                                                     iom=self.iom,
+                                                     cmp_count=cmp_count)
+
+            # exit point 2: reached maximum allowed loss
+            elif total_profit < self.P_MAX_NEGATIVE_PROFIT_ALLOWED:
+                log.info('exit point #2: PLACE_ALL_PENDING by max negative profit reached')
+
+                # todo: check whether it works without it
+                # self.session_active = False
+
+                self.helpers.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING,
+                                                     session_id=session_id,
+                                                     symbol=self.symbol,
+                                                     cmp=cmp,
+                                                     iom=self.iom,
+                                                     cmp_count=cmp_count)
+
+            # exit point 3: reached target with completed pt
+            else:
+                completed_pt = self.ptm.get_pt_by_request(pt_status=[PerfectTradeStatus.COMPLETED])
+                if sum([pt.get_actual_profit_at_cmp(cmp=cmp) for pt in completed_pt]) > self.P_TARGET_TOTAL_NET_PROFIT:
+                    log.info('exit point #3: PLACE_ALL_PENDING by target reached with completed pt')
+
+                    # todo: check whether it works without it
+                    # self.session_active = False
+
+                    self.helpers.quit_particular_session(quit_mode=QuitMode.PLACE_ALL_PENDING,
+                                                         session_id=session_id,
+                                                         symbol=self.symbol,
+                                                         cmp=cmp,
+                                                         iom=self.iom,
+                                                         cmp_count=cmp_count)
 
     def check_pending_orders(self, cmp: float, consolidated_profit: float):
         # get pending orders that meet the criteria for re-placing
