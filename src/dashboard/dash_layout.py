@@ -124,8 +124,8 @@ class DashLayout:
                                         html.Br(),
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6('TBD-003', className='global-info-subtitle-2'),
-                                                html.H6(id='tbd-003', children='0', className='pt-info-1')
+                                                html.H6('IS ACTIVE', className='global-info-subtitle-2'),
+                                                html.H6(id='is-active', children='0', className='pt-info-1')
                                             ]),
                                             dbc.Col([
                                                 html.H6('TBD-004', className='global-info-subtitle-2'),

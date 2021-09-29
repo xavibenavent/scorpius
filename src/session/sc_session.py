@@ -115,6 +115,8 @@ class Session:
 
         self.alert_msg = ''
 
+        self.is_active = True
+
     # *******************************************************
     # ********** Binance socket callback functions **********
     # *******************************************************
@@ -122,6 +124,7 @@ class Session:
     def symbol_ticker_callback(self, cmp: float) -> None:
         if self.session_active:
             try:
+                self.is_active = self.checks_manager.check_to_update_activation_flag(cmp=cmp)
                 # 0.1: create first pt
                 if self.cmp_count == 5:
                     if self._try_new_pt_creation(cmp=cmp):
@@ -237,26 +240,29 @@ class Session:
         self.am.update_current_accounts(received_accounts=accounts)
 
     def _try_new_pt_creation(self, cmp: float) -> bool:
-        # is_allowed, forced_shift = self._allow_new_pt_creation(cmp=self.cmp, symbol=self.symbol)
-        is_allowed, forced_shift = self.checks_manager.allow_new_pt_creation(
-            cmp=self.cmp,
-            consolidated_profit=self.consolidated_profit,
-            gap=self.gap,
-            cmp_pattern_short=self.cmp_pattern_short,
-            cmp_pattern_long=self.cmp_pattern_long
-        )
-        if is_allowed:
-            shifted_cmp = cmp + forced_shift
-            # create pt
-            self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+        if self.is_active:
+            # is_allowed, forced_shift = self._allow_new_pt_creation(cmp=self.cmp, symbol=self.symbol)
+            is_allowed, forced_shift = self.checks_manager.allow_new_pt_creation(
+                cmp=self.cmp,
+                consolidated_profit=self.consolidated_profit,
+                gap=self.gap,
+                cmp_pattern_short=self.cmp_pattern_short,
+                cmp_pattern_long=self.cmp_pattern_long
+            )
+            if is_allowed:
+                shifted_cmp = cmp + forced_shift
+                # create pt
+                self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
 
-            # update inactivity counters
-            self.cycles_from_last_trade = 0
-            self.cycles_count_for_inactivity = self.strategy_manager.get_new_inactivity_cycles(
-                buy_count=self.buy_count,
-                sell_count=self.sell_count,
-                ref_cycles=self.P_REF_CYCLES_INACTIVITY)
-        return is_allowed
+                # update inactivity counters
+                self.cycles_from_last_trade = 0
+                self.cycles_count_for_inactivity = self.strategy_manager.get_new_inactivity_cycles(
+                    buy_count=self.buy_count,
+                    sell_count=self.sell_count,
+                    ref_cycles=self.P_REF_CYCLES_INACTIVITY)
+            return is_allowed
+        else:
+            return False
 
     def _check_inactivity(self, cmp):
         # a new pt is created if no order has been traded for a while

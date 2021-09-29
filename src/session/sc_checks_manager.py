@@ -43,9 +43,14 @@ class ChecksManager:
         self.P_TRIES_TO_FORCE_GET_LIQUIDITY = int(config['tries_to_force_get_liquidity'])
         self.P_MIN_DISTANCE_FOR_CANCELING_ORDER = float(config['min_distance_for_canceling_order'])
         self.P_FORCED_SHIFT = float(config['forced_shift'])
+        self.P_LOSS_FOR_ACTIVATION_FLAG = float(config['loss_for_activation_flag'])
 
         self.base_negative_try_count = 0
         self.quote_negative_try_count = 0
+
+    def check_to_update_activation_flag(self, cmp: float) -> bool:
+        loss_at_cmp = self.iom.get_expected_profit_at_cmp(cmp=cmp, symbol_name=self.symbol.name)
+        return False if loss_at_cmp < self.P_LOSS_FOR_ACTIVATION_FLAG else True
 
     def check_monitor_orders_for_activating(self, cmp: float):
         # get orders

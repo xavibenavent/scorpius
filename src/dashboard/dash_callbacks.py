@@ -107,6 +107,7 @@ def display_value(value):
               Output('stop-price-profit', 'children'),
               Output('ntc', 'children'),
               Output('time-to-next-try', 'children'),
+              Output('is-active', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
@@ -121,10 +122,13 @@ def display_value(value):
     cycles_to_new_pt = 0.0 if cycles_to_new_pt < 0 else cycles_to_new_pt
     time_to_next_try = timedelta(seconds=cycles_to_new_pt)
 
+    is_active = 'ON' if dfm.sm.active_sessions[symbol_name].is_active else 'OFF'
+
     return f'{dfm.sm.active_sessions[symbol_name].ptm.get_total_actual_profit_at_cmp(cmp=cmp):,.{qp}f}',\
            f'{dfm.sm.active_sessions[symbol_name].ptm.get_stop_price_profit(cmp=cmp):,.{qp}f}', \
            f'{base_ntc} - {quote_ntc}', \
-           f'{time_to_next_try}' 
+           f'{time_to_next_try}', \
+           f'{is_active}'
 
 
 # @app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
