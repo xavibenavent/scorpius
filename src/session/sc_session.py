@@ -568,10 +568,6 @@ class Session:
         else:
             return True, 0.0
 
-        # dynamic parameters:
-        #   - inactivity time
-        #   - neb/amount
-
     def get_all_orders_for_symbol(self, symbol: Symbol):
         isolated_orders = self.iom.get_isolated_orders(symbol_name=symbol.name)
         session_orders = self.ptm.get_orders_by_request(
