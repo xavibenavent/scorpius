@@ -228,7 +228,8 @@ def display_value(value):
     consolidated = dfm.sm.terminated_sessions[symbol_name]['global_consolidated_profit']
     expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
     expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=cmp, symbol_name=symbol_name)
-    buy_actions_count, sell_actions_count, actions_balance = dfm.sm.active_sessions[symbol_name].get_actions_balance()
+    buy_actions_count, sell_actions_count, actions_balance = \
+        dfm.sm.active_sessions[symbol_name].checks_manager.get_actions_balance()
     buy_actions_rate = consolidated / (buy_actions_count +1)
     sell_actions_rate = consolidated / (sell_actions_count +1)
     canceled_buy_orders = [order for order in dfm.sm.iom.canceled_orders if order.k_side == k_binance.SIDE_BUY]
@@ -435,8 +436,7 @@ def on_button_click(n):
     if n:
         symbol = dfm.dashboard_active_symbol
         symbol_name = symbol.name
-        cmp = dfm.sm.active_sessions[symbol_name].cmp  # if dfm.sm.active_sessions[symbol_name].cmps else 0
-        dfm.sm.active_sessions[symbol_name].manually_create_new_pt(cmp=cmp, symbol=symbol)
+        dfm.sm.active_sessions[symbol_name].manually_create_new_pt()
     return 'NEW-PT'
 
 
