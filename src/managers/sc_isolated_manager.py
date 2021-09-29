@@ -4,6 +4,7 @@ from typing import List, Optional
 import logging
 from binance import enums as k_binance
 from basics.sc_order import Order, OrderStatus
+from basics.sc_action import Action
 from basics.sc_asset import Asset
 
 log = logging.getLogger('log')
@@ -13,6 +14,8 @@ class IsolatedOrdersManager:
     def __init__(self):
         self.isolated_orders: List[Order] = []
         self.previous_runs_orders: List[Order] = []
+        self.canceled_orders: List[Order] = []
+        self.actions: List[Action] = []
 
     def check_previous_runs_orders(self, uid: str) -> None:
         # remove from list and, therefore, from dashboard

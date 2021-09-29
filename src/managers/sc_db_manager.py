@@ -24,7 +24,9 @@ class DBManager:
         # create tables if they do not exist
         try:
             # ACTIONS TABLE
-            query = f'CREATE TABLE IF NOT EXISTS {self.ACTIONS_TABLE} '
+            self.cursor.execute(F'DROP TABLE IF EXISTS {self.ACTIONS_TABLE};')
+            # query = f'CREATE TABLE IF NOT EXISTS {self.ACTIONS_TABLE} '
+            query = f'CREATE TABLE {self.ACTIONS_TABLE} '
             query += '(action_id TEXT, side TEXT, qty REAL, price REAL);'
             self.cursor.execute(query)
             self.conn.commit()

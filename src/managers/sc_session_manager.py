@@ -224,6 +224,7 @@ class SessionManager:
             dbm=self.dbm,
             isolated_order_traded_callback=self._isolated_order_traded_callback,
             get_liquidity_needed_callback=self._get_liquidity_needed_callback,
+            consolidated_profit=self.terminated_sessions[symbol.name]['global_consolidated_profit']
         )
 
         # update counter for all symbols

@@ -33,6 +33,7 @@ class Session:
                  dbm: DBManager,
                  isolated_order_traded_callback: Callable[[Symbol, float, float], None],
                  get_liquidity_needed_callback: Callable[[Asset], float],
+                 consolidated_profit: float
                  ):
 
         self.symbol = symbol
@@ -74,6 +75,11 @@ class Session:
         # distance for replacing order
         self.distance_for_replacing_order = float(config['distance_for_replacing_order'])
         self.min_distance_for_canceling_order = float(config['min_distance_for_canceling_order'])
+
+        self.cancel_max = int(config['cancel_max'])
+
+        self.consolidated_profit = consolidated_profit
+        self.consolidated_vs_actions_count_rate = float(config['consolidated_vs_actions_count_rate'])
 
         self.ptm = PTManager(
             session_id=self.session_id,
@@ -277,6 +283,10 @@ class Session:
                 log.info(f'PENDING_ORDER: place, change status & delete from database')
                 self.market.place_limit_order(order=order)
                 order.status = OrderStatus.TO_BE_TRADED
+                if order in self.iom.canceled_orders:
+                    self.iom.canceled_orders.remove(order)
+                else:
+                    raise Exception(f'order {order} not in canceled_orders list')
                 # self.dbm.delete_pending_order(pending_order_uid=order.uid)
             else:
                 # since there will be no further orders of the same side to cancel and get liquidity
@@ -284,10 +294,17 @@ class Session:
                 # check there is liquidity of the counter side to trade
                 log.info(f'PENDING_ORDER: trying to buy/sell to get enough liquidity for canceling')
                 counter_k_side = k_binance.SIDE_BUY if order.k_side == k_binance.SIDE_SELL else k_binance.SIDE_SELL
-                if self.strategy_manager.is_asset_liquidity_enough(asset=counter_asset,
-                                                                   new_pt_need=counter_liquidity_needed):
+
+                # check rate condition to limit the number of created actions based on consolidated profit
+                buy_actions, sell_actions, _ = self.get_actions_balance()
+                actions_count = buy_actions if counter_k_side == k_binance.SIDE_BUY else sell_actions
+                consolidated_actions_rate = self.consolidated_profit / (actions_count + 1)
+                is_rate_ok = consolidated_actions_rate > self.consolidated_vs_actions_count_rate
+
+                if is_rate_ok and self.strategy_manager.is_asset_liquidity_enough(asset=counter_asset,
+                                                                                  new_pt_need=counter_liquidity_needed):
                     # prepare & place market order
-                    new_qty = order.amount / 3
+                    new_qty = order.amount / 2.0
                     new_order = Order(symbol=self.symbol,
                                       order_id='NO_ID',
                                       k_side=counter_k_side,
@@ -296,10 +313,11 @@ class Session:
                                       status=OrderStatus.TO_BE_TRADED)
                     log.info(f'PENDING_ORDER: MARKET place order: {new_order}')
                     self.market.place_market_order(order=new_order)
-                    self.dbm.add_action(action=Action(
+                    # self.dbm.add_action(action=Action(
+                    self.iom.actions.append(Action(
                         action_id='ACTION_FOR_CANCELING',
                         side=counter_k_side,
-                        qty=order.amount,
+                        qty=new_qty,
                         price=self.cmp))
 
                 else:
@@ -308,9 +326,12 @@ class Session:
                     furthest_order = self.iom.get_further_order(cmp=self.cmp,
                                                                 k_side=counter_k_side,
                                                                 min_distance=0.0)  # no need for this criteria
-                    if furthest_order:
+                    canceled_side_orders = [order for order in self.iom.canceled_orders
+                                            if order.k_side == counter_k_side]
+                    if furthest_order and len(canceled_side_orders) < self.cancel_max:
                         log.info(f'PENDING_ORDER: cancel order {furthest_order}')
                         self.market.cancel_orders([furthest_order])
+                        self.iom.canceled_orders.append(furthest_order)
 
     def _check_exit_conditions(self, cmp):
         # check profit only if orders are stable (no ACTIVE nor TO_BE_TRADED)
@@ -401,15 +422,23 @@ class Session:
                 furthest_sell_order = self.iom.get_further_order(cmp=cmp,
                                                                  k_side=k_binance.SIDE_SELL,
                                                                  min_distance=self.min_distance_for_canceling_order)
-                if furthest_sell_order:
+                canceled_sell_orders = [order for order in self.iom.canceled_orders
+                                        if order.k_side == k_binance.SIDE_SELL]
+                if furthest_sell_order and len(canceled_sell_orders) < self.cancel_max:
                     self.market.cancel_orders([furthest_sell_order])
+                    self.iom.canceled_orders.append(furthest_sell_order)
                 else:
                     # BUY base
                     log.info(f'PENDING_ORDER: trying to buy base to get enough liquidity to create new pt')
-                    if self.strategy_manager.is_asset_liquidity_enough(asset=symbol.quote_asset(),
-                                                                       new_pt_need=self.quantity * cmp):
+
+                    # check rate condition to limit the number of created actions based on consolidated profit
+                    buy_actions, _, _ = self.get_actions_balance()
+                    consolidated_actions_rate = self.consolidated_profit / (buy_actions + 1)
+                    is_rate_ok = consolidated_actions_rate > self.consolidated_vs_actions_count_rate
+                    if is_rate_ok and self.strategy_manager.is_asset_liquidity_enough(asset=symbol.quote_asset(),
+                                                                                      new_pt_need=self.quantity * cmp):
                         # prepare & place market order
-                        new_qty = self.quantity / 3
+                        new_qty = self.quantity / 2.0
                         new_order = Order(symbol=self.symbol,
                                           order_id='NO_ID',
                                           k_side=k_binance.SIDE_BUY,
@@ -418,7 +447,8 @@ class Session:
                                           status=OrderStatus.TO_BE_TRADED)
                         log.info(f'PENDING_ORDER: MARKET place order: {new_order}')
                         self.market.place_market_order(order=new_order)
-                        self.dbm.add_action(action=Action(
+                        # self.dbm.add_action(action=Action(
+                        self.iom.actions.append(Action(
                             action_id='ACTION_TO_CREATE_NEW_PT',
                             side=k_binance.SIDE_BUY,
                             qty=new_qty,
@@ -438,15 +468,23 @@ class Session:
                 furthest_buy_order = self.iom.get_further_order(cmp=cmp,
                                                                 k_side=k_binance.SIDE_BUY,
                                                                 min_distance=self.min_distance_for_canceling_order)
-                if furthest_buy_order:
+                canceled_buy_orders = [order for order in self.iom.canceled_orders
+                                       if order.k_side == k_binance.SIDE_BUY]
+                if furthest_buy_order and len(canceled_buy_orders) < self.cancel_max:
                     self.market.cancel_orders([furthest_buy_order])
+                    self.iom.canceled_orders.append(furthest_buy_order)
                 else:
                     # SELL base
                     log.info(f'PENDING_ORDER: trying to sell base to get enough liquidity to create new pt')
-                    if self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(),
-                                                                       new_pt_need=self.quantity):
+
+                    # check rate condition to limit the number of created actions based on consolidated profit
+                    _, sell_actions, _ = self.get_actions_balance()
+                    consolidated_actions_rate = self.consolidated_profit / (sell_actions + 1)
+                    is_rate_ok = consolidated_actions_rate > self.consolidated_vs_actions_count_rate
+                    if is_rate_ok and self.strategy_manager.is_asset_liquidity_enough(asset=symbol.base_asset(),
+                                                                                      new_pt_need=self.quantity):
                         # prepare & place market order
-                        new_qty = self.quantity / 3
+                        new_qty = self.quantity / 2.0
                         new_order = Order(symbol=self.symbol,
                                           order_id='NO_ID',
                                           k_side=k_binance.SIDE_SELL,
@@ -455,7 +493,8 @@ class Session:
                                           status=OrderStatus.TO_BE_TRADED)
                         log.info(f'PENDING_ORDER: MARKET place order: {new_order}')
                         self.market.place_market_order(order=new_order)
-                        self.dbm.add_action(action=Action(
+                        # self.dbm.add_action(action=Action(
+                        self.iom.actions.append(Action(
                             action_id='ACTION_TO_CREATE_NEW_PT',
                             side=k_binance.SIDE_SELL,
                             qty=new_qty,
@@ -552,17 +591,24 @@ class Session:
         # print(self.cmp_pattern)
 
     def get_actions_balance(self) -> (int, int, float):
-        buy_actions = [action for action in self.dbm.get_all_actions() if action.side == k_binance.SIDE_BUY]
-        sell_actions = [action for action in self.dbm.get_all_actions() if action.side == k_binance.SIDE_SELL]
+        # buy_actions = [action for action in self.dbm.get_all_actions() if action.side == k_binance.SIDE_BUY]
+        # sell_actions = [action for action in self.dbm.get_all_actions() if action.side == k_binance.SIDE_SELL]
+        buy_actions = [action for action in self.iom.actions if action.side == k_binance.SIDE_BUY]
+        sell_actions = [action for action in self.iom.actions if action.side == k_binance.SIDE_SELL]
         buy_actions_count = len(buy_actions)
         sell_actions_count = len(sell_actions)
 
-        actions_for_balance_count = min([buy_actions_count, sell_actions_count])
+        actions_for_balance_count = min(buy_actions_count, sell_actions_count)
 
         actions_balance = 0.0
         for i in range(actions_for_balance_count):
-            actions_balance += sell_actions[i].price * sell_actions[i].qty
-            actions_balance -= buy_actions[i].price * buy_actions[i].qty
+            partial_balance = sell_actions[i].price * sell_actions[i].qty - buy_actions[i].price * buy_actions[i].qty
+            actions_balance += partial_balance
+
+        # print(f'balance: {actions_balance}')
+        # if abs(actions_balance) > 100.0:
+        #     [print(action) for action in self.iom.actions]
+        #     raise Exception()
 
         return buy_actions_count, sell_actions_count, actions_balance
 

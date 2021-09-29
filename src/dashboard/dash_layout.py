@@ -8,7 +8,7 @@ import dash_core_components as dcc
 print('dash_layout.py')
 
 # with lower values the dashboard does not refresh itself correctly
-K_UPDATE_INTERVAL = 1000  # milisecs
+K_UPDATE_INTERVAL = 2000.0  # milisecs
 
 
 class DashLayout:
@@ -225,12 +225,12 @@ class DashLayout:
                                         html.Br(),
                                         dbc.Row([
                                             dbc.Col([
-                                                html.H6('DONE + AA', className='global-info-subtitle-2'),
-                                                html.H6(id='done-aa', children='0', className='order-info-1')
+                                                html.H6('ACTIONS RATE', className='global-info-subtitle-2'),
+                                                html.H6(id='actions-rate', children='0', className='order-info-1')
                                             ]),
                                             dbc.Col([
-                                                html.H6('TBD-006', className='global-info-subtitle-2'),
-                                                html.H6(id='tbd-006', children='0', className='order-info-1')
+                                                html.H6('CANCELED', className='global-info-subtitle-2'),
+                                                html.H6(id='canceled-count', children='0', className='order-info-1')
                                             ]),
                                         ])
                                     ]),

@@ -215,7 +215,8 @@ def display_value(value):
               Output('expected-profit-at-cmp', 'children'),
               Output('expected-profit', 'children'),
               Output('actions-info', 'children'),
-              Output('done-aa', 'children'),
+              Output('actions-rate', 'children'),
+              Output('canceled-count', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
@@ -228,11 +229,16 @@ def display_value(value):
     expected = dfm.sm.terminated_sessions[symbol_name]['global_expected_profit']
     expected_at_cmp = dfm.sm.iom.get_expected_profit_at_cmp(cmp=cmp, symbol_name=symbol_name)
     buy_actions_count, sell_actions_count, actions_balance = dfm.sm.active_sessions[symbol_name].get_actions_balance()
+    buy_actions_rate = consolidated / (buy_actions_count +1)
+    sell_actions_rate = consolidated / (sell_actions_count +1)
+    canceled_buy_orders = [order for order in dfm.sm.iom.canceled_orders if order.k_side == k_binance.SIDE_BUY]
+    canceled_sell_orders = [order for order in dfm.sm.iom.canceled_orders if order.k_side == k_binance.SIDE_SELL]
     return f'{consolidated:,.{qp}f}',\
            f'{expected_at_cmp:,.{qp}f}',\
            f'{expected:,.{qp}f}', \
            f'{buy_actions_count}/{sell_actions_count} {actions_balance:,.2f}', \
-           f'{consolidated + expected_at_cmp + actions_balance:,.2f}'
+           f'{buy_actions_rate:,.0f} / {sell_actions_rate:,.0f}', \
+           f'{len(canceled_buy_orders)} / {len(canceled_sell_orders)}'
 
 
 # ********** PT count / traded orders count **********

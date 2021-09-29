@@ -12,3 +12,6 @@ class Action:
 
     def get_tuple(self) -> (str, k_binance, float, float):
         return self.action_id, self.side, self.qty, self.price
+
+    def __repr__(self):
+        return f'{self.action_id} {self.side} {self.qty} {self.price}'
