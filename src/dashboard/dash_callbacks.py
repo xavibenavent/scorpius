@@ -238,6 +238,13 @@ def display_value(value):
     sell_actions_rate = consolidated / (sell_actions_count +1)
     canceled_buy_orders = [order for order in dfm.sm.iom.canceled_orders if order.k_side == k_binance.SIDE_BUY]
     canceled_sell_orders = [order for order in dfm.sm.iom.canceled_orders if order.k_side == k_binance.SIDE_SELL]
+
+    if consolidated + expected_at_cmp > 100.0:
+        global_cmp = dfm.sm.terminated_sessions[symbol_name]["global_cmp_count"]
+        session_cmp = dfm.sm.active_sessions[symbol_name].cmp_count
+        raise Exception(f'TARGET ACHIEVED!!! in {timedelta(seconds=global_cmp + session_cmp)}'
+                        f' DONE: {consolidated} ACTUAL AL CMP: {expected_at_cmp}')
+
     return f'{consolidated:,.{qp}f}',\
            f'{expected_at_cmp:,.{qp}f}',\
            f'{expected:,.{qp}f}', \

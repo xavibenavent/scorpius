@@ -16,6 +16,7 @@ from managers.sc_strategy_manager import StrategyManager
 from managers.sc_db_manager import DBManager
 from session.sc_helpers import Helpers
 from session.sc_checks_manager import ChecksManager
+from session.sc_off_mode_manager import OffModeManager
 
 log = logging.getLogger('log')
 
@@ -60,6 +61,7 @@ class Session:
         self.P_QUANTITY = float(config['quantity'])
         self.P_NET_QUOTE_BALANCE = float(config['net_quote_balance'])
         self.P_TIME_BETWEEN_SUCCESSIVE_PT_CREATION_TRIES = float(config['time_between_successive_pt_creation_tries'])
+        self.P_FORCED_SHIFT = float(config['forced_shift'])
 
         self.consolidated_profit = consolidated_profit
 
@@ -93,6 +95,16 @@ class Session:
             symbol=symbol
         )
 
+        self.off_mode_manager = OffModeManager(
+            symbol=symbol,
+            iom=self.iom,
+            strategy_manager=self.strategy_manager,
+            helpers=self.helpers,
+            ptm=self.ptm,
+            market_api_out=self.market,
+            config=config
+        )
+
         self.cmp = self.market.get_cmp(symbol_name=self.symbol.name)
         print(f'initial cmp: {self.cmp}')
         self.min_cmp = self.cmp
@@ -124,7 +136,30 @@ class Session:
     def symbol_ticker_callback(self, cmp: float) -> None:
         if self.session_active:
             try:
-                self.is_active = self.checks_manager.check_to_update_activation_flag(cmp=cmp)
+                self.is_active = self.off_mode_manager.check_to_update_activation_flag(cmp=cmp)
+                # self.off_mode_manager.check_monitor_order(cmp=cmp)
+                if not self.is_active:
+                    # try to create shifted pt
+                    orders = self.iom.isolated_orders + self.ptm.get_all_alive_orders()
+                    buy_span, sell_span = self.helpers.get_span_from_list(orders=orders, cmp=cmp)
+                    if buy_span == 0.0 and sell_span > 0.0:
+                        # force sell
+                        shifted_cmp = cmp - self.P_FORCED_SHIFT
+                        if self.strategy_manager.is_liquidity_enough(cmp=cmp, symbol=self.symbol):
+                            self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+                            created_remaining_order = self.ptm.perfect_trades[-1].orders[0]
+                            print(f'created remaining order: {created_remaining_order}')
+                            # self.off_mode_manager.monitor_order = created_remaining_order  # buy order
+
+                    elif buy_span > 0.0 and sell_span == 0.0:
+                        # force buy
+                        shifted_cmp = cmp + self.P_FORCED_SHIFT
+                        if self.strategy_manager.is_liquidity_enough(cmp=cmp, symbol=self.symbol):
+                            self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+                            created_remaining_order = self.ptm.perfect_trades[-1].orders[1]
+                            log.info(f'created remaining order: {created_remaining_order}')
+                            # self.off_mode_manager.monitor_order = created_remaining_order  # sell order
+
                 # 0.1: create first pt
                 if self.cmp_count == 5:
                     if self._try_new_pt_creation(cmp=cmp):

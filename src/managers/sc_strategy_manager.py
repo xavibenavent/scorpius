@@ -103,6 +103,10 @@ class StrategyManager:
         is_quote_enough = self.is_asset_liquidity_enough(asset=symbol.quote_asset(), new_pt_need=self.quantity * cmp)
         return is_base_enough, is_quote_enough
 
+    def is_liquidity_enough(self, cmp: float, symbol: Symbol) -> bool:
+        is_base_enough, is_quote_enough = self.is_symbol_liquidity_enough(cmp=cmp, symbol=symbol)
+        return is_base_enough and is_quote_enough
+
     def is_last_possible(self, asset: Asset, new_pt_need: float) -> (bool, float):
         liquidity_available, liquidity_needed = self._get_both_liquidity(asset=asset, new_pt_need=new_pt_need)
         liquidity_needed += (new_pt_need * 2)
@@ -110,24 +114,25 @@ class StrategyManager:
         rel_dist = (liquidity_needed - liquidity_available) / new_pt_need
         return is_last, rel_dist
 
-    def try_to_get_liquidity(self, symbol: Symbol, asset: Asset, cmp: float):
-        # return the order to trade to get liquidity for the asset or None
-        # this is a LIMIT order placed in a previous session that will be traded at MARKET price with losses
-        order = self.iom.try_to_get_asset_liquidity(
-            asset=asset,
-            cmp=cmp,
-            max_loss=self.config_manager.get_max_allowed_loss_for_liquidity(symbol_name=symbol.name))
-
-        if order:
-            # place at MARKET price
-            log.info(f'order to place at MARKET price with loss: {order}')
-
-            # cancel in Binance the previously placed order
-            self.market_api_out.cancel_orders([order])
-            log.info(f'order canceled in Binance from previous sessions: {order}')
-
-            # self.logbook.append(f'place isolated order at cmp to get liquidity: {order}')
-            self.helpers.place_market_order(order=order)
-            log.info(f'order placed at Market price with loss: {order}')
+    # def try_to_get_liquidity(self, symbol: Symbol, asset: Asset, cmp: float):
+    #     raise Exception()
+    #     # return the order to trade to get liquidity for the asset or None
+    #     # this is a LIMIT order placed in a previous session that will be traded at MARKET price with losses
+    #     order = self.iom.try_to_get_asset_liquidity(
+    #         asset=asset,
+    #         cmp=cmp,
+    #         max_loss=self.config_manager.get_max_allowed_loss_for_liquidity(symbol_name=symbol.name))
+    #
+    #     if order:
+    #         # place at MARKET price
+    #         log.info(f'order to place at MARKET price with loss: {order}')
+    #
+    #         # cancel in Binance the previously placed order
+    #         self.market_api_out.cancel_orders([order])
+    #         log.info(f'order canceled in Binance from previous sessions: {order}')
+    #
+    #         # self.logbook.append(f'place isolated order at cmp to get liquidity: {order}')
+    #         self.helpers.place_market_order(order=order)
+    #         log.info(f'order placed at Market price with loss: {order}')
 
 
