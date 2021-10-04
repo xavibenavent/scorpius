@@ -28,13 +28,15 @@ class OrdersManager:
         return orders_sum - (diff * cmp * qty)
 
     def _get_diff(self) -> int:
-        buy_count = len([order for order in self.orders
-                         if order.k_side == k_binance.SIDE_BUY
-                         and order.status == OrderStatus.TRADED])
-        sell_count = len([order for order in self.orders
-                          if order.k_side == k_binance.SIDE_SELL
-                          and order.status == OrderStatus.TRADED])
+        buy_count = self.get_side_count(side=k_binance.SIDE_BUY)
+        sell_count = self.get_side_count(side=k_binance.SIDE_SELL)
         return sell_count - buy_count
+
+    def get_side_count(self, side: k_binance):
+        side_count = len([order for order in self.orders
+                         if order.k_side == side
+                         and order.status == OrderStatus.TRADED])
+        return side_count
 
     def get_to_be_consolidated(self) -> float:
         return sum([order.get_total_at_cmp(cmp=order.price)

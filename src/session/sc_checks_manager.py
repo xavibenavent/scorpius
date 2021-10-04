@@ -377,7 +377,7 @@ class ChecksManager:
         return buy_actions_count, sell_actions_count, actions_balance
 
     def check_trade_at_loss(self, cmp: float):
-        distance_for_loss = 500.0
+        distance_for_loss = 2000.0
         # raise Exception()
         for order in self.iom.isolated_orders:
             if order.status == OrderStatus.TO_BE_TRADED:

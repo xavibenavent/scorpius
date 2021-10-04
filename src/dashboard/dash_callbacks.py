@@ -131,16 +131,6 @@ def display_value(value):
            f'{is_active}'
 
 
-# @app.callback(Output('cycles-to-new-pt', 'children'), Input('update', 'n_intervals'))
-# def display_value(value):
-#     symbol_name = dfm.dashboard_active_symbol.name
-#     cycles_count_for_inactivity = dfm.sm.active_sessions[symbol_name].cycles_count_for_inactivity
-#     cycles_to_new_pt = cycles_count_for_inactivity - dfm.sm.active_sessions[symbol_name].cycles_from_last_trade
-#     time_to_new_pt = timedelta(seconds=cycles_to_new_pt)
-#     return f'({cycles_count_for_inactivity})  {time_to_new_pt}'
-
-
-
 # **********************************
 # ********** Global data **********
 # **********************************
@@ -222,13 +212,13 @@ def display_value(value):
               Output('actions-rate', 'children'),
               Output('canceled-count', 'children'),
               Output('x-consolidated', 'children'),
-              Output('x-to-be-consolidated', 'children'),
-              Output('x-opt', 'children'),
-              Output('x-cmp', 'children'),
-              Output('x-sum-opt', 'children'),
-              Output('x-sum-cmp', 'children'),
-              Output('x-sum-opt-canceled', 'children'),
-              Output('x-sum-cmp-canceled', 'children'),
+              Output('x-buy-sell-consolidated', 'children'),
+              # Output('x-opt', 'children'),
+              # Output('x-cmp', 'children'),
+              # Output('x-sum-opt', 'children'),
+              # Output('x-sum-cmp', 'children'),
+              # Output('x-sum-opt-canceled', 'children'),
+              # Output('x-sum-cmp-canceled', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
@@ -255,15 +245,16 @@ def display_value(value):
 
     x_consolidated_paired = \
         dfm.sm.orders_manager.get_consolidated_paired(cmp=cmp, qty=dfm.sm.active_sessions[symbol_name].P_QUANTITY)
-    x_to_be_consolidated = dfm.sm.orders_manager.get_to_be_consolidated()
-    x_opt = dfm.sm.orders_manager.get_optimistic_monitor()
-    x_cmp = dfm.sm.orders_manager.get_cmp_monitor(cmp=cmp)
-    x_sum_opt = x_consolidated_paired + x_to_be_consolidated + x_opt
-    x_sum_cmp = x_consolidated_paired + x_to_be_consolidated + x_cmp
-    x_opt_canceled = dfm.sm.orders_manager.get_optimistic_canceled()
-    x_cmp_canceled = dfm.sm.orders_manager.get_cmp_canceled(cmp=cmp)
-    x_sum_opt_can = x_sum_opt + x_opt_canceled
-    x_sum_cmp_can = x_sum_cmp + x_cmp_canceled
+    buy_count = dfm.sm.orders_manager.get_side_count(side=k_binance.SIDE_BUY)
+    sell_count = dfm.sm.orders_manager.get_side_count(side=k_binance.SIDE_SELL)
+    # x_opt = dfm.sm.orders_manager.get_optimistic_monitor()
+    # x_cmp = dfm.sm.orders_manager.get_cmp_monitor(cmp=cmp)
+    # x_sum_opt = x_consolidated_paired + x_to_be_consolidated + x_opt
+    # x_sum_cmp = x_consolidated_paired + x_to_be_consolidated + x_cmp
+    # x_opt_canceled = dfm.sm.orders_manager.get_optimistic_canceled()
+    # x_cmp_canceled = dfm.sm.orders_manager.get_cmp_canceled(cmp=cmp)
+    # x_sum_opt_can = x_sum_opt + x_opt_canceled
+    # x_sum_cmp_can = x_sum_cmp + x_cmp_canceled
 
     return f'{consolidated:,.{qp}f}',\
            f'{expected_at_cmp:,.{qp}f}',\
@@ -272,43 +263,7 @@ def display_value(value):
            f'{buy_actions_rate:,.0f} / {sell_actions_rate:,.0f}', \
            f'{len(canceled_buy_orders)} / {len(canceled_sell_orders)}', \
            f'{x_consolidated_paired:,.2f}', \
-           f'{x_to_be_consolidated:,.2f}', \
-           f'{x_opt:,.2f}', \
-           f'{x_cmp:,.2f}', \
-           f'{x_sum_opt:,.2f}', \
-           f'{x_sum_cmp:,.2f}', \
-           f'{x_sum_opt_can:,.2f}', \
-           f'{x_sum_cmp_can:,.2f}'
-
-
-# ********** PT count / traded orders count **********
-# @app.callback(Output('trade-info', 'children'), Input('update', 'n_intervals'))
-# def display_value(value):
-#     symbol_name = dfm.dashboard_active_symbol.name
-#     pt_count = len(dfm.sm.active_sessions[symbol_name].ptm.perfect_trades)
-#     buy_count = dfm.sm.active_sessions[symbol_name].buy_count
-#     sell_count = dfm.sm.active_sessions[symbol_name].sell_count
-#     return f'pt: {pt_count}   b: {buy_count}   s: {sell_count}'
-
-
-
-
-# @app.callback(Output('short-prediction', 'children'),
-#               Output('long-prediction', 'children'),
-#               Input('update', 'n_intervals'))
-# def display_value(value):
-#     symbol_name = dfm.dashboard_active_symbol.name
-#     session = dfm.sm.active_sessions[symbol_name]
-#     short_prediction = session.strategy_manager.get_tendency(session.cmp_pattern_short) - session.cmp
-#     long_prediction = session.strategy_manager.get_tendency(session.cmp_pattern_long) - session.cmp
-#     return f'short: {short_prediction:,.0f}', f'long: {long_prediction:,.0f}'
-
-
-# @app.callback(Output('accounts-info', 'children'), Input('update', 'n_intervals'))
-# def display_value(value):
-#     accounts_info = [f'{account.name}: {account.free:,.2f} ' for account in dfm.sm.am.accounts.values()]
-#     accounts_info_s = ' '.join(map(str, accounts_info))
-#     return accounts_info_s
+           f'{buy_count} / {sell_count}'
 
 
 # ********** symbol & accounts data **********

@@ -142,27 +142,27 @@ class Session:
             try:
                 self.is_active = self.off_mode_manager.check_to_update_activation_flag(cmp=cmp)
                 # self.off_mode_manager.check_monitor_order(cmp=cmp)
-                if not self.is_active:
-                    # try to create shifted pt
-                    orders = self.iom.isolated_orders + self.ptm.get_all_alive_orders()
-                    buy_span, sell_span = self.helpers.get_span_from_list(orders=orders, cmp=cmp)
-                    if buy_span == 0.0 and sell_span > 0.0:
-                        # force sell
-                        shifted_cmp = cmp - self.P_FORCED_SHIFT
-                        if self.strategy_manager.is_liquidity_enough(cmp=cmp, symbol=self.symbol):
-                            self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
-                            created_remaining_order = self.ptm.perfect_trades[-1].orders[0]
-                            print(f'created remaining order: {created_remaining_order}')
-                            # self.off_mode_manager.monitor_order = created_remaining_order  # buy order
-
-                    elif buy_span > 0.0 and sell_span == 0.0:
-                        # force buy
-                        shifted_cmp = cmp + self.P_FORCED_SHIFT
-                        if self.strategy_manager.is_liquidity_enough(cmp=cmp, symbol=self.symbol):
-                            self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
-                            created_remaining_order = self.ptm.perfect_trades[-1].orders[1]
-                            log.info(f'created remaining order: {created_remaining_order}')
-                            # self.off_mode_manager.monitor_order = created_remaining_order  # sell order
+                # if not self.is_active:
+                #     # try to create shifted pt
+                #     orders = self.iom.isolated_orders + self.ptm.get_all_alive_orders()
+                #     buy_span, sell_span = self.helpers.get_span_from_list(orders=orders, cmp=cmp)
+                #     if buy_span == 0.0 and sell_span > 0.0:
+                #         # force sell
+                #         shifted_cmp = cmp - self.P_FORCED_SHIFT
+                #         if self.strategy_manager.is_liquidity_enough(cmp=cmp, symbol=self.symbol):
+                #             self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+                #             created_remaining_order = self.ptm.perfect_trades[-1].orders[0]
+                #             print(f'created remaining order: {created_remaining_order}')
+                #             # self.off_mode_manager.monitor_order = created_remaining_order  # buy order
+                #
+                #     elif buy_span > 0.0 and sell_span == 0.0:
+                #         # force buy
+                #         shifted_cmp = cmp + self.P_FORCED_SHIFT
+                #         if self.strategy_manager.is_liquidity_enough(cmp=cmp, symbol=self.symbol):
+                #             self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+                #             created_remaining_order = self.ptm.perfect_trades[-1].orders[1]
+                #             log.info(f'created remaining order: {created_remaining_order}')
+                #             # self.off_mode_manager.monitor_order = created_remaining_order  # sell order
 
                 # 0.1: create first pt
                 if self.cmp_count == 5:
@@ -212,7 +212,7 @@ class Session:
                 # ********** SESSION EXIT POINT ********
                 self.checks_manager.check_exit_conditions(cmp=cmp, session_id=self.session_id, cmp_count=self.cmp_count)
 
-                self.checks_manager.check_trade_at_loss(cmp=cmp)
+                # self.checks_manager.check_trade_at_loss(cmp=cmp)
 
             except AttributeError as e:
                 print(e)
