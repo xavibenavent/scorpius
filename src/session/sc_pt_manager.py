@@ -27,7 +27,7 @@ class PTManager:
         self.fee = float(config['fee'])
         self.net_quote_balance = float(config['net_quote_balance'])
 
-    def create_new_pt(self, cmp: float, symbol: Symbol, pt_type='NORMAL') -> None:
+    def create_new_pt(self, cmp: float, symbol: Symbol, pt_type='NORMAL') -> (Order, Order):
         # create and get new orders
         b1, s1 = self._get_b1s1(symbol=symbol, mp=cmp)
 
@@ -41,6 +41,7 @@ class PTManager:
             # create new perfect trade from orders and add it to perfect trades list
             new_pt = PerfectTrade(pt_id=pt_id, orders=[b1, s1], pt_type=pt_type)
             self.perfect_trades.append(new_pt)
+            return b1, s1
         else:
             raise Exception('********** CRITICAL ERROR CREATING PT **********')
 

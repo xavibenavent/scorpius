@@ -18,6 +18,7 @@ from basics.sc_order import Order, OrderStatus
 from basics.sc_pending_order import PendingOrder
 from basics.sc_perfect_trade import PerfectTrade
 from managers.sc_client_manager import ClientManager
+from managers.sc_orders_manager import OrdersManager
 
 log = logging.getLogger('log')
 
@@ -48,6 +49,10 @@ class SessionManager:
         )
         self.market_api_out = MarketAPIOut(client=self.client_manager.client,
                                            hot_reconnect_callback=self.client_manager.hot_reconnect)
+
+        self.orders_manager = OrdersManager(
+            market_api_out=self.market_api_out,
+        )
 
         # session will be started within start_session method
         self.active_sessions: Dict[str, Optional[Session]] = {}
@@ -224,7 +229,8 @@ class SessionManager:
             dbm=self.dbm,
             isolated_order_traded_callback=self._isolated_order_traded_callback,
             get_liquidity_needed_callback=self._get_liquidity_needed_callback,
-            consolidated_profit=self.terminated_sessions[symbol.name]['global_consolidated_profit']
+            consolidated_profit=self.terminated_sessions[symbol.name]['global_consolidated_profit'],
+            orders_manager=self.orders_manager
         )
 
         # update counter for all symbols

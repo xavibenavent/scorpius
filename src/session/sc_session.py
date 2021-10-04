@@ -14,6 +14,7 @@ from basics.sc_symbol import Symbol, Asset
 from managers.sc_isolated_manager import IsolatedOrdersManager
 from managers.sc_strategy_manager import StrategyManager
 from managers.sc_db_manager import DBManager
+from managers.sc_orders_manager import OrdersManager
 from session.sc_helpers import Helpers
 from session.sc_checks_manager import ChecksManager
 from session.sc_off_mode_manager import OffModeManager
@@ -34,7 +35,8 @@ class Session:
                  dbm: DBManager,
                  isolated_order_traded_callback: Callable[[Symbol, float, float], None],
                  get_liquidity_needed_callback: Callable[[Asset], float],
-                 consolidated_profit: float
+                 consolidated_profit: float,
+                 orders_manager: OrdersManager
                  ):
 
         self.symbol = symbol
@@ -43,6 +45,8 @@ class Session:
         self.market = market
         self.am = account_manager
         self.dbm = dbm
+
+        self.orders_manager = orders_manager
 
         # isolated manager callbacks
         self.isolated_order_traded_callback = isolated_order_traded_callback
@@ -208,6 +212,8 @@ class Session:
                 # ********** SESSION EXIT POINT ********
                 self.checks_manager.check_exit_conditions(cmp=cmp, session_id=self.session_id, cmp_count=self.cmp_count)
 
+                self.checks_manager.check_trade_at_loss(cmp=cmp)
+
             except AttributeError as e:
                 print(e)
 
@@ -287,7 +293,11 @@ class Session:
             if is_allowed:
                 shifted_cmp = cmp + forced_shift
                 # create pt
-                self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+                b1, s1 = self.ptm.create_new_pt(cmp=shifted_cmp, symbol=self.symbol)
+
+                self.orders_manager.orders.append(b1)
+                self.orders_manager.orders.append(s1)
+                # self.orders_manager.show_orders()
 
                 # update inactivity counters
                 self.cycles_from_last_trade = 0

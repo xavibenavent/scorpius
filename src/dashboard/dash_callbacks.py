@@ -221,6 +221,14 @@ def display_value(value):
               Output('actions-info', 'children'),
               Output('actions-rate', 'children'),
               Output('canceled-count', 'children'),
+              Output('x-consolidated', 'children'),
+              Output('x-to-be-consolidated', 'children'),
+              Output('x-opt', 'children'),
+              Output('x-cmp', 'children'),
+              Output('x-sum-opt', 'children'),
+              Output('x-sum-cmp', 'children'),
+              Output('x-sum-opt-canceled', 'children'),
+              Output('x-sum-cmp-canceled', 'children'),
               Input('update', 'n_intervals'))
 def display_value(value):
     symbol = dfm.dashboard_active_symbol
@@ -239,18 +247,38 @@ def display_value(value):
     canceled_buy_orders = [order for order in dfm.sm.iom.canceled_orders if order.k_side == k_binance.SIDE_BUY]
     canceled_sell_orders = [order for order in dfm.sm.iom.canceled_orders if order.k_side == k_binance.SIDE_SELL]
 
-    if consolidated + expected_at_cmp > 100.0:
-        global_cmp = dfm.sm.terminated_sessions[symbol_name]["global_cmp_count"]
-        session_cmp = dfm.sm.active_sessions[symbol_name].cmp_count
-        raise Exception(f'TARGET ACHIEVED!!! in {timedelta(seconds=global_cmp + session_cmp)}'
-                        f' DONE: {consolidated} ACTUAL AL CMP: {expected_at_cmp}')
+    # if consolidated + expected_at_cmp > 500.0:
+    #     global_cmp = dfm.sm.terminated_sessions[symbol_name]["global_cmp_count"]
+    #     session_cmp = dfm.sm.active_sessions[symbol_name].cmp_count
+    #     raise Exception(f'TARGET ACHIEVED!!! in {timedelta(seconds=global_cmp + session_cmp)}'
+    #                     f' DONE: {consolidated} ACTUAL AL CMP: {expected_at_cmp}')
+
+    x_consolidated_paired = \
+        dfm.sm.orders_manager.get_consolidated_paired(cmp=cmp, qty=dfm.sm.active_sessions[symbol_name].P_QUANTITY)
+    x_to_be_consolidated = dfm.sm.orders_manager.get_to_be_consolidated()
+    x_opt = dfm.sm.orders_manager.get_optimistic_monitor()
+    x_cmp = dfm.sm.orders_manager.get_cmp_monitor(cmp=cmp)
+    x_sum_opt = x_consolidated_paired + x_to_be_consolidated + x_opt
+    x_sum_cmp = x_consolidated_paired + x_to_be_consolidated + x_cmp
+    x_opt_canceled = dfm.sm.orders_manager.get_optimistic_canceled()
+    x_cmp_canceled = dfm.sm.orders_manager.get_cmp_canceled(cmp=cmp)
+    x_sum_opt_can = x_sum_opt + x_opt_canceled
+    x_sum_cmp_can = x_sum_cmp + x_cmp_canceled
 
     return f'{consolidated:,.{qp}f}',\
            f'{expected_at_cmp:,.{qp}f}',\
            f'{expected:,.{qp}f}', \
            f'{buy_actions_count}/{sell_actions_count} {actions_balance:,.2f}', \
            f'{buy_actions_rate:,.0f} / {sell_actions_rate:,.0f}', \
-           f'{len(canceled_buy_orders)} / {len(canceled_sell_orders)}'
+           f'{len(canceled_buy_orders)} / {len(canceled_sell_orders)}', \
+           f'{x_consolidated_paired:,.2f}', \
+           f'{x_to_be_consolidated:,.2f}', \
+           f'{x_opt:,.2f}', \
+           f'{x_cmp:,.2f}', \
+           f'{x_sum_opt:,.2f}', \
+           f'{x_sum_cmp:,.2f}', \
+           f'{x_sum_opt_can:,.2f}', \
+           f'{x_sum_cmp_can:,.2f}'
 
 
 # ********** PT count / traded orders count **********

@@ -232,7 +232,51 @@ class DashLayout:
                                                 html.H6('CANCELED', className='global-info-subtitle-2'),
                                                 html.H6(id='canceled-count', children='0', className='order-info-1')
                                             ]),
-                                        ])
+                                        ]),
+                                        html.Br(),
+                                        dbc.Row([
+                                            dbc.Col([
+                                                html.H6('CONSOLIDATED', className='global-info-subtitle-2'),
+                                                html.H6(id='x-consolidated', children='0', className='order-info-1')
+                                            ]),
+                                            dbc.Col([
+                                                html.H6('TO BE CONSOLIDATED', className='global-info-subtitle-2'),
+                                                html.H6(id='x-to-be-consolidated', children='0', className='order-info-1')
+                                            ]),
+                                        ]),
+                                        html.Br(),
+                                        dbc.Row([
+                                            dbc.Col([
+                                                html.H6('OPT', className='global-info-subtitle-2'),
+                                                html.H6(id='x-opt', children='0', className='order-info-1')
+                                            ]),
+                                            dbc.Col([
+                                                html.H6('CMP', className='global-info-subtitle-2'),
+                                                html.H6(id='x-cmp', children='0', className='order-info-1')
+                                            ]),
+                                        ]),
+                                        html.Br(),
+                                        dbc.Row([
+                                            dbc.Col([
+                                                html.H6('SUM-OPT', className='global-info-subtitle-2'),
+                                                html.H6(id='x-sum-opt', children='0', className='order-info-1')
+                                            ]),
+                                            dbc.Col([
+                                                html.H6('SUM-CMP', className='global-info-subtitle-2'),
+                                                html.H6(id='x-sum-cmp', children='0', className='order-info-1')
+                                            ]),
+                                        ]),
+                                        html.Br(),
+                                        dbc.Row([
+                                            dbc.Col([
+                                                html.H6('SUM-OPT-CAN', className='global-info-subtitle-2'),
+                                                html.H6(id='x-sum-opt-canceled', children='0', className='order-info-1')
+                                            ]),
+                                            dbc.Col([
+                                                html.H6('SUM-CMP-CAN', className='global-info-subtitle-2'),
+                                                html.H6(id='x-sum-cmp-canceled', children='0', className='order-info-1')
+                                            ]),
+                                        ]),
                                     ]),
                                     # dbc.CardFooter('Footer')
                                 ], color='dark', inverse=True, className='scorpius-card'

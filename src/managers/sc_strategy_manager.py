@@ -135,4 +135,3 @@ class StrategyManager:
     #         self.helpers.place_market_order(order=order)
     #         log.info(f'order placed at Market price with loss: {order}')
 
-

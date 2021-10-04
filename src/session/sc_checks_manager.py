@@ -375,3 +375,13 @@ class ChecksManager:
             actions_balance += partial_balance
 
         return buy_actions_count, sell_actions_count, actions_balance
+
+    def check_trade_at_loss(self, cmp: float):
+        distance_for_loss = 500.0
+        # raise Exception()
+        for order in self.iom.isolated_orders:
+            if order.status == OrderStatus.TO_BE_TRADED:
+                if order.k_side == k_binance.SIDE_BUY and cmp > order.sibling_order.price + distance_for_loss:
+                    self.market_api_out.place_market_order(order=order)
+                if order.k_side == k_binance.SIDE_SELL and cmp < order.sibling_order.price - distance_for_loss:
+                    self.market_api_out.place_market_order(order=order)
